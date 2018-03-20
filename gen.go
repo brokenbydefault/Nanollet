@@ -1,7 +1,4 @@
-// The following directive is necessary to make the package coherent:
-
 // +build ignore
-
 // This program generates html.go/css.go. It can be invoked by running
 // go generate
 package main
@@ -12,9 +9,15 @@ import (
 	"strings"
 	"io/ioutil"
 	"os"
+	"github.com/kib357/less-go"
 )
 
 func main() {
+
+	err := less.RenderFile("GUI/Front/less/style.less", "GUI/Front/css/style.css", map[string]interface{}{"compress": true})
+	if err != nil {
+		panic(err)
+	}
 
 	os.Create("GUI/Front/html.go")
 

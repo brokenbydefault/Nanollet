@@ -9,7 +9,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/GUI/Storage"
 )
 
-//go:generate go run GUI/Gen/gen.go
+//go:generate go run gen.go
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
