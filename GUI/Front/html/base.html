@@ -1,0 +1,54 @@
+<html window-frame="transparent" resizeable>
+<head>
+    <meta charset="UTF-8">
+    <title>Nanollet</title>
+
+    <link rel="stylesheet" type="text/css" href="../css/icons.css">
+    <link rel="stylesheet" type="text/css" href="icons.css">
+</head>
+<body class="notconnected">
+
+<section class="account" role="window-caption">
+    <icon class="logo-nano"></icon>
+    <div class="ammount">0.00000</div>
+</section>
+
+<section class="apps">
+    <aside class="app">
+        <button id="nanofy">Nanofy</button>
+        <button id="nanollet">Nanollet</button>
+    </aside>
+</section>
+
+<section class="control">
+</section>
+
+<section class="dynamic">
+</section>
+
+<section class="notification">
+    <!--<button class="notification"></button>-->
+</section>
+<script type="text/tiscript">
+    class DropZone : Element {
+      event drag (evt) {
+        if(evt.draggingDataType == #file) {
+          return true;
+        }
+      }
+      event drop (evt) {
+        if(evt.draggingDataType == #file) {
+          this.parent.select(".filepath").value = evt.dragging
+          this.select(".name").value = evt.dragging.split("\\")[evt.dragging.split("\\").length-1]
+
+          return true;
+        }
+      }
+    }
+
+</script>
+<button  role="window-close">
+    <icon id="end" class="icon-exit"></icon>
+</button>
+</body>
+</html>

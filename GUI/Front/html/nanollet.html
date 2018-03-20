@@ -1,0 +1,50 @@
+<main application="nanollet">
+
+    <section page="wallet">
+        <div class="middle">
+
+            <label for="address">ADDRESS</label>
+            <textarea spellcheck="false" class="address" rows="2"></textarea>
+
+            <label for="address">AMOUNT</label>
+            <div class="amountbox">
+                <input type="text" class="whole" novalue="0" maxlength="7" filter="0~9">
+                <input type="text" class="divider" readonly value=".">
+                <input type="text" class="decimal" novalue="000000" maxlength="6" filter="0~9">
+            </div>
+
+            <input class="continue" type="submit" value="SEND PAYMENT">
+
+        </div>
+    </section>
+
+
+    <section page="receive">
+        <div class="middle">
+
+            <label for="address">YOUR ADDRESS</label>
+            <textarea class="address" rows="2" spellcheck="false"></textarea>
+
+        </div>
+    </section>
+
+    <section page="list">
+        <div class="middle">
+
+            <label>BALANCE</label>
+            <div class="box fullamoutbox">
+                <div class="item fullamount"></div>
+            </div>
+
+            <label>TRANSACTIONS</label>
+            <div class="box txbox">
+                <div class="item">
+                    No transactions were found. :(
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+
+</main>
