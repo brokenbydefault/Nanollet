@@ -1,7 +1,7 @@
 
 # Nanollet
 
-Nanollet is light is size, but rich in features. The wallet need less than 5MB of disk space and negligible bandwidth consumption.
+Nanollet is light is size, but rich in features. The wallet need less than 20MB of disk space and negligible bandwidth consumption.
 
 > Remember, the Nanollet is working in progress, if you had some problem report it directly in the issues.
 
@@ -36,9 +36,6 @@ You can only send one transaction with hold your mobile phone, for instance. It 
 - “Nanofy with Universal Blocks”
 Yes, the version two is already at the door, we expect to take advantage of the universal blocks, which have more size and room to store data.
 
-- “Forks Support”:
-We really want to support any variations of the Nano, we don’t have any thing against forks, you can also fork the Nanollet. The SeedFY was built with this support in mind, but the GUI not support it yet and the code is not write in the way to allow that.
-
 - “Alias”:
 The Nanode already allow you to set one alias, but we want to take different approach and even more decentralized and, of course, secure to anyone.
 
@@ -51,6 +48,22 @@ That is hard for, but challenges are good. Create one completely hardware wallet
 ### Technology:
 The entire Nanollet was written in Golang, the GUI uses the Sciter, consequently we have CSS/HTML, you can find information to how compile it under wiki.
 
+#### Dependencies:
+The Nanofy tries to avoid dependencies, but Golang don't have GUI system by default. Here is listed all external dependencies. Remember that using `go get -x` will automatically download.
+
+##### GUI:
+- github.com/sciter-sdk/go-sciter
+	- github.com/lxn/win
+- github.com/shibukawa/configdir
+
+##### Generator:
+- github.com/kib357/less-go
+	- gopkg.in/olebedev/go-duktape.v2
+
+#### License:
+
+- Sciter: https://sciter.com/prices/
+- Icons8: https://icons8.com/
 
 ---------
 
