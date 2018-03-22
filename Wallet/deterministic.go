@@ -112,7 +112,7 @@ func (sf *SeedFY) IsValid() (r bool) {
 	return
 }
 
-type TwoFactor []byte
+
 
 // @TODO
 
@@ -120,8 +120,8 @@ type Seed []byte
 
 // RecoverSeedFromSeedFY returns the Seed based on given password and hex-encoded SeedFY.
 // SEEDFY: [version][type][time][memory][thread][salt]
-func (sf *SeedFY) RecoverSeed(password string, tf TwoFactor) Seed {
-	salt := Util.CreateKeyedHash(32, sf.Salt, tf)
+func (sf *SeedFY) RecoverSeed(password string, additionaldata []byte) Seed {
+	salt := Util.CreateKeyedHash(32, sf.Salt, additionaldata)
 
 	kdf := argon2.IDKey([]byte(password), salt, uint32(sf.Time), uint32(1<<sf.Memory), sf.Thread, 32)
 	debug.FreeOSMemory()

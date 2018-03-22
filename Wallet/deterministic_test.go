@@ -44,8 +44,8 @@ func TestReadSeedFY3(t *testing.T) {
 		t.Error("ReadWrong")
 	}
 
-	if err == nil {
-		t.Error("mininum salt light not verified")
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -92,4 +92,15 @@ func TestSeed_CreateKeyPair(t *testing.T) {
 			t.Errorf("recover seed failed, expecting %s and gives %s", Util.SecureHexEncode(expected), Util.SecureHexEncode(sk))
 		}
 	}
+}
+
+func TestRecoverCoinSeed(t *testing.T) {
+	s, _ := Util.SecureHexDecode("15ac010515107c4ad61e4527cd8e43a9f6b4bd4fa6f1536361f3da686b0a88bc")
+	seed := Seed(s)
+	coin := Currency(0x00000001)
+
+	if !bytes.Equal(Util.CreateKeyedXOFHash(32, seed, []byte{0x01, 0x00, 0x00, 0x00}), RecoverCoinSeed(seed, coin)) {
+		t.Error("Coinseed is wrong")
+	}
+
 }
