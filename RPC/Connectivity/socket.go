@@ -9,6 +9,8 @@ import (
 	"io"
 	"crypto/tls"
 	"github.com/brokenbydefault/Nanollet/RPC/PKP"
+	"github.com/brokenbydefault/Nanollet/Config"
+	"fmt"
 )
 
 type S struct {
@@ -56,6 +58,11 @@ func (c S) SendRequest(b []byte) (msg []byte, err error) {
 		}
 	}
 
+	if Config.IsDebugEnabled() {
+		fmt.Println("Requesting:")
+		fmt.Println(string(b))
+	}
+
 	_, err = wss.Write(b)
 	if err != nil {
 		c.StartWebsocket()
@@ -63,6 +70,13 @@ func (c S) SendRequest(b []byte) (msg []byte, err error) {
 	}
 
 	err = websocket.Message.Receive(wss, &msg)
+
+
+	if Config.IsDebugEnabled() {
+		fmt.Println("Response:")
+		fmt.Println(string(msg))
+	}
+
 	return
 }
 
