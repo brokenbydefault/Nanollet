@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-
+//@TODO Use JSONMarshal instead, rewrite the code
 //@TODO UniversalBlock is not finished!
 /**
 func (s *UniversalBlock) Serialize() ([]byte, error) {

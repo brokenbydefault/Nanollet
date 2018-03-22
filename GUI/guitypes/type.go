@@ -20,9 +20,3 @@ type Application interface {
 
 type Sector struct {}
 type App struct {}
-
-type Options uint32
-
-const (
-	WithoutSidebar Options = iota
-)
