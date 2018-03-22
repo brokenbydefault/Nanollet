@@ -64,7 +64,7 @@ func TestSecureHexDecode(t *testing.T) {
 		}
 
 
-		if ok {
+		if !ok {
 			t.Error(r, v.Result , ok)
 		}
 	}
