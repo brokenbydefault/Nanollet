@@ -4,11 +4,8 @@ import (
 	"testing"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"fmt"
 	"github.com/brokenbydefault/Nanollet/Block"
-	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
-	"encoding/json"
 )
 
 func TestGetAccountBalance(t *testing.T) {
@@ -86,13 +83,11 @@ func TestGetAccountInformation(t *testing.T) {
 	StartWebsocket()
 
 	addr := Wallet.Address("xrb_1qato4k7z3spc8gq1zyd8xeqfbzsoxwo36a45ozbrxcatut7up8ohyardu1z")
-	result, err := GetAccountInformation(Connectivity.Socket, addr)
+	_, err := GetAccountInformation(Connectivity.Socket, addr)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-
-	fmt.Println(result, result.Balance.ToHex(), result.RepresentativeBlock)
 
 	addr = Wallet.Address("xrb_1nanofy1the1next1transaction1is1an1pkregister1u11111ashk5pbd")
 	_, err = GetAccountInformation(Connectivity.Socket, addr)
@@ -138,7 +133,7 @@ func TestGetMultiAccountsPending(t *testing.T) {
 	addr2 := Wallet.Address("xrb_1nanofy8on8preceding8transaction11111111111111111111chcdnjcj")
 	amm, err := Numbers.NewRawFromString("0")
 
-	r, err := GetMultiAccountsPending(Connectivity.Socket, 100, amm, addr, addr2)
+	r, err := GetMultiAccountsPending(Connectivity.Socket, 25, amm, addr, addr2)
 	if err != nil {
 		t.Error(err)
 		return
@@ -150,6 +145,23 @@ func TestGetMultiAccountsPending(t *testing.T) {
 	}
 }
 
+func TestGetMultiAccountsPendingOverLimit(t *testing.T) {
+
+	StartWebsocket()
+
+	pk, _, _ := Wallet.GenerateRandomKeyPair()
+
+	addr := pk.CreateAddress()
+	addr2 := Wallet.Address("xrb_1nanofy8on8preceding8transaction11111111111111111111chcdnjcj")
+	amm, err := Numbers.NewRawFromString("0")
+
+	_, err = GetMultiAccountsPending(Connectivity.Socket, 100, amm, addr, addr2)
+	if err == nil {
+		t.Error(err)
+		return
+	}
+}
+
 func TestGetAccountPending(t *testing.T) {
 
 	StartWebsocket()
@@ -157,7 +169,7 @@ func TestGetAccountPending(t *testing.T) {
 	addr := Wallet.Address("xrb_1nanofy8on8preceding8transaction11111111111111111111chcdnjcj")
 	amm, err := Numbers.NewRawFromString("0")
 
-	r, err := GetAccountPending(Connectivity.Socket, 100, amm, addr)
+	r, err := GetAccountPending(Connectivity.Socket, 25, amm, addr)
 	if err != nil {
 		t.Error(err)
 		return
@@ -175,6 +187,22 @@ func TestGetAccountPending(t *testing.T) {
 
 }
 
+func TestGetAccountPendingOverLimit(t *testing.T) {
+
+	StartWebsocket()
+
+	addr := Wallet.Address("xrb_1nanofy8on8preceding8transaction11111111111111111111chcdnjcj")
+	amm, err := Numbers.NewRawFromString("0")
+
+	_, err = GetAccountPending(Connectivity.Socket, 100, amm, addr)
+	if err != err {
+		t.Error(err)
+		return
+	}
+
+}
+
+
 func TestGetAccountPendingInvalid(t *testing.T) {
 
 	StartWebsocket()
@@ -182,7 +210,7 @@ func TestGetAccountPendingInvalid(t *testing.T) {
 	addr := Wallet.Address("xrb_3yxxyyrdeapnxe1dyxxxxxxxsyhxou4risfkzibe8bfdjj3663d7ppy1enb")
 	amm, err := Numbers.NewRawFromString("0")
 
-	_, err = GetAccountPending(Connectivity.Socket, 100, amm, addr)
+	_, err = GetAccountPending(Connectivity.Socket, 25, amm, addr)
 	if err.Error() != ErrBadAddress.Error() {
 		t.Error(err)
 		return
@@ -208,15 +236,12 @@ func TestSendBlock(t *testing.T) {
 	block.Type = "change"
 	block.Previous = info.Frontier
 	block.Signature, _ = sk.CreateSignature(block.Hash())
-	block.Work = block.CreateProof()
 
-	resp, err := BroadcastBlock(Connectivity.Socket, block)
+	_, err = BroadcastBlock(Connectivity.Socket, block)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-
-	fmt.Println(string(Util.UnsafeHexEncode(resp.Hash)))
 
 }
 
@@ -248,13 +273,12 @@ func TestSendBlock2(t *testing.T) {
 		block.Signature, _ = sk.CreateSignature(block.Hash())
 		block.Work = block.CreateProof()
 
-		resp, err := BroadcastBlock(Connectivity.Socket, block)
+		_, err := BroadcastBlock(Connectivity.Socket, block)
 		if err != nil {
 			t.Error(err)
 			return
 		}
 
-		fmt.Println(string(Util.UnsafeHexEncode(resp.Hash)))
 	}
 
 }
