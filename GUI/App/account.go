@@ -209,17 +209,17 @@ func (c *PageAddress) OnContinue(w *window.Window) {
 		return
 	}
 
+	Storage.SK = sk
+	Storage.PK = pk
+
 	err = Background.StartAddress(w)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a critical problem connecting to our servers, please try again")
 		return
 	}
 
-	page.ApplyForIt(w, ".address", DOM.ClearHTML)
-
-	Storage.SK = sk
-	Storage.PK = pk
 	Storage.SEED = nil
+	page.ApplyForIt(w, ".address", DOM.ClearHTML)
 
 	Background.StartTransaction()
 	ViewApplication(w, &NanolletApp{})
