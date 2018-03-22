@@ -6,8 +6,9 @@ import (
 	"github.com/brokenbydefault/Nanollet/Wallet"
 )
 
-type HistoryStore []RPCClient.SingleHistory
+var Amount *Numbers.RawAmount
 
+type HistoryStore []RPCClient.SingleHistory
 var History HistoryStore
 
 func (h *HistoryStore) Set(hist []RPCClient.SingleHistory) {

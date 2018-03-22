@@ -23,8 +23,8 @@ func StartAddress(w *window.Window) error {
 		}
 	}
 
-	Storage.SetFrontier(info.Frontier)
-	Storage.SetAmount(info.Balance)
+	Storage.Frontier = info.Frontier
+	Storage.Amount = info.Balance
 	DOM.UpdateAmount(w)
 
 	hist, err := RPCClient.GetAccountHistory(Connectivity.Socket, 25, Storage.PK.CreateAddress())

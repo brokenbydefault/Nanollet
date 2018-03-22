@@ -82,8 +82,8 @@ func execute() {
 				break
 			}
 
-			Storage.SetAmount(balance)
-			Storage.SetFrontier(hash)
+			Storage.Amount = balance
+			Storage.Frontier = hash
 			Storage.History.Add(blk.GetType(), tx.ammount, hash, "") // @TODO Set Address
 		}
 

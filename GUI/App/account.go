@@ -86,7 +86,7 @@ func (c *PageGenerate) OnContinue(w *window.Window) {
 		panic(err)
 	}
 
-	err = Storage.SaveSeed(seed)
+	err = Storage.Permanent.WriteFile("wallet.dat", []byte(seed))
 	if err != nil {
 		panic(err)
 	}
@@ -118,7 +118,7 @@ func (c *PageImport) OnContinue(w *window.Window) {
 		return
 	}
 
-	err = Storage.SaveSeed(seed)
+	err = Storage.Permanent.WriteFile("wallet.dat", []byte(seed))
 	if err != nil {
 		panic(err)
 	}
@@ -146,7 +146,7 @@ func (c *PagePassword) OnContinue(w *window.Window) {
 		return
 	}
 
-	seed, err := Storage.RetrieveSeed()
+	seed, err := Storage.Permanent.ReadFile("wallet.dat")
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem reading your seed or it doesn't exist anymore")
 		return
@@ -211,7 +211,8 @@ func (c *PageAddress) OnContinue(w *window.Window) {
 
 	page.ApplyForIt(w, ".address", DOM.ClearHTML)
 
-	Storage.SetPrivateKey(sk, pk)
+	Storage.SK = sk
+	Storage.PK = pk
 	Storage.SEED = nil
 
 	err = Background.StartAddress(w)
