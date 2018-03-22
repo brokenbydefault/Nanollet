@@ -7,9 +7,11 @@ import (
 	"github.com/brokenbydefault/Nanollet/GUI/App"
 	"github.com/brokenbydefault/Nanollet/GUI/Storage"
 	"github.com/brokenbydefault/Nanollet/Config"
+	"path/filepath"
 )
 
 func Start() {
+
 	w, err := window.New(sciter.SW_MAIN|sciter.SW_RESIZEABLE|sciter.SW_OWNS_VM, sciter.NewRect(200, 200, 900, 600))
 	if err != nil {
 		panic(err)
@@ -27,11 +29,19 @@ func Start() {
 	App.InitApplication(w, &App.AccountApp{})
 
 	App.ViewApplication(w, &App.AccountApp{})
-	if Storage.ExistSeed() {
+
+	if Storage.Permanent.Exists("wallet.dat") {
 		App.ViewPage(w, &App.PagePassword{})
 	}
 
 	w.Show()
 	w.Run()
 
+}
+
+func Unpack() {
+	if err := Storage.Permanent.WriteFile("sciter.link", Front.Sciter); err != nil {
+		panic(err)
+	}
+	sciter.SetDLL(filepath.Join(Storage.Permanent.Path, "sciter.link"))
 }

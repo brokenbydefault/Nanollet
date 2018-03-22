@@ -9,9 +9,10 @@ import (
 	"github.com/brokenbydefault/Nanollet/GUI/Storage"
 )
 
-//go:generate go run gen.go
+//go:generate go run GUI/Generator/gen.go
 
 func main() {
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	if Config.IsDebugEnabled() {
@@ -20,5 +21,7 @@ func main() {
 
 	Storage.Start()
 	RPCClient.StartWebsocket()
+
+	GUI.Unpack()
 	GUI.Start()
 }
