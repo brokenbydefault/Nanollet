@@ -6,7 +6,7 @@
 
 // -------------------------
 
-@color-primary: #0f1121;
+@color-primary: #183a56;
 @color-secondary: #152360;
 @color-tertiary: #4a90e2;
 
@@ -15,23 +15,24 @@
 @color-dark: #08080e;
 @color-divider: #ea891f;
 @color-light: #efefef;
+@color-gray-light: #dcdcdf;
+@color-gray-dark: #c5c5c8;
 @color-light-blue: #4da7e5;
 @color-dark-blue: #2c3265;
 
+@color-font-secondary: #7f8088;
 // -------------------------
 
-@has-navegation-toolbar: 1;
-
-@w-nav: 20px;
-@h-nav: 100vh;
+@w-nav: 100vw;
+@h-nav: 40px;
 
 // -------------------------
 
 @w-sidebar: 160px;
-@h-sidebar: 100vh;
+@h-sidebar: ~"calc(100vh - @{h-nav})";
 
 @w-sidebar-content: 100%;
-@h-sidebar-content: 70px;
+@h-sidebar-content: 60px;
 
 @w-sidebar-menu: 100%;
 @h-sidebar-menu: 150px;
@@ -46,7 +47,7 @@
 
 //---------------------------
 
-@w-account-outside: 80px;
+@w-account-outside: 0px;
 
 @w-account: calc(@w-sidebar + @w-sidebar-control + @w-account-outside + 3px);
 @w-account-logo: 50px;
@@ -62,8 +63,8 @@
 
 // -------------------------
 
-@h-main: ~"calc(100vh)";
-@w-main: ~"calc(100vw - (@{w-sidebar} + @{w-sidebar-control} +  @{w-account-outside}))";
+@h-main: ~"calc(100vh - @{h-nav})";
+@w-main: ~"calc(100vw - (@{w-sidebar} +  @{w-account-outside}))";
 
 // -------------------------
 

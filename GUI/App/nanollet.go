@@ -126,7 +126,7 @@ func (c *PageReceive) OnContinue(w *window.Window) {
 type PageList guitypes.Sector
 
 func (c *PageList) Name() string {
-	return "list"
+	return "history"
 }
 
 func (c *PageList) OnView(w *window.Window) {

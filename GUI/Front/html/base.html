@@ -1,24 +1,25 @@
-<html window-frame="transparent" resizeable>
+<html window-frame="solid" window-blurbehind="light" resizeable>
 <head>
     <meta charset="UTF-8">
     <title>Nanollet</title>
 
-    <link rel="stylesheet" type="text/css" href="../css/icons.css">
-    <link rel="stylesheet" type="text/css" href="icons.css">
+    <link rel="stylesheet" type="text/css" href="../css/style.css">
 </head>
 <body class="notconnected">
 
-<section class="account" role="window-caption">
-    <icon class="logo-nano"></icon>
-    <div class="ammount">0.00000</div>
-</section>
 
-<section class="apps">
-    <aside class="app">
-        <button id="nanofy">Nanofy</button>
-        <button id="nanollet">Nanollet</button>
-    </aside>
-</section>
+<header role="window-caption">
+    <section class="logo">
+        NANOLLET
+    </section>
+    <section class="account">
+        <icon class="logo-nano" />
+        <div class="ammount"></div>
+        <button role="window-close">
+            <icon id="end" class="icon-exit"></icon>
+        </button>
+    </section>
+</header>
 
 <section class="control">
 </section>
@@ -44,9 +45,8 @@
         }
       }
     }
+
+
 </script>
-<button  role="window-close">
-    <icon id="end" class="icon-exit"></icon>
-</button>
 </body>
 </html>

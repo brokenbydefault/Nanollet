@@ -12,7 +12,7 @@ import (
 
 func Start() {
 
-	w, err := window.New(sciter.SW_MAIN|sciter.SW_RESIZEABLE|sciter.SW_OWNS_VM, sciter.NewRect(200, 200, 900, 600))
+	w, err := window.New(sciter.SW_MAIN|sciter.SW_RESIZEABLE|sciter.SW_OWNS_VM|sciter.SW_GLASSY, sciter.NewRect(200, 200, 900, 600))
 	if err != nil {
 		panic(err)
 	}
@@ -40,6 +40,10 @@ func Start() {
 }
 
 func Unpack() {
+	if Config.IsDebugEnabled() {
+		return
+	}
+
 	if err := Storage.Permanent.WriteFile("sciter.link", Front.Sciter); err != nil {
 		panic(err)
 	}

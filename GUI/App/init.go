@@ -9,36 +9,36 @@ import (
 )
 
 func InitApplication(w *window.Window, app guitypes.Application) {
-	elem, err := DOM.SelectFirstElement(w, ".dynamic")
+	elem, _ := DOM.SelectFirstElement(w, ".dynamic")
 	elem.SetHtml(string(app.Display()), sciter.SIH_APPEND_AFTER_LAST)
-
 	StartApplication(w, app)
 
-	menubutton, err := DOM.SelectFirstElement(w, ".apps #"+strings.ToLower(app.Name()))
-	if err != nil {
+	if !app.HaveSidebar() {
 		return
 	}
 
-	menubutton.OnClick(func() {
+	controlbar, _ := DOM.SelectFirstElement(w, ".control")
+	modulebutton := DOM.CreateElementAppendTo("button", "", "", "", controlbar)
+
+	DOM.CreateElementAppendTo("span", strings.Title(app.Name()), "title", "", modulebutton)
+	DOM.CreateElementAppendTo("span", "", "pointer", "", modulebutton)
+
+	modulebutton.OnClick(func() {
 		ViewApplication(w, app)
 	})
 
-
-	controlbar, _ := DOM.SelectFirstElement(w, ".control")
-	control, _ := sciter.CreateElement("aside", "")
-	control.SetAttr("application", app.Name())
-	controlbar.Append(control)
+	aside := DOM.CreateElementAppendTo("aside", "", "application", app.Name(), controlbar)
 
 	for _, p := range app.Pages() {
 		page := p
 
-		controlbutton, _ := sciter.CreateElement("button", "")
-		controlbutton.SetAttr("class", p.Name())
-		control.Append(controlbutton)
+		controlbutton := DOM.CreateElementAppendTo("button", "", strings.Title(page.Name()), "", aside)
+		block := DOM.CreateElementAppendTo("span", "", "block", "", controlbutton)
 
-		icon, _ := sciter.CreateElement("icon", "")
-		icon.SetAttr("class", "icon-"+p.Name())
-		controlbutton.Append(icon)
+		DOM.CreateElementAppendTo("icon", "", "icon-"+page.Name(), "", block)
+		DOM.CreateElementAppendTo("span", strings.Title(page.Name()), "title", "", block)
+		DOM.CreateElementAppendTo("span", "", "pointer", "", block)
+
 		controlbutton.OnClick(func() {
 			ViewPage(w, page)
 		})
@@ -46,14 +46,14 @@ func InitApplication(w *window.Window, app guitypes.Application) {
 }
 
 func ViewApplication(w *window.Window, app guitypes.Application) error {
-	DOM.ApplyForAll(w, "[application], [page]", DOM.HideElement)
+	DOM.ApplyForAll(w, ".application, [page]", DOM.HideElement)
 
 	if app.HaveSidebar() {
 		el, _ := DOM.SelectFirstElement(w, "body")
 		el.SetAttr("class", "")
 	}
 
-	DOM.ApplyForAll(w, "[application=\""+app.Name()+"\"]", DOM.ShowElement)
+	DOM.ApplyForAll(w, ".application#"+app.Name(), DOM.ShowElement)
 
 	return ViewPage(w, app.Pages()[0])
 }
@@ -83,7 +83,7 @@ func StartApplication(w *window.Window, app guitypes.Application) error {
 func ViewPage(w *window.Window, page guitypes.Page) error {
 
 	DOM.ApplyForAll(w, ".control button", DOM.UnvisitedElement)
-	DOM.ApplyForIt(w, ".control button."+page.Name(), DOM.VisitedElement)
+	DOM.ApplyForIt(w, ".control button."+strings.Title(page.Name()), DOM.VisitedElement)
 
 	DOM.ApplyForAll(w, "[page]", DOM.HideElement)
 	page.OnView(w)

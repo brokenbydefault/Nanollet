@@ -2,23 +2,32 @@
 
 // -------------------------
 
-html, body {
-  overflow-y: hidden;
-  overflow-x: hidden;
+body, html, .glass {
   height: 100vh;
   width: 100vw;
   padding: 0;
   margin: 0;
+}
+
+html {
+  transform: translate(0%, 0);
+  background-clip: padding-box;
+  transition: transform(quint-out, 300ms);
+  overflow-y: hidden;
+  overflow-x: hidden;
   min-height: 600px;
   min-width: 650px;
   font-family: lucida grande, tahoma, verdana, arial, sans-serif;
   font-size: 10pt !important;
-  //background-color: rgba(234,137,31, 0.5);
   background-color: transparent;
   text-selection-caret-color: @color-divider;
+  text-selection-background-color: @color-divider;
+  text-selection-color: @color-divider;
 }
 
+
 body.notconnected {
+
   main, .dynamic {
     width: 100vw;
     margin-left: @w-account-outside;
@@ -36,124 +45,126 @@ body.notconnected {
     width: ~"calc(100vw - (@{w-account-outside} + 15px))" !important;
   }
 
-  section.account {
-    width: @w-account-outside;
-  }
-
 }
 
 // -------------------------
 
-section.apps {
+section.control {
 
+  position: relative;
   width: @w-sidebar;
   height: @h-sidebar;
   box-sizing: border-box;
   margin-left: @w-account-outside;
   float: left;
   color: @color-tertiary;
-  background: @color-primary;
+  background: fade(@color-primary, 60%);
   overflow-x: hidden;
   overflow-y: hidden;
+  z-index: 10;
 
-  aside {
-    margin: 0;
-    padding: 0;
+  button {
+    margin-top: 10px;
+    width: calc(@w-sidebar - 10px);
+    padding-left: 10px;
+    background: fade(@color-gray-light, 1%);
+    margin-left: 10px;
+    color: fade(@color-light, 90%);
+    cursor: pointer;
 
-    button {
-      cursor: pointer;
+    .title {
+      font-size: 15px;
+    }
+
+    .pointer {
+      position: relative;
       display: block;
-      background: @color-primary;
-      color: @color-tertiary;
-      border: 1px @color-tertiary;
-      width: 100%;
-
-      &:active {
-        background: @color-dark;
-      }
-
+      height: 1px;
+      top: -13px;
+      width: 80px;
+      left: 80px;
+      border-bottom: solid 1px fade(@color-light, 90%);
     }
-
-    &.app {
-      height: ~"calc(@{h-sidebar} - @{h-sidebar-menu})";
-
-      button {
-        padding-right: 15px;
-        height: @h-sidebar-content;
-        line-height: @h-sidebar-content;
-      }
-    }
-
   }
 
-}
-
-// -------------------------
-
-.control {
-  width: @w-sidebar-control;
-  height: @h-sidebar-control;
-
-  float: left;
-  background: @color-tertiary;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  display: block;
-}
-
-section.control {
-
-  width: @w-sidebar-control;
-  height: @h-sidebar-control;
-
-  float: left;
-  background: @color-tertiary;
-  overflow-x: hidden;
-  overflow-y: hidden;
-  display: block;
-
-  aside {
+  aside.application {
     margin: 0;
     padding: 0;
-    height: @h-sidebar;
-    list-style-type: none;
+    height: auto;
+    width: 100%;
     outline: none;
 
     button {
 
-      &:active, &:visited {
-        color: @color-divider;
-        background-color: @color-light;
-        width: calc(@w-sidebar-control-button + 6px);
-        margin-right: 0;
-        border-bottom-right-radius: 0;
-        border-top-right-radius: 0;
-        outline: none;
-      }
+
+      width: 120px;
+      margin: 0  0 0 calc(@w-sidebar - 120px);
+      height: 34px;
+      padding: 5px;
+      display: block;
+      background: transparent;
+      position: relative;
+      cursor: pointer;
+      text-align: center;
+      border-radius: 5px;
+      text-decoration: none;
+      box-shadow: none;
+      border: 0;
 
       &:focus, &:target {
         outline: none;
       }
 
-      icon {
-        display: block;
-        width: 34px;
-        height: 34px;
+      &:visited {
+        .block {
+          fill: @color-light;
+          color: @color-light;
+        }
+
+        .pointer {
+          border-radius: 2px;
+          position: relative;
+          float: left;
+          left: 110px;
+          top: -29px;
+          display: block;
+          width: 15px !important;
+          height: 34px !important;
+          background: @color-light;
+          border: 0;
+        }
+
       }
 
-      width: calc(@w-sidebar-control-button - 10px);
-      height: calc(@h-sidebar-control-button - 10px);
-      padding: 5px;
-      margin: ~"calc((@{h-sidebar-content} - @{w-sidebar-control-button})  / 2)" auto;
+      icon {
+        float: left;
+        margin-right: 20px;
+        display: inline-block;
+        width: 18px !important;
+        height: 18px !important;
+        padding-top: 6px;
+      }
 
-      cursor: pointer;
-      text-align: center;
-      background: @color-light-blue;
-      border-radius: 5px;
-      display: block;
-      text-decoration: none;
-      box-shadow: none;
-      border: 0;
+      .block {
+        float: left;
+        display: inline-block;
+        height: 70%;
+        width: 20px;
+        color: fade(@color-light, 50%);
+        fill: fade(@color-light, 50%);
+        text-align: left;
+      }
+
+      .title {
+        position: relative;
+        left: 0;
+        display: inline-block;
+        font-size: 11px;
+      }
+
+      .pointer {
+        display: none;
+      }
 
     }
 
@@ -162,35 +173,77 @@ section.control {
 
 // -------------------------
 
-section.account {
+header {
+  width: @w-nav;
+  height: @h-nav;
+  line-height: @h-nav;
+  color: @color-primary;
 
-  width: @w-account;
-  height: @w-account-logo;
-  overflow: hidden;
-  padding: calc((@h-account - @w-account-logo) / 2) 0;
-  z-index: 100;
-
-  background: @color-divider;
-  display: block;
-  text-align: right;
-
-  position: fixed;
-  bottom: 10px;
-
-  .ammount {
-    display: block;
-    height: @w-account-logo;
-    font-size: 26px;
-    line-height: 50px;
-    padding-right: 15px;
+  section.logo {
+    width: @w-sidebar;
+    height: @h-nav;
+    text-align: center;
+    float: left;
+    background: @color-divider;
   }
 
-  icon {
-    width: @w-account-logo;
-    height: @w-account-logo;
-    color: @color-dark;
+  section.account {
+
+
+    background: fade(@color-light, 50%);
+    width: @w-main;
+    height: @h-nav;
+    display: block;
     float: left;
-    margin-left: 15px;
+
+    icon {
+      position: relative;
+      display: block;
+      float: left;
+      fill: @color-primary;
+      width: calc(@h-nav - 10px);
+      height: calc(@h-nav - 10px);
+      margin: 5px 10px;
+    }
+
+    .ammount {
+      float: left;
+      text-align: left;
+      display: block;
+      font-size: 14px;
+      padding-left: 15px;
+    }
+
+    button {
+      position: absolute;
+      background: transparent;
+      padding: 0;
+      margin: 0;
+      border: 0;
+      text-decoration: none;
+      right: 40px;
+      top: 5px;
+      cursor: pointer;
+      color: @color-tertiary;
+      text-align: center;
+
+      &:active {
+        text-decoration: none;
+        color: @color-divider;
+      }
+
+      icon {
+        opacity: 0.7;
+        fill: @color-primary;
+        width: 20px;
+        height: 20px;
+
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+
   }
 
 }
@@ -220,272 +273,233 @@ button {
 
 // -------------------------
 
-.dynamic {
+section.dynamic {
   display: block;
   float: left;
   width: @w-main;
   height: @h-main;
   background: @color-light;
   margin: 0;
-}
 
-main {
+  main {
+    text-align: center;
 
-  display: block;
-  float: left;
-  width: @w-main;
-  height: @h-main;
-  background: @color-light;
-  margin: 0;
-  text-align: center;
-
-  .middle {
-    position: fixed;
-    left: ~"1*";
-    top: ~"1*";
-    right: ~"1*";
-    bottom: ~"1*";
-    display: block;
-    padding-left: @w-account-outside + @w-sidebar-control + @w-sidebar;
-  }
-
-  label {
-    font-size: 10pt !important;
-    padding: 0;
-    margin: 0;
-  }
-
-  .box {
-    margin-bottom: 20px;
-
-    .receive {
-      .type {
-        content: "RECEIVED";
-      }
+    .middle {
+      position: fixed;
+      left: ~"1*";
+      top: ~"1*";
+      right: ~"1*";
+      bottom: ~"1*";
+      display: block;
+      padding-left: @w-account-outside + @w-sidebar;
     }
 
-    .open {
-      .type {
-        content: "RECEIVED";
-      }
+    label {
+      font-size: 10pt !important;
+      padding: 0;
+      margin: 0;
     }
 
-    .change {
-      .type {
-        content: "CHANGE";
+    .box {
+      margin-bottom: 20px;
+
+      .receive {
+        .type {
+          content: "RECEIVED";
+        }
       }
-    }
 
-    .send {
-      .type {
-        content: "SEND";
+      .open {
+        .type {
+          content: "RECEIVED";
+        }
       }
-    }
 
-    .item, .send, .receive, .open, .change {
-      margin: 5px auto;
-      height: 25px;
-      width: 300px;
-      padding: 5px;
-      color: #7f8088;
-      background: #dcdcdf;
-      border-radius: 5px;
-      line-height: 25px;
-      font-size: 13px;
+      .change {
+        .type {
+          content: "CHANGE";
+        }
+      }
 
-      .type, .amount {
+      .send {
+        .type {
+          content: "SEND";
+        }
+      }
+
+      .item, .send, .receive, .open, .change {
+        margin: 5px auto;
         height: 25px;
-        float: left;
+        width: 300px;
+        padding: 5px;
+        color: @color-font-secondary;
+        background: @color-gray-light;
+        border-radius: 5px;
+        line-height: 25px;
+        font-size: 13px;
+
+        .type, .amount {
+          height: 25px;
+          float: left;
+        }
+
+        .type {
+          width: 20%;
+          letter-spacing: 1px;
+          text-align: left;
+        }
+
+        .amount {
+          width: 80%;
+          text-align: right;
+        }
+
+      }
+    }
+
+    .amountbox {
+      display: block;
+      height: 25px;
+      width: 310px;
+      margin: 5px auto 20px auto;
+
+      .divider, .whole, .decimal {
+        display: block;
+        margin: 0 !important;
+        float: left !important;
+        height: 25px;
+      }
+      .divider {
+        width: 10px;
+        border-radius: 0;
       }
 
-      .type {
-        width: 20%;
-        letter-spacing: 1px;
-        text-align: left;
-      }
-
-      .amount {
-        width: 80%;
+      .whole {
+        width: 180px;
+        border-bottom-right-radius: 0;
+        border-top-right-radius: 0;
         text-align: right;
       }
 
+      .decimal {
+        width: 90px;
+        border-bottom-left-radius: 0;
+        border-top-left-radius: 0;
+        text-align: left;
+      }
+
     }
-  }
 
-  .amountbox {
-    display: block;
-    height: 25px;
-    width: 310px;
-    margin: 5px auto 20px auto;
-
-    .divider, .whole, .decimal {
+    input, textarea, dropzone, select {
+      background: @color-gray-light;
+      color: @color-font-secondary;
+      margin: 5px auto 20px auto;
       display: block;
-      margin: 0 !important;
-      float: left !important;
-      height: 25px;
-    }
-    .divider {
-      width: 10px;
-      border-radius: 0;
+      padding: 5px;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
 
-    .whole {
-      width: 180px;
-      border-bottom-right-radius: 0;
-      border-top-right-radius: 0;
-      text-align: right;
-    }
+    input, textarea, dropzone {
+      line-height: 25px;
+      text-align: center;
+      overflow: hidden;
+      user-select: none;
 
-    .decimal {
-      width: 90px;
-      border-bottom-left-radius: 0;
-      border-top-left-radius: 0;
-      text-align: left;
-    }
-
-  }
-
-  input, textarea, dropzone {
-    margin: 5px auto 20px auto;
-    display: block;
-    padding: 5px;
-    background: @color-primary;
-    color: @color-light-blue;
-    border-radius: 5px;
-    line-height: 25px;
-    text-align: center;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow: hidden;
-    user-select: none;
-
-    &:disabled {
-      opacity: 0.5;
-      font-size: 11px;
-      color: #7f8088;
-      background: #dcdcdf;
-      cursor: not-allowed;
-    }
-
-    &[type="password"], &[type="submit"] {
-      width: 300px;
-      height: 25px;
-    }
-
-    &[type="submit"] {
       &:disabled {
-        color: #dcdcdf;
-        background: #9dc0e8;
+        opacity: 0.5;
+        font-size: 11px;
+        color: @color-font-secondary;
+        background: @color-gray-light;
         cursor: not-allowed;
       }
-      padding: 6px;
-      background: @color-tertiary;
-      color: @color-light;
-      cursor: pointer;
-      letter-spacing: 1px;
-    }
 
-    &[type="file"] {
-      prototype: DropZone;
-      width: 300px;
-      height: 66px;
+      &[type="password"], &[type="submit"] {
+        width: 300px;
+        height: 25px;
+      }
 
-      .content {
-        margin: auto;
-        padding: 0;
-        font-size: 10pt !important;
-        border-radius: 0;
-        width: 298px;
-        height: 64px;
-        color: @color-tertiary;
-        border: @color-light-blue 1px dashed;
-        line-height: 64px;
+      &[readonly] {
+        background: @color-gray-light;
+      }
+
+      &[type="submit"] {
+        &:disabled {
+          background: @color-gray-light;
+          background: #9dc0e8;
+          cursor: not-allowed;
+        }
+        padding: 6px;
+        background: @color-tertiary;
+        color: @color-light;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+
+      &[type="file"] {
+        prototype: DropZone;
+        width: 300px;
+        height: 66px;
+
+        .content {
+          margin: auto;
+          padding: 0;
+          font-size: 10pt !important;
+          border-radius: 0;
+          width: 298px;
+          height: 64px;
+          color: @color-tertiary;
+          border: @color-light-blue 1px dashed;
+          line-height: 64px;
+        }
+
       }
 
     }
 
-  }
+    select {
+      line-height: 20px;
+      overflow-x: hidden;
+      overflow-y: scroll-indicator;
+      height: 90px;
+      width: 300px;
 
-  select {
-    margin: 5px auto 20px auto;
-    display: block;
-    padding: 5px;
-    background: @color-primary;
-    color: @color-light-blue;
-    border-radius: 5px;
-    line-height: 20px;
-    overflow-x: hidden;
-    overflow-y: scroll-indicator;
-    height: 90px;
-    width: 300px;
-    text-align: left;
-    white-space: pre-wrap;
-    word-wrap: break-word;
+      option {
+        text-align: left;
+        margin: 0;
+        padding: 0;
+        color: @color-light-blue;
+      }
 
-    option {
-      text-align: left;
-      margin: 0;
-      padding: 0;
-      color: @color-light-blue;
+      option:checked {
+        color: @color-light;
+        background: @color-primary;
+      }
+
     }
 
-    option:checked {
-      color: @color-light;
-      background: @color-primary;
+    hr {
+      display: block;
+      margin: 40px auto;
+      height: 0;
+      width: 300px;
+      border: none;
+      border-bottom: dashed 2px @color-divider;
+      opacity: 0.2;
     }
 
-  }
-
-  hr {
-    display: block;
-    margin: 40px auto;
-    height: 0;
-    width: 300px;
-    border: none;
-    border-bottom: dashed 2px @color-divider;
-    opacity: 0.2;
-  }
-
-}
-
-[role="window-close"] {
-  position: fixed;
-  background: transparent;
-  padding: 0;
-  margin: 0;
-  border: 0;
-  text-decoration: none;
-  right: 30px;
-  top: 8px;
-  cursor: pointer;
-  color: @color-tertiary;
-  text-align: center;
-
-  &:active {
-    text-decoration: none;
-    color: @color-divider;
-  }
-
-  icon {
-    opacity: 0.7;
-    width: 24px;
-    height: 24px;
-
-    &:hover {
-      opacity: 1;
-    }
   }
 }
 
 [type="hidden"] {
-  display: none;
+  display: none !important;
 }
 
 icon {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  fill: black;
   stroke: none;
   display: block;
   font-style: normal;
@@ -525,7 +539,7 @@ icon {
   &.icon-signature {
     background-image: url(~"path:M23.2 3.29c-2.826.157-6.108 2.52-9.104 6.704C6.99 19.75 9.44 38 12.902 41.658c.132.14.266.273.4.4-2.84 2.458-5.924 3.64-9.505 3.803-.552.026-.98.494-.953 1.046.024.535.467.953.998.953.016 0 .03-.002.047-.003 4.228-.194 7.804-1.6 11.06-4.56 2.847 1.643 6.066 1.214 9.185.433 2.076-.52 3.914-1.188 5.58-2.068 2.923 1.66 6.938 1.164 9.084-.03 2.213-1.144 4.034-2.22 5.612-3.51.83.754 1.892 1.26 3.067 1.413 2.224.287 4.378-.624 6.004-1.45.884-.448 1.806-.97 2.897-1.64.473-.29.62-.905.33-1.375-.288-.472-.904-.62-1.374-.33-1.045.64-1.923 1.138-2.758 1.563-2.033 1.033-3.53 1.418-4.844 1.25-.62-.08-1.276-.34-1.83-.785 1.285-1.308 2.414-2.864 3.49-4.866.753-1.4 1.76-4.475.182-6.1-.48-.493-1.162-.714-1.916-.62-1.497.185-3.122 1.556-3.828 2.775-1.21 2.09-1.617 4.6-1.15 7.07.1.535.275 1.043.515 1.51-1.47 1.208-3.19 2.22-5.343 3.332-1.426.79-3.97 1.207-6.075.53 4.02-2.83 7.04-7.325 10.234-14.677 1.5-3.45.578-7.154-2.094-8.434-2.556-1.223-6.585-.042-10.246 6.937-4.803 9.158-3.663 13.763-1.662 16.052-1.32.62-2.763 1.11-4.364 1.51-3.246.814-5.452.858-7.218.036 3.277-3.562 6.268-8.842 9.338-16.21 5.436-13.045 3.438-19.86.078-21.73-.813-.454-1.705-.647-2.647-.595zm.267 1.99c.51 0 .98.115 1.404.35 2.847 1.586 3.435 8.694-.948 19.214-3.05 7.323-5.98 12.463-9.176 15.828-.132-.123-.262-.253-.39-.39-2.587-2.734-5.27-20.013 1.36-29.118 2.687-3.748 5.56-5.885 7.75-5.885zm14.57 13.59c.378 0 .723.08 1.02.222 1.456.697 2.3 3.125 1.123 5.832-3.272 7.532-6.215 11.806-10.344 14.367l-.08-.075c-2.424-2.366-1.824-7.36 1.69-14.06 2.455-4.685 4.89-6.286 6.59-6.286zm9.965 8.29c.056 0 .114.007.14.035.51.524.27 2.317-.507 3.76-.9 1.677-1.832 3-2.883 4.125-.042-.135-.078-.277-.106-.424-.377-2-.053-4.025.916-5.7.482-.83 1.62-1.7 2.342-1.79.027-.003.063-.006.098-.006zm12.855 4.197c-.128.02-.256.062-.375.133-.76.46-1.51.94-2.267 1.424-.465.298-.6.92-.303 1.383.19.297.515.46.844.46.185 0 .372-.052.54-.16.74-.474 1.478-.946 2.222-1.396.473-.285.623-.9.337-1.372-.215-.355-.612-.527-.998-.47zM3 51c-.553 0-1 .448-1 1s.447 1 1 1h58c.553 0 1-.448 1-1s-.447-1-1-1H3zm4 4.057c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1zm5 0c-.553 0-1 .448-1 1v2c0 .552.447 1 1 1 .553 0 1-.448 1-1v-2c0-.552-.447-1-1-1z")
   }
-  &.icon-list {
+  &.icon-history {
     background-image: url(~"path:M11 9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6zm12 0a1 1 0 1 0 0 2h28a1 1 0 1 0 0-2H23zm34 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zM11 19a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6zm12 0a1 1 0 1 0 0 2h28a1 1 0 1 0 0-2H23zm42 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zM11 29a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6zm12 0a1 1 0 1 0 0 2h28a1 1 0 1 0 0-2H23zm34 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zM11 39a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6zm12 0a1 1 0 1 0 0 2h28a1 1 0 1 0 0-2H23zm46 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zM11 49a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6zm12 0a1 1 0 1 0 0 2h28a1 1 0 1 0 0-2H23zm34 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zM11 59a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6zm12 0a1 1 0 1 0 0 2h28a1 1 0 1 0 0-2H23zm38 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zM11 69a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-6zm12 0a1 1 0 1 0 0 2h28a1 1 0 1 0 0-2H23zm34 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1 1 1 0 0 0 1 1 1 1 0 0 0 1-1 1 1 0 0 0-1-1z")
   }
   &.icon-user-account {
@@ -544,7 +558,7 @@ icon {
     background-image: url(~"path:M 50 6.585938 L 16.585938 40 L 50 73.414063 L 58.414063 65 L 33.414063 40 L 58.414063 15 Z M 50 9.414063 L 55.585938 15 L 30.585938 40 L 55.585938 65 L 50 70.585938 L 19.414063 40 Z M 50 12 C 49.449219 12 49 12.449219 49 13 C 49 13.550781 49.449219 14 50 14 C 50.550781 14 51 13.550781 51 13 C 51 12.449219 50.550781 12 50 12 Z M 47 15 C 46.449219 15 46 15.449219 46 16 C 46 16.550781 46.449219 17 47 17 C 47.550781 17 48 16.550781 48 16 C 48 15.449219 47.550781 15 47 15 Z M 44 18 C 43.449219 18 43 18.449219 43 19 C 43 19.550781 43.449219 20 44 20 C 44.550781 20 45 19.550781 45 19 C 45 18.449219 44.550781 18 44 18 Z M 41 21 C 40.449219 21 40 21.449219 40 22 C 40 22.550781 40.449219 23 41 23 C 41.550781 23 42 22.550781 42 22 C 42 21.449219 41.550781 21 41 21 Z M 38 24 C 37.449219 24 37 24.449219 37 25 C 37 25.550781 37.449219 26 38 26 C 38.550781 26 39 25.550781 39 25 C 39 24.449219 38.550781 24 38 24 Z M 35 27 C 34.449219 27 34 27.449219 34 28 C 34 28.550781 34.449219 29 35 29 C 35.550781 29 36 28.550781 36 28 C 36 27.449219 35.550781 27 35 27 Z M 32 30 C 31.449219 30 31 30.449219 31 31 C 31 31.550781 31.449219 32 32 32 C 32.550781 32 33 31.550781 33 31 C 33 30.449219 32.550781 30 32 30 Z M 29 33 C 28.449219 33 28 33.449219 28 34 C 28 34.550781 28.449219 35 29 35 C 29.550781 35 30 34.550781 30 34 C 30 33.449219 29.550781 33 29 33 Z M 26 36 C 25.449219 36 25 36.449219 25 37 C 25 37.550781 25.449219 38 26 38 C 26.550781 38 27 37.550781 27 37 C 27 36.449219 26.550781 36 26 36 Z M 23 39 C 22.449219 39 22 39.449219 22 40 C 22 40.550781 22.449219 41 23 41 C 23.550781 41 24 40.550781 24 40 C 24 39.449219 23.550781 39 23 39 Z M 31 43 C 30.449219 43 30 43.449219 30 44 C 30 44.550781 30.449219 45 31 45 C 31.550781 45 32 44.550781 32 44 C 32 43.449219 31.550781 43 31 43 Z M 34 46 C 33.449219 46 33 46.449219 33 47 C 33 47.550781 33.449219 48 34 48 C 34.550781 48 35 47.550781 35 47 C 35 46.449219 34.550781 46 34 46 Z M 37 49 C 36.449219 49 36 49.449219 36 50 C 36 50.550781 36.449219 51 37 51 C 37.550781 51 38 50.550781 38 50 C 38 49.449219 37.550781 49 37 49 Z M 40 52 C 39.449219 52 39 52.449219 39 53 C 39 53.550781 39.449219 54 40 54 C 40.550781 54 41 53.550781 41 53 C 41 52.449219 40.550781 52 40 52 Z M 43 55 C 42.449219 55 42 55.449219 42 56 C 42 56.550781 42.449219 57 43 57 C 43.550781 57 44 56.550781 44 56 C 44 55.449219 43.550781 55 43 55 Z M 46 58 C 45.449219 58 45 58.449219 45 59 C 45 59.550781 45.449219 60 46 60 C 46.550781 60 47 59.550781 47 59 C 47 58.449219 46.550781 58 46 58 Z M 49 61 C 48.449219 61 48 61.449219 48 62 C 48 62.550781 48.449219 63 49 63 C 49.550781 63 50 62.550781 50 62 C 50 61.449219 49.550781 61 49 61 Z M 52 64 C 51.449219 64 51 64.449219 51 65 C 51 65.550781 51.449219 66 52 66 C 52.550781 66 53 65.550781 53 65 C 53 64.449219 52.550781 64 52 64 Z")
   }
   &.icon-notification {
-    background-image: url(~"M 40 5 C 37.800781 5 36 6.800781 36 9 L 36 10.46875 C 29.078125 12.046875 23.636719 17.617188 22.3125 24.710938 C 20.898438 25.46875 19.800781 26.773438 19.621094 28.464844 L 16.542969 56.921875 C 16.292969 59.25 14.339844 61 12 61 L 11 61 L 11 67 L 33 67 C 33 70.855469 36.144531 74 40 74 C 43.855469 74 47 70.855469 47 67 L 69 67 L 69 61 L 68 61 C 65.660156 61 63.707031 59.25 63.457031 56.921875 L 60.378906 28.464844 C 60.199219 26.773438 59.101563 25.46875 57.6875 24.710938 C 56.363281 17.617188 50.921875 12.046875 44 10.46875 L 44 9 C 44 6.800781 42.199219 5 40 5 Z M 40 7 C 41.117188 7 42 7.882813 42 9 L 42 10.125 C 41.34375 10.050781 40.675781 10 40 10 C 39.324219 10 38.65625 10.050781 38 10.125 L 38 9 C 38 7.882813 38.882813 7 40 7 Z M 40 12 C 47.925781 12 54.558594 17.757813 55.8125 25.417969 L 55.910156 25.988281 L 56.453125 26.191406 C 57.492188 26.578125 58.265625 27.515625 58.390625 28.675781 L 61.46875 57.136719 C 61.503906 57.457031 61.570313 57.761719 61.652344 58.0625 C 61.257813 58.210938 61 58.582031 61 59 C 61 59.550781 61.449219 60 62 60 C 62.160156 60 62.320313 59.960938 62.464844 59.886719 C 63.46875 61.429688 65.109375 62.507813 67 62.8125 L 67 65 L 13 65 L 13 62.8125 C 14.890625 62.507813 16.53125 61.429688 17.535156 59.886719 C 17.679688 59.960938 17.839844 60 18 60 C 18.550781 60 19 59.550781 19 59 C 19 58.582031 18.742188 58.210938 18.347656 58.0625 C 18.429688 57.761719 18.496094 57.457031 18.53125 57.136719 L 21.609375 28.675781 C 21.734375 27.515625 22.507813 26.578125 23.546875 26.191406 L 24.089844 25.988281 L 24.1875 25.417969 C 25.441406 17.757813 32.074219 12 40 12 Z M 26 24 C 25.449219 24 25 24.449219 25 25 C 25 25.550781 25.449219 26 26 26 C 26.550781 26 27 25.550781 27 25 C 27 24.449219 26.550781 24 26 24 Z M 30 24 C 29.449219 24 29 24.449219 29 25 C 29 25.550781 29.449219 26 30 26 C 30.550781 26 31 25.550781 31 25 C 31 24.449219 30.550781 24 30 24 Z M 34 24 C 33.449219 24 33 24.449219 33 25 C 33 25.550781 33.449219 26 34 26 C 34.550781 26 35 25.550781 35 25 C 35 24.449219 34.550781 24 34 24 Z M 38 24 C 37.449219 24 37 24.449219 37 25 C 37 25.550781 37.449219 26 38 26 C 38.550781 26 39 25.550781 39 25 C 39 24.449219 38.550781 24 38 24 Z M 42 24 C 41.449219 24 41 24.449219 41 25 C 41 25.550781 41.449219 26 42 26 C 42.550781 26 43 25.550781 43 25 C 43 24.449219 42.550781 24 42 24 Z M 46 24 C 45.449219 24 45 24.449219 45 25 C 45 25.550781 45.449219 26 46 26 C 46.550781 26 47 25.550781 47 25 C 47 24.449219 46.550781 24 46 24 Z M 50 24 C 49.449219 24 49 24.449219 49 25 C 49 25.550781 49.449219 26 50 26 C 50.550781 26 51 25.550781 51 25 C 51 24.449219 50.550781 24 50 24 Z M 54 24 C 53.449219 24 53 24.449219 53 25 C 53 25.550781 53.449219 26 54 26 C 54.550781 26 55 25.550781 55 25 C 55 24.449219 54.550781 24 54 24 Z M 22 58 C 21.449219 58 21 58.449219 21 59 C 21 59.550781 21.449219 60 22 60 C 22.550781 60 23 59.550781 23 59 C 23 58.449219 22.550781 58 22 58 Z M 26 58 C 25.449219 58 25 58.449219 25 59 C 25 59.550781 25.449219 60 26 60 C 26.550781 60 27 59.550781 27 59 C 27 58.449219 26.550781 58 26 58 Z M 30 58 C 29.449219 58 29 58.449219 29 59 C 29 59.550781 29.449219 60 30 60 C 30.550781 60 31 59.550781 31 59 C 31 58.449219 30.550781 58 30 58 Z M 34 58 C 33.449219 58 33 58.449219 33 59 C 33 59.550781 33.449219 60 34 60 C 34.550781 60 35 59.550781 35 59 C 35 58.449219 34.550781 58 34 58 Z M 38 58 C 37.449219 58 37 58.449219 37 59 C 37 59.550781 37.449219 60 38 60 C 38.550781 60 39 59.550781 39 59 C 39 58.449219 38.550781 58 38 58 Z M 42 58 C 41.449219 58 41 58.449219 41 59 C 41 59.550781 41.449219 60 42 60 C 42.550781 60 43 59.550781 43 59 C 43 58.449219 42.550781 58 42 58 Z M 46 58 C 45.449219 58 45 58.449219 45 59 C 45 59.550781 45.449219 60 46 60 C 46.550781 60 47 59.550781 47 59 C 47 58.449219 46.550781 58 46 58 Z M 50 58 C 49.449219 58 49 58.449219 49 59 C 49 59.550781 49.449219 60 50 60 C 50.550781 60 51 59.550781 51 59 C 51 58.449219 50.550781 58 50 58 Z M 54 58 C 53.449219 58 53 58.449219 53 59 C 53 59.550781 53.449219 60 54 60 C 54.550781 60 55 59.550781 55 59 C 55 58.449219 54.550781 58 54 58 Z M 58 58 C 57.449219 58 57 58.449219 57 59 C 57 59.550781 57.449219 60 58 60 C 58.550781 60 59 59.550781 59 59 C 59 58.449219 58.550781 58 58 58 Z M 35 67 L 45 67 C 45 69.773438 42.773438 72 40 72 C 37.226563 72 35 69.773438 35 67 Z")
+    background-image: url(~"path:M 40 5 C 37.800781 5 36 6.800781 36 9 L 36 10.46875 C 29.078125 12.046875 23.636719 17.617188 22.3125 24.710938 C 20.898438 25.46875 19.800781 26.773438 19.621094 28.464844 L 16.542969 56.921875 C 16.292969 59.25 14.339844 61 12 61 L 11 61 L 11 67 L 33 67 C 33 70.855469 36.144531 74 40 74 C 43.855469 74 47 70.855469 47 67 L 69 67 L 69 61 L 68 61 C 65.660156 61 63.707031 59.25 63.457031 56.921875 L 60.378906 28.464844 C 60.199219 26.773438 59.101563 25.46875 57.6875 24.710938 C 56.363281 17.617188 50.921875 12.046875 44 10.46875 L 44 9 C 44 6.800781 42.199219 5 40 5 Z M 40 7 C 41.117188 7 42 7.882813 42 9 L 42 10.125 C 41.34375 10.050781 40.675781 10 40 10 C 39.324219 10 38.65625 10.050781 38 10.125 L 38 9 C 38 7.882813 38.882813 7 40 7 Z M 40 12 C 47.925781 12 54.558594 17.757813 55.8125 25.417969 L 55.910156 25.988281 L 56.453125 26.191406 C 57.492188 26.578125 58.265625 27.515625 58.390625 28.675781 L 61.46875 57.136719 C 61.503906 57.457031 61.570313 57.761719 61.652344 58.0625 C 61.257813 58.210938 61 58.582031 61 59 C 61 59.550781 61.449219 60 62 60 C 62.160156 60 62.320313 59.960938 62.464844 59.886719 C 63.46875 61.429688 65.109375 62.507813 67 62.8125 L 67 65 L 13 65 L 13 62.8125 C 14.890625 62.507813 16.53125 61.429688 17.535156 59.886719 C 17.679688 59.960938 17.839844 60 18 60 C 18.550781 60 19 59.550781 19 59 C 19 58.582031 18.742188 58.210938 18.347656 58.0625 C 18.429688 57.761719 18.496094 57.457031 18.53125 57.136719 L 21.609375 28.675781 C 21.734375 27.515625 22.507813 26.578125 23.546875 26.191406 L 24.089844 25.988281 L 24.1875 25.417969 C 25.441406 17.757813 32.074219 12 40 12 Z M 26 24 C 25.449219 24 25 24.449219 25 25 C 25 25.550781 25.449219 26 26 26 C 26.550781 26 27 25.550781 27 25 C 27 24.449219 26.550781 24 26 24 Z M 30 24 C 29.449219 24 29 24.449219 29 25 C 29 25.550781 29.449219 26 30 26 C 30.550781 26 31 25.550781 31 25 C 31 24.449219 30.550781 24 30 24 Z M 34 24 C 33.449219 24 33 24.449219 33 25 C 33 25.550781 33.449219 26 34 26 C 34.550781 26 35 25.550781 35 25 C 35 24.449219 34.550781 24 34 24 Z M 38 24 C 37.449219 24 37 24.449219 37 25 C 37 25.550781 37.449219 26 38 26 C 38.550781 26 39 25.550781 39 25 C 39 24.449219 38.550781 24 38 24 Z M 42 24 C 41.449219 24 41 24.449219 41 25 C 41 25.550781 41.449219 26 42 26 C 42.550781 26 43 25.550781 43 25 C 43 24.449219 42.550781 24 42 24 Z M 46 24 C 45.449219 24 45 24.449219 45 25 C 45 25.550781 45.449219 26 46 26 C 46.550781 26 47 25.550781 47 25 C 47 24.449219 46.550781 24 46 24 Z M 50 24 C 49.449219 24 49 24.449219 49 25 C 49 25.550781 49.449219 26 50 26 C 50.550781 26 51 25.550781 51 25 C 51 24.449219 50.550781 24 50 24 Z M 54 24 C 53.449219 24 53 24.449219 53 25 C 53 25.550781 53.449219 26 54 26 C 54.550781 26 55 25.550781 55 25 C 55 24.449219 54.550781 24 54 24 Z M 22 58 C 21.449219 58 21 58.449219 21 59 C 21 59.550781 21.449219 60 22 60 C 22.550781 60 23 59.550781 23 59 C 23 58.449219 22.550781 58 22 58 Z M 26 58 C 25.449219 58 25 58.449219 25 59 C 25 59.550781 25.449219 60 26 60 C 26.550781 60 27 59.550781 27 59 C 27 58.449219 26.550781 58 26 58 Z M 30 58 C 29.449219 58 29 58.449219 29 59 C 29 59.550781 29.449219 60 30 60 C 30.550781 60 31 59.550781 31 59 C 31 58.449219 30.550781 58 30 58 Z M 34 58 C 33.449219 58 33 58.449219 33 59 C 33 59.550781 33.449219 60 34 60 C 34.550781 60 35 59.550781 35 59 C 35 58.449219 34.550781 58 34 58 Z M 38 58 C 37.449219 58 37 58.449219 37 59 C 37 59.550781 37.449219 60 38 60 C 38.550781 60 39 59.550781 39 59 C 39 58.449219 38.550781 58 38 58 Z M 42 58 C 41.449219 58 41 58.449219 41 59 C 41 59.550781 41.449219 60 42 60 C 42.550781 60 43 59.550781 43 59 C 43 58.449219 42.550781 58 42 58 Z M 46 58 C 45.449219 58 45 58.449219 45 59 C 45 59.550781 45.449219 60 46 60 C 46.550781 60 47 59.550781 47 59 C 47 58.449219 46.550781 58 46 58 Z M 50 58 C 49.449219 58 49 58.449219 49 59 C 49 59.550781 49.449219 60 50 60 C 50.550781 60 51 59.550781 51 59 C 51 58.449219 50.550781 58 50 58 Z M 54 58 C 53.449219 58 53 58.449219 53 59 C 53 59.550781 53.449219 60 54 60 C 54.550781 60 55 59.550781 55 59 C 55 58.449219 54.550781 58 54 58 Z M 58 58 C 57.449219 58 57 58.449219 57 59 C 57 59.550781 57.449219 60 58 60 C 58.550781 60 59 59.550781 59 59 C 59 58.449219 58.550781 58 58 58 Z M 35 67 L 45 67 C 45 69.773438 42.773438 72 40 72 C 37.226563 72 35 69.773438 35 67 Z")
   }
   &.logo-nano {
     background-image: url(~"path:m 62,0.6 c -2.6,0 -4.8,2.1 -4.8,4.8 0,3.8 -0.6,4.8 -4.8,4.8 H 52 c -2.4,0.2 -4.3,2.2 -4.3,4.7 V 15 c 0,3.7 -0.7,4.6 -4.8,4.6 -0.2,0 -0.4,0 -0.5,0.1 -2.4,0.3 -4.3,2.3 -4.3,4.7 0,2.6 2.1,4.8 4.8,4.8 2.5,0 4.6,-2 4.7,-4.4 v -0.4 c 0,-3.4 1.1,-4.7 4.7,-4.8 h 0.1 c 2.5,0 4.6,-2 4.7,-4.5 v -0.3 c 0,-3.5 1.1,-4.8 4.8,-4.8 2.6,0 4.8,-2.1 4.8,-4.8 0,-2.5 -2.1,-4.6 -4.7,-4.6 z m -28.2,9.6 h -0.4 c -4.2,0 -4.8,-1 -4.8,-4.8 0,-2.6 -2.1,-4.8 -4.8,-4.8 -2.6,0 -4.8,2.1 -4.8,4.8 0,3.8 -0.6,4.7 -4.8,4.7 h -0.4 c -2.4,0.2 -4.3,2.2 -4.3,4.7 0,2.6 2.1,4.8 4.8,4.8 2.5,0 4.6,-2 4.7,-4.4 v -0.3 c 0,-3.5 1.1,-4.8 4.8,-4.8 3.7,0 4.8,1.3 4.8,4.7 0,2.6 2.1,4.8 4.8,4.8 2.7,0 4.8,-2.1 4.8,-4.8 -0.1,-2.4 -2,-4.4 -4.4,-4.6 z M 9.6000004,24.4 A 4.8000002,4.8000002 0 0 1 4.8000002,29.2 4.8000002,4.8000002 0 0 1 0,24.4 4.8000002,4.8000002 0 0 1 4.8000002,19.599999 4.8000002,4.8000002 0 0 1 9.6000004,24.4 Z")
