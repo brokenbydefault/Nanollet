@@ -2,6 +2,8 @@ package Util
 
 import (
 	"testing"
+	"crypto/rand"
+	"bytes"
 )
 
 
@@ -39,6 +41,16 @@ func TestSecureHexEncode(t *testing.T) {
 		if r := SecureHexEncode([]byte(v.Message)); r != v.Result {
 			t.Errorf("SecureHexEncode failed given %s expecting %s", r, v.Result)
 		}
+	}
+
+	random := make([]byte, 12)
+	rand.Read(random)
+
+	hex := SecureHexEncode(random)
+	decoded, ok := SecureHexDecode(hex)
+
+	if !ok || !bytes.Equal(decoded, random) {
+		t.Error("error")
 	}
 
 }
