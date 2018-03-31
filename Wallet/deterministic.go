@@ -10,16 +10,34 @@ import (
 	"errors"
 )
 
-type Currency uint32
+type Type uint8
 
-//@TODO Support Banano
 const (
-	Base Currency = iota
-	Nano
-	//Banano
+	Nanollet Type = iota
+	MFA
 )
 
-var SupportedVersions = [...]uint8{0}
+var SupportedTypes = [...]Type{Nanollet, MFA}
+
+type Version uint8
+
+const (
+	V1 Version = iota
+)
+
+var SupportedVersions = [...]Version{V1}
+
+type Currency uint32
+
+const (
+	Base   Currency = iota
+	Nano
+	Banano
+)
+
+
+
+var ErrImpossibleDecode = errors.New("impossible to decode the seed")
 
 type SeedFY struct {
 	Version uint8
@@ -32,10 +50,10 @@ type SeedFY struct {
 
 // NewSeedFY generate the SeedFY, which is the random salt and the default computational cost parameters
 // used in the Argon2id derivation in combination with the password.
-func NewSeedFY() (sf SeedFY, err error) {
+func NewSeedFY(v Version, t Type) (sf SeedFY, err error) {
 	sf = SeedFY{
-		Version: 0,
-		Type:    0,
+		Version: uint8(v),
+		Type:    uint8(t),
 		Time:    15,
 		Memory:  21,
 		Thread:  uint8(runtime.NumCPU()),
@@ -46,7 +64,25 @@ func NewSeedFY() (sf SeedFY, err error) {
 	return
 }
 
-var ErrImpossibleDecode = errors.New("impossible to decode the seed")
+func NewCustomFY(v Version, t Type, time uint8, memory uint8) (sf SeedFY, err error) {
+	sf = SeedFY{
+		Version: uint8(v),
+		Type:    uint8(t),
+		Time:    time,
+		Memory:  memory,
+
+		Thread: uint8(runtime.NumCPU()),
+		Salt:   make([]byte, 32),
+	}
+
+	_, err = rand.Read(sf.Salt)
+
+	if !sf.IsValid(v, t) {
+		err = ErrImpossibleDecode
+	}
+
+	return
+}
 
 //ReadSeedFY act like to NewSeedFY, however it creates the struct based on the given hex-encoded SeedFY.
 func ReadSeedFY(s string) (sf SeedFY, err error) {
@@ -60,11 +96,11 @@ func ReadSeedFY(s string) (sf SeedFY, err error) {
 		Type:    uint8(sb[1]),
 		Time:    uint8(sb[2]),
 		Memory:  uint8(sb[3]) & 0x1F,
-		Thread:  sb[4],
+		Thread:  uint8(sb[4]),
 		Salt:    []byte(sb[5:]),
 	}
 
-	if !sf.IsValid() {
+	if !sf.IsValid(Version(sf.Version), Type(sf.Type)) {
 		return sf, ErrImpossibleDecode
 	}
 
@@ -72,12 +108,8 @@ func ReadSeedFY(s string) (sf SeedFY, err error) {
 }
 
 // Encode will return the hexadecimal representation of the given SeedFY.
-func (sf *SeedFY) Encode() (string, error) {
+func (sf *SeedFY) Encode() string {
 	var seed = make([]byte, 37)
-
-	if !sf.IsValid() {
-		return "", ErrImpossibleDecode
-	}
 
 	copy(seed, []byte{
 		sf.Version,
@@ -88,17 +120,30 @@ func (sf *SeedFY) Encode() (string, error) {
 	})
 	copy(seed[5:], sf.Salt)
 
-	return Util.SecureHexEncode(seed), nil
+	return Util.SecureHexEncode(seed)
 }
 
 // IsValid will return false if the SeedFY is not supported or don't have
 // enough seed-length
-func (sf *SeedFY) IsValid() (r bool) {
-	for _, v := range SupportedVersions {
-		if v == sf.Type {
+func (sf *SeedFY) IsValid(v Version, t Type) (bool) {
+	var r bool
+
+	for _, val := range SupportedVersions {
+		if uint8(val) == sf.Version && uint8(val) == uint8(v) {
 			r = true
-			break
 		}
+	}
+	if !r {
+		return r
+	}
+
+	for _, val := range SupportedTypes {
+		if uint8(val) == sf.Type  && uint8(val) == uint8(t){
+			r = true
+		}
+	}
+	if !r {
+		return r
 	}
 
 	if len(sf.Salt) != 32 {
@@ -109,12 +154,12 @@ func (sf *SeedFY) IsValid() (r bool) {
 		return false
 	}
 
-	return
+	if sf.Type != uint8(t) {
+		return false
+	}
+
+	return true
 }
-
-
-
-// @TODO
 
 type Seed []byte
 

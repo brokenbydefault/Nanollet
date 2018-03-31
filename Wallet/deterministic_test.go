@@ -23,8 +23,7 @@ func TestReadSeedFY2(t *testing.T) {
 	p.Thread = 24
 	p.Time = 3
 
-	_, err := p.Encode()
-	if err == nil {
+	if p.IsValid(V1, Nanollet) {
 		t.Error("mininum salt light not verified")
 	}
 }
@@ -37,7 +36,7 @@ func TestReadSeedFY3(t *testing.T) {
 	p.Thread = 24
 	p.Time = 3
 
-	enc, _ := p.Encode()
+	enc := p.Encode()
 
 	readed, err := ReadSeedFY(enc)
 	if readed.Type != p.Type || readed.Version != p.Version || readed.Thread != p.Thread || readed.Time != p.Time || readed.Memory != p.Memory {
@@ -53,7 +52,7 @@ func TestNewSeedFY(t *testing.T) {
 
 	var previous []byte
 	for i := 0; i < 10; i++ {
-		sf, err := NewSeedFY()
+		sf, err := NewSeedFY(V1,Nanollet)
 		if err != nil {
 			t.Error(t)
 		}
@@ -62,7 +61,7 @@ func TestNewSeedFY(t *testing.T) {
 			t.Error("Not random")
 		}
 
-		if !sf.IsValid() {
+		if !sf.IsValid(V1,Nanollet) {
 			t.Error("Seed is not valid when generate from the default")
 		}
 

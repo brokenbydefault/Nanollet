@@ -69,7 +69,7 @@ func (c *PageGenerate) Name() string {
 func (c *PageGenerate) OnView(w *window.Window) {
 	page := DOM.SetSector(c)
 
-	seed, err := Wallet.NewSeedFY()
+	seed, err := Wallet.NewSeedFY(Wallet.V1, Wallet.Nanollet)
 	if err != nil {
 		return
 	}
