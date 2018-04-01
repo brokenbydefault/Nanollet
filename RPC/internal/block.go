@@ -2,7 +2,7 @@ package internal
 
 type DefaultRequest struct {
 	Action string `json:"action"`
-	App string `json:"app,omitempty"`
+	App    string `json:"app,omitempty"`
 }
 
 type DefaultResponse struct {
@@ -12,7 +12,7 @@ type DefaultResponse struct {
 //--------------
 
 type ProcessBlockRequest struct {
-	Block  string `json:"block"`
+	Block string `json:"block"`
 	DefaultRequest
 }
 
@@ -24,7 +24,7 @@ type ProcessBlockResponse struct {
 //--------------
 
 type RetrieveBlockRequest struct {
-	Hash   string `json:"hash"`
+	Hash string `json:"hash"`
 	DefaultRequest
 }
 

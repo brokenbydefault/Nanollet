@@ -8,15 +8,15 @@ import (
 	"time"
 	"io"
 	"crypto/tls"
-	"github.com/brokenbydefault/Nanollet/RPC/PKP"
 	"github.com/brokenbydefault/Nanollet/Config"
 	"fmt"
+	"github.com/brokenbydefault/Nanollet/RPC/internal"
 )
 
 type S struct {
 	endpoint  string
 	publickey []byte
-	wss *websocket.Conn
+	wss       *websocket.Conn
 }
 
 var Socket = &S{
@@ -32,18 +32,22 @@ func (c *S) StartWebsocket() (err error) {
 	}
 
 	config, _ := websocket.NewConfig(c.endpoint, "wss://api.nanollet.org")
+	config.Dialer = &net.Dialer{
+		Timeout: 10 * time.Second,
+		Resolver: &net.Resolver{
+			PreferGo: true,
+			Dial:     internal.DNSResolver("1.1.1.1:53"),
+		},
+	}
+
 	config.TlsConfig = &tls.Config{
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.X25519},
-		VerifyPeerCertificate:    PKP.VerifyPeerCertificate(c.publickey, c.endpoint),
+		VerifyPeerCertificate:    internal.VerifyPeerCertificate(c.publickey, c.endpoint),
 		PreferServerCipherSuites: true,
 		CipherSuites: []uint16{
 			tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
 		},
-	}
-
-	config.Dialer = &net.Dialer{
-		Timeout: 5 * time.Second,
 	}
 
 	c.wss, err = websocket.DialConfig(config)
@@ -69,7 +73,6 @@ func (c *S) SendRequest(b []byte) (msg []byte, err error) {
 	}
 
 	err = websocket.Message.Receive(c.wss, &msg)
-
 
 	if Config.IsDebugEnabled() {
 		fmt.Println("Response:")

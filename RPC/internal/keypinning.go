@@ -1,4 +1,4 @@
-package PKP
+package internal
 
 import (
 	"crypto/x509"
