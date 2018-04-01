@@ -19,3 +19,4 @@ func ExistEmpty(s ...string) bool {
 	}
 	return false
 }
+
