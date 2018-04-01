@@ -7,6 +7,8 @@ body, html, .glass {
   width: 100vw;
   padding: 0;
   margin: 0;
+  border: none;
+  text-decoration: none;
 }
 
 html {
@@ -71,6 +73,8 @@ section.control {
     margin-left: 10px;
     color: fade(@color-light, 90%);
     cursor: pointer;
+    border: 0;
+    text-decoration: none;
 
     .title {
       font-size: 15px;
@@ -157,9 +161,11 @@ section.control {
 
       .title {
         position: relative;
-        left: 0;
-        display: inline-block;
-        font-size: 11px;
+        top: 3px;
+        left: 32px;
+        display: block;
+        font-size: 12px;
+        height: 12px;
       }
 
       .pointer {
@@ -399,6 +405,8 @@ section.dynamic {
       border-radius: 5px;
       white-space: pre-wrap;
       word-wrap: break-word;
+      border: 0;
+      text-decoration: none;
     }
 
     input, textarea, dropzone {

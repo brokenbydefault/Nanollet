@@ -24,8 +24,8 @@ func Start() {
 	w.LoadHtml(string(Front.HTMLBase), "/")
 	w.SetCSS(Front.CSSStyle, "style.css", "text/css")
 
-	App.InitApplication(w, &App.NanofyApp{})
 	App.InitApplication(w, &App.NanolletApp{})
+	App.InitApplication(w, &App.NanofyApp{})
 	App.InitApplication(w, &App.AccountApp{})
 
 	App.ViewApplication(w, &App.AccountApp{})

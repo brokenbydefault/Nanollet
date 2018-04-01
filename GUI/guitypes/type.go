@@ -18,5 +18,5 @@ type Application interface {
 	HaveSidebar() bool
 }
 
-type Sector struct {}
-type App struct {}
+type Sector struct{}
+type App struct{}
