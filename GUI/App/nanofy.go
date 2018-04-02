@@ -116,6 +116,12 @@ func (c *PageVerify) OnContinue(w *window.Window) {
 		return
 	}
 
+	statfile, _  := file.Stat()
+	if statfile.IsDir() {
+		DOM.UpdateNotification(w, "There was a problem opening the file")
+		return
+	}
+
 	filehash, err := Nanofy.CreateFileHash(file)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem hashing the file")
