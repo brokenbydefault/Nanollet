@@ -13,7 +13,7 @@
         NANOLLET
     </section>
     <section class="account">
-        <icon class="logo-nano" />
+        <icon class="logo-nano"/>
         <div class="ammount"></div>
         <button role="window-close">
             <icon id="end" class="icon-exit"></icon>
@@ -30,8 +30,20 @@
 <section class="notification">
     <!--<button class="notification"></button>-->
 </section>
+<!--
+    Custom Input - DropZone:
+    This input is used in "Nanofy" to select the file, it
+ -->
 <script type="text/tiscript">
     class DropZone : Element {
+      event click() {
+         var fn = view.selectFile(#open, "All Files (*.*)|*.*");
+         if( fn ) {
+          this.parent.select(".filepath").value = fn
+          this.select(".name").value = fn.split("/")[fn.split("/").length-1]
+          return true;
+         }
+      }
       event drag (evt) {
         if(evt.draggingDataType == #file) {
           return true;
@@ -40,13 +52,11 @@
       event drop (evt) {
         if(evt.draggingDataType == #file) {
           this.parent.select(".filepath").value = evt.dragging
-          this.select(".name").value = evt.dragging.split("\\")[evt.dragging.split("\\").length-1]
+          this.select(".name").value = evt.dragging.replace("\\", "/").split("/")[evt.dragging.replace("\\", "/").split("/").length-1]
           return true;
         }
       }
     }
-
-
 </script>
 </body>
 </html>
