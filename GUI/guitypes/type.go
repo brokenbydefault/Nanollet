@@ -6,7 +6,7 @@ import (
 )
 
 type Page interface {
-	OnContinue(w *window.Window)
+	OnContinue(w *window.Window, action string)
 	OnView(w *window.Window)
 	Name() string
 }

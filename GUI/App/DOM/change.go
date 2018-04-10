@@ -36,16 +36,9 @@ func UpdateAmount(w *window.Window) error {
 func UpdateNotification(w *window.Window, msg string) {
 	box, _ := SelectFirstElement(w, "section.notification")
 
-	nt, err := sciter.CreateElement("button", html.EscapeString(msg))
-	if err != nil {
-		return
-	}
-
-	nt.SetAttr("class", "notification")
-	box.Append(nt)
+	nt := CreateElementAppendTo("button", html.EscapeString(msg), "notification", "", box)
 	nt.OnClick(func() {
 		nt.SetHtml(" ", sciter.SOH_REPLACE)
 		nt.Clear()
 	})
-
 }

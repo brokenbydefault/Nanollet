@@ -12,6 +12,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
+	"strings"
 )
 
 type NanolletApp guitypes.App
@@ -46,7 +47,7 @@ func (c *PageWallet) OnView(w *window.Window) {
 	// no-op
 }
 
-func (c *PageWallet) OnContinue(w *window.Window) {
+func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
 	var errors []error
@@ -119,7 +120,7 @@ func (c *PageReceive) OnView(w *window.Window) {
 	DOM.ReadOnlyElement(textarea)
 }
 
-func (c *PageReceive) OnContinue(w *window.Window) {
+func (c *PageReceive) OnContinue(w *window.Window, _ string) {
 	// no-op
 }
 
@@ -146,22 +147,20 @@ func (c *PageList) OnView(w *window.Window) {
 	for i, hist := range Storage.History {
 		tx := hist
 
-		txdiv, _ := sciter.CreateElement("div", "")
-		txdiv.SetAttr("class", tx.Type)
-		txbox.Append(txdiv)
-
-		tpdiv, _ := sciter.CreateElement("div", "")
-		tpdiv.SetAttr("class", "type")
-		txdiv.Append(tpdiv)
-
 		amm, err := Numbers.NewHumanFromRaw(tx.Amount).ConvertToBase(Numbers.MegaXRB, 6)
 		if err != nil {
 			return
 		}
 
-		ammdiv, _ := sciter.CreateElement("div", amm)
-		ammdiv.SetAttr("class", "amount")
-		txdiv.Append(ammdiv)
+		blktype := tx.Type
+		if tx.SubType != "" {
+			blktype = tx.SubType
+		}
+
+		txdiv := DOM.CreateElementAppendTo("div", "", "item", "", txbox)
+
+		DOM.CreateElementAppendTo("div", strings.ToUpper(blktype), "type", "", txdiv)
+		DOM.CreateElementAppendTo("div", amm, "amount", "", txdiv)
 
 		if i == 4 {
 			break
@@ -170,6 +169,6 @@ func (c *PageList) OnView(w *window.Window) {
 
 }
 
-func (c *PageList) OnContinue(w *window.Window) {
+func (c *PageList) OnContinue(w *window.Window, _ string) {
 	//no-op
 }

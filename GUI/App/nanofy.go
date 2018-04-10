@@ -47,7 +47,7 @@ func (c *PageSign) OnView(w *window.Window) {
 	// no-op
 }
 
-func (c *PageSign) OnContinue(w *window.Window) {
+func (c *PageSign) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
 	filepath, err := page.GetStringValue(w, ".filepath")
@@ -97,7 +97,7 @@ func (c *PageVerify) OnView(w *window.Window) {
 	// no-op
 }
 
-func (c *PageVerify) OnContinue(w *window.Window) {
+func (c *PageVerify) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
 	filepath, err := page.GetStringValue(w, ".filepath")
@@ -116,8 +116,8 @@ func (c *PageVerify) OnContinue(w *window.Window) {
 		return
 	}
 
-	statfile, _  := file.Stat()
-	if statfile.IsDir() {
+	statfile, err  := file.Stat()
+	if statfile.IsDir() || err != nil {
 		DOM.UpdateNotification(w, "There was a problem opening the file")
 		return
 	}

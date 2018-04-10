@@ -58,26 +58,31 @@ func ViewApplication(w *window.Window, app guitypes.Application) error {
 	return ViewPage(w, app.Pages()[0])
 }
 
-func StartApplication(w *window.Window, app guitypes.Application) error {
+func StartApplication(w *window.Window, app guitypes.Application) {
 
 	for _, p := range app.Pages() {
 		sector := DOM.SetSector(p)
 		page := p
 
-		continuebtn, err := sector.SelectFirstElement(w, ".continue")
-		if err == nil {
-			continuebtn.OnClick(func() {
+		btns, err := sector.SelectAllElement(w, `button, input[type="submit"]`)
+		if err != nil {
+			return
+		}
+
+		for _, b := range btns {
+			btn := b
+			btnClass, _ := btn.Attr("class")
+			btn.OnClick(func() {
 				go func() {
-					sector.ApplyForIt(w, ".continue", DOM.DisableElement)
-					page.OnContinue(w)
-					sector.ApplyForIt(w, ".continue", DOM.EnableElement)
+					sector.ApplyForAll(w, `button, input[type="submit"]`, DOM.DisableElement)
+					page.OnContinue(w, btnClass)
+					sector.ApplyForAll(w, `button, input[type="submit"]`, DOM.EnableElement)
 				}()
 			})
 		}
-
 	}
 
-	return nil
+	return
 }
 
 func ViewPage(w *window.Window, page guitypes.Page) error {

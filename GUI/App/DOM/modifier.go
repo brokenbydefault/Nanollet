@@ -11,13 +11,16 @@ func ApplyForAll(w *window.Window, css string, mod Modifier) error {
 		return err
 	}
 
-	for _, e := range els {
-		if err := mod(e); err != nil {
-			return err
-		}
+	return applyForAll(els, mod)
+}
+
+func (p *Page) ApplyForAll(w *window.Window, css string, mod Modifier) error {
+	els, err := p.SelectAllElement(w, css)
+	if err != nil {
+		return err
 	}
 
-	return err
+	return applyForAll(els, mod)
 }
 
 func ApplyForIt(w *window.Window, css string, mod Modifier) error {
@@ -36,6 +39,16 @@ func (p *Page) ApplyForIt(w *window.Window, css string, mod Modifier) error {
 	}
 
 	return mod(it)
+}
+
+func applyForAll(els []*sciter.Element, mod Modifier) error {
+	for _, e := range els {
+		if err := mod(e); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 type Modifier func(el *sciter.Element) error
@@ -64,7 +77,6 @@ func InvisibleElement(el *sciter.Element) error {
 	return el.SetStyle("visibility", "hidden")
 }
 
-
 func VisitedElement(el *sciter.Element) error {
 	return el.SetState(sciter.STATE_VISITED, 0, true)
 }
@@ -81,6 +93,14 @@ func WriteOnlyElement(el *sciter.Element) error {
 	return el.SetState(0, sciter.STATE_READONLY, true)
 }
 
+func Checked(el *sciter.Element) error {
+	return el.SetState(sciter.STATE_CHECKED, 0, true)
+}
+
+func Unchecked(el *sciter.Element) error {
+	return el.SetState(0, sciter.STATE_CHECKED, true)
+}
+
 func ClearValue(el *sciter.Element) error {
 	return el.SetValue(sciter.NewValue())
 }
@@ -93,4 +113,3 @@ func DestroyHTML(el *sciter.Element) error {
 	el.SetHtml(" ", sciter.SOH_REPLACE)
 	return el.Clear()
 }
-
