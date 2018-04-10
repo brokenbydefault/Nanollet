@@ -5,7 +5,6 @@ package ProofWork
 import (
 	"encoding/binary"
 	"github.com/brokenbydefault/Nanollet/Util"
-	"fmt"
 )
 
 func ReferenceGenerateProof(blockHash []byte) []byte {
@@ -16,10 +15,6 @@ func ReferenceGenerateProof(blockHash []byte) []byte {
 
 		binary.LittleEndian.PutUint64(nonce, attempt)
 		hash := Util.CreateHash(8, nonce, blockHash)
-
-		if attempt < 100 {
-			fmt.Println(hash)
-		}
 
 		if binary.LittleEndian.Uint64(hash) >= MinimumWork {
 			break

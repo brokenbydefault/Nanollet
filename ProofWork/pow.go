@@ -20,7 +20,7 @@ func GenerateProof(blockHash []byte) []byte {
 	limit := uint64(runtime.NumCPU())
 	shard := uint64(1<<64-1) / limit
 
-	result := make(chan uint64)
+	result := make(chan uint64, 32)
 	stop := make(chan bool)
 
 	for i := uint64(0); i < limit; i++ {
@@ -30,11 +30,25 @@ func GenerateProof(blockHash []byte) []byte {
 	nonce := <-result
 	close(stop)
 	close(result)
+	clear(result)
 
 	n := make([]byte, 8)
 	binary.BigEndian.PutUint64(n, nonce)
 
 	return n
+}
+
+func IsValidProof(blockHash []byte, proof []byte) bool {
+	n := make([]byte, 8)
+	copy(n, proof)
+
+	binary.LittleEndian.PutUint64(n, binary.BigEndian.Uint64(n))
+
+	h, _ := blake2b.New(8, nil)
+	h.Write(n)
+	h.Write(blockHash)
+
+	return binary.LittleEndian.Uint64(h.Sum(nil)) >= MinimumWork
 }
 
 func createProof(blockHash []byte, attempt uint64, result chan uint64, stop chan bool) {
@@ -59,5 +73,11 @@ func createProof(blockHash []byte, attempt uint64, result chan uint64, stop chan
 		case <-stop:
 			return
 		}
+	}
+}
+
+func clear(r chan uint64) {
+	for len(r) > 0 {
+		<-r
 	}
 }

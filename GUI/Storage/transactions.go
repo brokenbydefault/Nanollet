@@ -3,29 +3,48 @@ package Storage
 import (
 	"github.com/brokenbydefault/Nanollet/RPC"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/Block"
+	"bytes"
 )
 
 var Amount *Numbers.RawAmount
 
 type HistoryStore []RPCClient.SingleHistory
+
 var History HistoryStore
 
 func (h *HistoryStore) Set(hist []RPCClient.SingleHistory) {
-	History = hist
+	*h = hist
 }
 
-func (h *HistoryStore) Add(types string, amount *Numbers.RawAmount, hash []byte, account Wallet.Address) {
-	if types == "change" {
-		return
+func (h *HistoryStore) ExistHash(hash Block.BlockHash) bool {
+	for _, blk := range *h {
+		if bytes.Equal(blk.Hash, hash) {
+			return true
+		}
 	}
 
+	return false
+}
+
+func (h *HistoryStore) AlreadyReceived(hash Block.BlockHash) bool {
+	for _, blk := range *h {
+		if bytes.Equal(blk.Source, hash) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (h *HistoryStore) Add(blk Block.BlockTransaction, amount *Numbers.RawAmount) {
 	hist := RPCClient.SingleHistory{}
-	hist.Type = types
+	hist.Type = blk.GetType()
 	hist.Amount = amount
-	hist.Hash = hash
-	hist.Account = account
-	History = append([]RPCClient.SingleHistory{hist}, History...)
+	hist.Destination, hist.Source = blk.GetTarget()
+	hist.Hash = blk.Hash()
+
+	*h = append([]RPCClient.SingleHistory{hist}, *h...)
 }
 
 func (h *HistoryStore) Next(page uint32) () {

@@ -18,6 +18,11 @@ func TestGenerateProof(t *testing.T) {
 	fmt.Println(Util.SecureHexEncode(GenerateProof(Genesis)))
 }
 
+func TestIsValidProof(t *testing.T) {
+	if !IsValidProof(Genesis, GenerateProof(Genesis)) {
+		t.Error("valid proof reported as invalid")
+	}
+}
 
 //func TestReferenceGenerateProof(t *testing.T) {
 //	fmt.Println(Util.SecureHexEncode(ReferenceGenerateProof(Genesis)))

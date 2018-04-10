@@ -7,9 +7,13 @@ import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/Block"
-	"time"
 	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
+	"encoding/json"
+	"bytes"
 )
+
+var min, _ = Numbers.NewRawFromString("1000000000000000000000000") //@TODO Enable user to change the minimum amount
+var pends = make(chan []byte, 10)
 
 func StartAddress(w *window.Window) error {
 	info, err := RPCClient.GetAccountInformation(Connectivity.Socket, Storage.PK.CreateAddress())
@@ -23,52 +27,83 @@ func StartAddress(w *window.Window) error {
 		}
 	}
 
-	Storage.Frontier = info.Frontier
+	Storage.UpdateFrontier(info.Frontier)
 	Storage.Amount = info.Balance
 	DOM.UpdateAmount(w)
 
-	hist, err := RPCClient.GetAccountHistory(Connectivity.Socket, 25, Storage.PK.CreateAddress())
+	hist, err := RPCClient.GetAccountHistory(Connectivity.Socket, 1000, Storage.PK.CreateAddress())
 	if err != nil {
 		return err
 	}
 
 	Storage.History.Set(hist)
 
-	go startTracking(w)
+	go func() {
+		pendings(w)
+		realtimeupdate(w)
+	}()
 	return nil
 }
 
-// @TODO Use the callback from the RPC instead of polling
-// For now we need to polling the server each 10 seconds, far from optimal.
-func startTracking(w *window.Window) {
+func realtimeupdate(w *window.Window) {
+	conn := Connectivity.NewSocket()
 
-	for range time.Tick(10 * time.Second) {
+	err := RPCClient.Subscribe(conn, Storage.PK)
+	if err != nil {
+		panic(err)
+	}
 
-		min, _ := Numbers.NewRawFromString("1000000000000000000000000") //@TODO Enable user to change the minimum amount
-		pends, err := RPCClient.GetAccountPending(Connectivity.Socket, 10, min, Storage.PK.CreateAddress())
+	go conn.ReceiveAllMessages(nil, pends)
+
+	pend := RPCClient.CallbackResponse{}
+
+	for p := range pends {
+		err := json.Unmarshal(p, &pend)
 		if err != nil {
 			continue
 		}
 
-		if len(pends) > 0 {
-			DOM.UpdateNotification(w, "New payments were detected in the network")
+		// If the destination is not the currently public-key or already sent a received: skip
+		if !bytes.Equal(pend.Destination, Storage.PK) || Storage.History.AlreadyReceived(pend.Hash) {
+			continue
 		}
 
-		for _, pend := range pends {
-
-			blk, err := Block.CreateSignedReceiveOrOpenBlock(&Storage.SK, pend.Hash, Storage.Frontier)
-			if err != nil {
-				continue
-			}
-
-			err = PublishBlockToQueue(blk, pend.Amount)
-			if err != nil {
-				continue
-			}
-
-			DOM.UpdateAmount(w)
-			DOM.UpdateNotification(w, "You had received a new payment")
+		blk, err := Block.CreateSignedReceiveOrOpenBlock(&Storage.SK, pend.Hash, Storage.Frontier)
+		if err != nil || Storage.History.ExistHash(blk.Hash()) {
+			continue
 		}
+
+		err = PublishBlockToQueue(blk, pend.Amount)
+		if err != nil {
+			continue
+		}
+
+		DOM.UpdateAmount(w)
+		DOM.UpdateNotification(w, "You had received a new payment")
 	}
 
+	pendings(w)
+	realtimeupdate(w)
+}
+
+func pendings(w *window.Window) {
+	pends, err := RPCClient.GetAccountPending(Connectivity.Socket, 1000, min, Storage.PK.CreateAddress())
+	if err != nil {
+		return
+	}
+
+	for _, pend := range pends {
+		blk, err := Block.CreateSignedReceiveOrOpenBlock(&Storage.SK, pend.Hash, Storage.Frontier)
+		if err != nil {
+			continue
+		}
+
+		err = PublishBlockToQueue(blk, pend.Amount)
+		if err != nil {
+			continue
+		}
+
+		DOM.UpdateAmount(w)
+		DOM.UpdateNotification(w, "You had received a new payment")
+	}
 }
