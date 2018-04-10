@@ -76,6 +76,7 @@ func NewAccountHistory(limit int, addr Wallet.Address) (AccountHistoryRequest) {
 	return AccountHistoryRequest{
 		Account:        addr,
 		Count:          limit,
+		Raw:            true,
 		DefaultRequest: defaultRequest("account_history"),
 	}
 }

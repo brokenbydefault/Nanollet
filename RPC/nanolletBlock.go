@@ -58,14 +58,18 @@ type AccountInformation struct {
 type AccountHistoryRequest struct {
 	Account Wallet.Address `json:"account"`
 	Count   int            `json:"count"`
+	Raw     bool           `json:"raw"`
 	DefaultRequest
 }
 
 type SingleHistory struct {
-	Hash    Block.BlockHash    `json:"hash"`
-	Type    string             `json:"type"`
-	Account Wallet.Address     `json:"account"`
-	Amount  *Numbers.RawAmount `json:"amount"`
+	Hash        Block.BlockHash    `json:"hash"`
+	Type        string             `json:"type"`
+	SubType     string             `json:"subtype,omitempty"`
+	Source      Block.BlockHash    `json:"source,omitempty"`
+	Destination Wallet.Address     `json:"destination,omitempty"`
+	Account     Wallet.Address     `json:"account"`
+	Amount      *Numbers.RawAmount `json:"amount"`
 }
 
 type AccountHistory []SingleHistory
