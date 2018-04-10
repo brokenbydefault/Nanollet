@@ -11,6 +11,7 @@ type BlockTransaction interface {
 	Hash() BlockHash
 
 	GetType() string
+	GetTarget() (destination Wallet.Address, source BlockHash)
 
 	SetWork([]byte)
 	SetSignature([]byte)
@@ -21,15 +22,15 @@ type BlockTransaction interface {
 //--------------
 
 type DefaultBlock struct {
-	Type      string `json:"type" serialize:"string"`
-	Work      []byte `json:"work" serialize:"hex"`
-	Signature []byte `json:"signature" serialize:"hex"`
+	Type      string `json:"type"`
+	Work      []byte `json:"work"`
+	Signature []byte `json:"signature"`
 }
 
 type SerializedDefaultBlock struct {
 	Type      string `json:"type"`
-	Work      string `json:"work" serialize:"hex"`
-	Signature string `json:"signature" serialize:"hex"`
+	Work      string `json:"work"`
+	Signature string `json:"signature"`
 }
 
 //--------------
@@ -42,9 +43,9 @@ type SendBlock struct {
 }
 
 type SerializedSendBlock struct {
-	Previous    string `json:"previous" serialize:"hex"`
+	Previous    string `json:"previous"`
 	Destination string `json:"destination"`
-	Balance     string `json:"balance" serialize:"hex"`
+	Balance     string `json:"balance"`
 	SerializedDefaultBlock
 }
 
@@ -57,8 +58,8 @@ type ReceiveBlock struct {
 }
 
 type SerializedReceiveBlock struct {
-	Previous string `json:"previous" serialize:"hex"`
-	Source   string `json:"source" serialize:"hex"`
+	Previous string `json:"previous"`
+	Source   string `json:"source"`
 	SerializedDefaultBlock
 }
 
@@ -72,9 +73,9 @@ type OpenBlock struct {
 }
 
 type SerializedOpenBlock struct {
-	Source         string `json:"source" serialize:"hex"`
-	Representative string `json:"representative" serialize:"hex"`
-	Account        string `json:"account" serialize:"hex"`
+	Source         string `json:"source"`
+	Representative string `json:"representative"`
+	Account        string `json:"account"`
 	SerializedDefaultBlock
 }
 
@@ -87,24 +88,25 @@ type ChangeBlock struct {
 }
 
 type SerializedChangeBlock struct {
-	Previous       string `json:"previous" serialize:"hex"`
-	Representative string `json:"representative" serialize:"hex"`
+	Previous       string `json:"previous"`
+	Representative string `json:"representative"`
 	SerializedDefaultBlock
 }
 
 //--------------
 
 type SerializedUniversalBlock struct {
-	Account        string `json:"account" serialize:"hex"`
-	Previous       string `json:"previous" serialize:"hex"`
-	Representative string `json:"representative" serialize:"hex"`
-	Balance        string `json:"balance" serialize:"hex"`
-	Amount         string `json:"amount" serialize:"hex"`
+	Account        string `json:"account"`
+	Previous       string `json:"previous"`
+	Representative string `json:"representative"`
+	Balance        string `json:"balance"`
+	Amount         string `json:"amount"`
 
-	Link string `json:"link" serialize:"hex"` // Link or Target?!
+	Link           string `json:"target"`
+	LinkAccount	   string `json:"link_as_account"`
 
 	Destination string `json:"destination"`
-	Source      string `json:"source" serialize:"hex"`
+	Source      string `json:"source"`
 
 	SerializedDefaultBlock
 }
@@ -116,8 +118,11 @@ type UniversalBlock struct {
 	Balance        *Numbers.RawAmount
 	Amount         *Numbers.RawAmount
 
-	Destination Wallet.PublicKey `json:"destination"`
-	Source      []byte           `json:"source" serialize:"hex"`
+	Link           []byte
+	LinkAccount   Wallet.Address `json:"link_as_account"`
+
+	Destination Wallet.PublicKey
+	Source      []byte
 
 	DefaultBlock
 }

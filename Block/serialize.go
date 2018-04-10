@@ -6,22 +6,26 @@ import (
 )
 
 //@TODO Use JSONMarshal instead, rewrite the code
-//@TODO UniversalBlock is not finished!
-/**
 func (s *UniversalBlock) Serialize() ([]byte, error) {
 
 	sb := SerializedUniversalBlock{
-		Previous:               DOM.SecureHexEncode(s.Previous),
-		Representative:			string(s.Representative),
-		Balance:				s.Balance.ToHex(),
-		Amount:					s.Amount.ToHex(),
-		Link:            		s.Link,
-		SerializedDefaultBlock: newSerializeDefault("send", s.DefaultBlock),
+		Account:                string(s.Account.CreateAddress()),
+		Previous:               Util.SecureHexEncode(s.Previous),
+		Representative:         string(s.Representative),
+		Balance:                s.Balance.ToHex(),
+		Amount:                 s.Amount.ToHex(),
+		SerializedDefaultBlock: newSerializeDefault("state", s.DefaultBlock),
 	}
 
-	return json.Marshal(sb), err
+	switch {
+	case s.Destination != nil:
+		sb.Link = string(s.Destination.CreateAddress())
+	case s.Source != nil:
+		sb.Link = Util.SecureHexEncode(s.Source)
+	}
+
+	return json.Marshal(sb)
 }
-**/
 
 func (s *SendBlock) Serialize() ([]byte, error) {
 	sb := SerializedSendBlock{

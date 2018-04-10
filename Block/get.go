@@ -2,6 +2,7 @@ package Block
 
 import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/Wallet"
 )
 
 func (s *SendBlock) SetFrontier(h BlockHash) {
@@ -24,17 +25,15 @@ func (s *SendBlock) SetBalance(n *Numbers.RawAmount) {
 }
 
 func (s *ReceiveBlock) SetBalance(n *Numbers.RawAmount) {
+	// no-op
 }
 
 func (s *OpenBlock) SetBalance(n *Numbers.RawAmount) {
+	// no-op
 }
 
 func (s *ChangeBlock) SetBalance(n *Numbers.RawAmount) {
-}
-
-
-func (d *DefaultBlock) GetType() string {
-	return d.Type
+	// no-op
 }
 
 func (d *DefaultBlock) SetWork(w []byte) {
@@ -43,4 +42,25 @@ func (d *DefaultBlock) SetWork(w []byte) {
 
 func (d *DefaultBlock) SetSignature(s []byte) {
 	d.Signature = s
+}
+
+func (d *DefaultBlock) GetType() string {
+	return d.Type
+}
+
+func (s *SendBlock) GetTarget() (Wallet.Address, BlockHash) {
+	return s.Destination.CreateAddress(), nil
+}
+
+func (s *ReceiveBlock) GetTarget() (Wallet.Address, BlockHash) {
+	return "", s.Source
+}
+
+func (s *OpenBlock) GetTarget() (Wallet.Address, BlockHash) {
+	return "", s.Source
+}
+
+func (s *ChangeBlock) GetTarget() (Wallet.Address, BlockHash) {
+	// no-op
+	return "", nil
 }

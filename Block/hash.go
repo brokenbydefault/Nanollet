@@ -25,7 +25,7 @@ func (s *ChangeBlock) Hash() BlockHash {
 
 // It can change in the future, consider "Destination" as "Target".
 func (u *UniversalBlock) Hash() BlockHash {
-	return Util.CreateHash(32, u.Previous, u.Destination, u.Representative, u.Balance.ToBytes(), u.Account)
+	return Util.CreateHash(32, u.Previous, u.Link, u.Representative, u.Balance.ToBytes(), u.Account)
 }
 
 func (u *UniversalBlock) HashAsSend() BlockHash {
