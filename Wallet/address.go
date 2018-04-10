@@ -16,10 +16,10 @@ type Address string
 // CreateAddress creates the encoded address using the public-key. It returns
 // the address (with identifier, public-key and checksum) as string, encoded
 // with base32.
-func (pk *PublicKey) CreateAddress() Address {
+func (pk PublicKey) CreateAddress() Address {
 	addr := ADDRESS_PREFIX
 	addr += "_"
-	addr += Util.UnsafeBase32Encode(append([]byte{0, 0, 0}, []byte(*pk)...))[4:]
+	addr += Util.UnsafeBase32Encode(append([]byte{0, 0, 0}, []byte(pk)...))[4:]
 	addr += Util.UnsafeBase32Encode(pk.CreateChecksum())
 
 	return Address(addr)
@@ -132,8 +132,8 @@ func (d *PublicKey) UnmarshalJSON(data []byte) (err error) {
 		return
 	}
 
-	v, err := Util.UnsafeHexDecode(str)
-	if err != nil {
+	v, ok := Util.SecureHexDecode(str)
+	if !ok {
 		return
 	}
 
@@ -142,5 +142,5 @@ func (d *PublicKey) UnmarshalJSON(data []byte) (err error) {
 }
 
 func (d PublicKey) MarshalJSON() ([]byte, error) {
-	return json.Marshal(Util.UnsafeHexEncode(d))
+	return json.Marshal(Util.SecureHexEncode(d))
 }
