@@ -22,16 +22,20 @@ var queue = make(queueup, 32)
 
 func PublishBlocksToQueue(blk []Block.BlockTransaction, amount ...*Numbers.RawAmount) error {
 	var rt = make(WaitConfirmation)
+	var amm *Numbers.RawAmount
 	defer close(rt)
 
+	// amount is optional, set default of 0 if missing
 	if len(amount) == 0 {
-		amount[0], _ = Numbers.NewRawFromString("0")
+		amm, _ = Numbers.NewRawFromString("0")
+	} else {
+		amm = amount[0]
 	}
 
 	queue <- txs{
 		blocks:    blk,
 		returning: rt,
-		amount:    amount[0],
+		amount:    amm,
 	}
 
 	return <-rt
