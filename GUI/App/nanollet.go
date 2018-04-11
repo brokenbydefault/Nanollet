@@ -33,6 +33,7 @@ func (c *NanolletApp) Pages() []guitypes.Page {
 	return []guitypes.Page{
 		&PageWallet{},
 		&PageReceive{},
+		&PageRepresentative{},
 		&PageList{},
 	}
 }
@@ -40,7 +41,7 @@ func (c *NanolletApp) Pages() []guitypes.Page {
 type PageWallet guitypes.Sector
 
 func (c *PageWallet) Name() string {
-	return "wallet"
+	return "send"
 }
 
 func (c *PageWallet) OnView(w *window.Window) {
@@ -79,23 +80,23 @@ func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	raw, err := Numbers.NewHumanFromString(whole+"."+decimal, Numbers.MegaXRB).ConvertToRawAmount()
+	amm, err := Numbers.NewHumanFromString(whole+"."+decimal, Numbers.MegaXRB).ConvertToRawAmount()
 	if err != nil {
 		return
 	}
 
-	if !Storage.Amount.Subtract(raw).IsValid() {
+	if !Storage.Amount.Subtract(amm).IsValid() {
 		DOM.UpdateNotification(w, "The given amount is higher than the maximum")
 		return
 	}
 
-	blk, err := Block.CreateSignedSendBlock(&Storage.SK, raw, Storage.Amount, Storage.Frontier, &address)
+	blk, err := Block.CreateSignedSendBlock(&Storage.SK, amm, Storage.Amount, Storage.Frontier, &address)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem creating a block")
 		return
 	}
 
-	err = Background.PublishBlockToQueue(blk, raw)
+	err = Background.PublishBlockToQueue(blk, amm)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem sending a block")
 		return
@@ -123,6 +124,52 @@ func (c *PageReceive) OnView(w *window.Window) {
 func (c *PageReceive) OnContinue(w *window.Window, _ string) {
 	// no-op
 }
+
+type PageRepresentative guitypes.Sector
+
+func (c *PageRepresentative) Name() string {
+	return "representative"
+}
+
+func (c *PageRepresentative) OnView(w *window.Window) {
+	// no-op
+}
+
+func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
+	page := DOM.SetSector(c)
+
+	addr, err := page.GetStringValue(w, ".address")
+	if err != nil {
+		return
+	}
+
+	address := Wallet.Address(addr)
+	if address == "" {
+		return
+	}
+
+	if !address.IsValid() {
+		DOM.UpdateNotification(w, "The given address is invalid")
+		return
+	}
+
+	blk, err := Block.CreateSignedChangeBlock(&Storage.SK, Storage.Frontier, &address)
+	if err != nil {
+		DOM.UpdateNotification(w, "There was a problem creating a block")
+		return
+	}
+
+	err = Background.PublishBlockToQueue(blk)
+	if err != nil {
+		DOM.UpdateNotification(w, "There was a problem sending a block")
+		return
+	}
+
+	DOM.UpdateAmount(w)
+	DOM.UpdateNotification(w, "Your representative was changed successfully.")
+	page.ApplyForIt(w, ".address", DOM.ClearValue)
+}
+
 
 type PageList guitypes.Sector
 
