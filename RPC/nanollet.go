@@ -99,6 +99,11 @@ func (d *AccountHistory) UnmarshalJSON(data []byte) (err error) {
 	}
 
 	err = json.Unmarshal(data, &def)
+	for i, hist := range def {
+		if hist.Amount == nil {
+			def[i].Amount, _ = Numbers.NewRawFromString("0")
+		}
+	}
 
 	*d = def
 	return err
