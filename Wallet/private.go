@@ -1,13 +1,13 @@
 package Wallet
 
 import (
-	"io"
-	"github.com/brokenbydefault/Nanollet/Util"
-	"crypto/subtle"
 	"bytes"
 	cryptorand "crypto/rand"
+	"crypto/subtle"
 	"errors"
 	"github.com/Inkeliz/blakEd25519"
+	"github.com/brokenbydefault/Nanollet/Util"
+	"io"
 )
 
 type SecretKey []byte

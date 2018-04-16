@@ -1,10 +1,10 @@
 package Wallet
 
 import (
-	"github.com/brokenbydefault/Nanollet/Util"
-	"errors"
-	"strings"
 	"encoding/json"
+	"errors"
+	"github.com/brokenbydefault/Nanollet/Util"
+	"strings"
 )
 
 const ADDRESS_PREFIX = "xrb"

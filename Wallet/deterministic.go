@@ -1,13 +1,13 @@
 package Wallet
 
 import (
-	"github.com/brokenbydefault/Nanollet/Util"
-	"encoding/binary"
 	"crypto/rand"
+	"encoding/binary"
+	"errors"
+	"github.com/brokenbydefault/Nanollet/Util"
 	"golang.org/x/crypto/argon2"
 	"runtime"
 	"runtime/debug"
-	"errors"
 )
 
 type Type uint8
@@ -30,12 +30,10 @@ var SupportedVersions = [...]Version{V1}
 type Currency uint32
 
 const (
-	Base   Currency = iota
+	Base Currency = iota
 	Nano
 	Banano
 )
-
-
 
 var ErrImpossibleDecode = errors.New("impossible to decode the seed")
 
@@ -125,7 +123,7 @@ func (sf *SeedFY) Encode() string {
 
 // IsValid will return false if the SeedFY is not supported or don't have
 // enough seed-length
-func (sf *SeedFY) IsValid(v Version, t Type) (bool) {
+func (sf *SeedFY) IsValid(v Version, t Type) bool {
 	var r bool
 
 	for _, val := range SupportedVersions {
@@ -138,7 +136,7 @@ func (sf *SeedFY) IsValid(v Version, t Type) (bool) {
 	}
 
 	for _, val := range SupportedTypes {
-		if uint8(val) == sf.Type  && uint8(val) == uint8(t){
+		if uint8(val) == sf.Type && uint8(val) == uint8(t) {
 			r = true
 		}
 	}

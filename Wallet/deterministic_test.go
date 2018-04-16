@@ -1,9 +1,9 @@
 package Wallet
 
 import (
-	"testing"
 	"bytes"
 	"github.com/brokenbydefault/Nanollet/Util"
+	"testing"
 )
 
 func TestReadSeedFY(t *testing.T) {
@@ -52,7 +52,7 @@ func TestNewSeedFY(t *testing.T) {
 
 	var previous []byte
 	for i := 0; i < 10; i++ {
-		sf, err := NewSeedFY(V1,Nanollet)
+		sf, err := NewSeedFY(V1, Nanollet)
 		if err != nil {
 			t.Error(t)
 		}
@@ -61,7 +61,7 @@ func TestNewSeedFY(t *testing.T) {
 			t.Error("Not random")
 		}
 
-		if !sf.IsValid(V1,Nanollet) {
+		if !sf.IsValid(V1, Nanollet) {
 			t.Error("Seed is not valid when generate from the default")
 		}
 

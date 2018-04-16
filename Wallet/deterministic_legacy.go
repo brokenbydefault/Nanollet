@@ -2,8 +2,8 @@ package Wallet
 
 import (
 	"encoding/binary"
-	"github.com/brokenbydefault/Nanollet/Util"
 	"errors"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 // RecoverKeyPairFromClassicalSeed will return the Ed25519 key-pair based on the hex-encoded HEX and one INDEX

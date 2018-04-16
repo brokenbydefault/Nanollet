@@ -28,7 +28,7 @@ func TestCreateKeyPairFromClassicalSeed(t *testing.T) {
 			t.Errorf("creation from seed falied with %s", test[i])
 		}
 
-		if string(addr) != test[i]{
+		if string(addr) != test[i] {
 			t.Errorf("creation from seed falied, given %s when expect %s", addr, test[i])
 		}
 
@@ -53,7 +53,7 @@ func TestRecoverKeyPairFromSeed(t *testing.T) {
 			t.Errorf("creation from seed falied with %s", test[i])
 		}
 
-		if string(addr) != test[i]{
+		if string(addr) != test[i] {
 			t.Errorf("creation from seed falied, given %s when expect %s", addr, test[i])
 		}
 
