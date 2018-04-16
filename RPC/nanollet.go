@@ -1,14 +1,14 @@
 package RPCClient
 
 import (
-	"github.com/brokenbydefault/Nanollet/Wallet"
+	"encoding/json"
+	"errors"
+	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/RPC/internal"
-	"github.com/brokenbydefault/Nanollet/Block"
-	"github.com/brokenbydefault/Nanollet/Util"
-	"errors"
 	"github.com/brokenbydefault/Nanollet/RPC/rpctypes"
-	"encoding/json"
+	"github.com/brokenbydefault/Nanollet/Util"
+	"github.com/brokenbydefault/Nanollet/Wallet"
 )
 
 var ErrNotOpenedAccount = errors.New("Account not found")
@@ -16,7 +16,7 @@ var ErrBadAddress = errors.New("Bad account number")
 var ErrEmpty = errors.New("empty")
 
 //@TODO Use custom UnmarshalJSON/MarshalJSON and rewrite the entire code.
-func NewAccountBalance(addr Wallet.Address) (AccountsBalancesRequest) {
+func NewAccountBalance(addr Wallet.Address) AccountsBalancesRequest {
 	return NewMultiAccountsBalance(addr)
 }
 
@@ -31,7 +31,7 @@ func GetAccountBalance(c rpctypes.Connection, addr Wallet.Address) (AccountBalan
 	return reqresp[addr], nil
 }
 
-func NewMultiAccountsBalance(addr ...Wallet.Address) (AccountsBalancesRequest) {
+func NewMultiAccountsBalance(addr ...Wallet.Address) AccountsBalancesRequest {
 	return AccountsBalancesRequest{
 		Accounts:       addr,
 		DefaultRequest: defaultRequest("accounts_balances"),
@@ -52,10 +52,11 @@ func GetMultiAccountsBalance(c rpctypes.Connection, addr ...Wallet.Address) (Mul
 	return reqresp.Balances, err
 }
 
-func NewAccountInformation(addr Wallet.Address) (AccountInformationRequest) {
+func NewAccountInformation(addr Wallet.Address) AccountInformationRequest {
 	return AccountInformationRequest{
 		Account:        addr,
 		Pending:        true,
+		Representative: true,
 		DefaultRequest: defaultRequest("account_info"),
 	}
 }
@@ -72,7 +73,7 @@ func GetAccountInformation(c rpctypes.Connection, addr Wallet.Address) (AccountI
 	return resp, err
 }
 
-func NewAccountHistory(limit int, addr Wallet.Address) (AccountHistoryRequest) {
+func NewAccountHistory(limit int, addr Wallet.Address) AccountHistoryRequest {
 	return AccountHistoryRequest{
 		Account:        addr,
 		Count:          limit,
@@ -103,6 +104,14 @@ func (d *AccountHistory) UnmarshalJSON(data []byte) (err error) {
 		if hist.Amount == nil {
 			def[i].Amount, _ = Numbers.NewRawFromString("0")
 		}
+		if hist.Link != nil {
+			switch hist.SubType {
+			case "send":
+				def[i].Destination = Wallet.Address(hist.Link)
+			case "receive":
+				def[i].Source = hist.Link
+			}
+		}
 	}
 
 	*d = def
@@ -123,7 +132,7 @@ func GetAccountHistory(c rpctypes.Connection, limit int, addr Wallet.Address) (r
 	return reqresp.History, err
 }
 
-func NewAccountPending(limit int, minimum *Numbers.RawAmount, addr Wallet.Address) (AccountsPendingRequest) {
+func NewAccountPending(limit int, minimum *Numbers.RawAmount, addr Wallet.Address) AccountsPendingRequest {
 	return NewMultiAccountsPending(limit, minimum, addr)
 }
 
@@ -136,7 +145,7 @@ func GetAccountPending(c rpctypes.Connection, limit int, minimum *Numbers.RawAmo
 	return reqresp[addr], nil
 }
 
-func NewMultiAccountsPending(limit int, minimum *Numbers.RawAmount, addr ...Wallet.Address) (AccountsPendingRequest) {
+func NewMultiAccountsPending(limit int, minimum *Numbers.RawAmount, addr ...Wallet.Address) AccountsPendingRequest {
 	return AccountsPendingRequest{
 		Accounts:       addr,
 		Threshold:      minimum,

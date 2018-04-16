@@ -1,10 +1,10 @@
 package RPCClient
 
 import (
+	"crypto/subtle"
+	"errors"
 	"github.com/brokenbydefault/Nanollet/RPC/rpctypes"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"errors"
-	"crypto/subtle"
 )
 
 func Subscribe(c rpctypes.Connection, pk Wallet.PublicKey) (err error) {

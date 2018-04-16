@@ -1,9 +1,9 @@
 package RPCClient
 
 import (
+	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/Block"
 )
 
 type DefaultRequest struct {
@@ -37,9 +37,10 @@ type MultiplesAccountsBalance map[Wallet.Address]AccountBalance
 //--------------
 
 type AccountInformationRequest struct {
-	Account Wallet.Address `json:"account"`
-	Weight  bool           `json:"weight,omitempty"`
-	Pending bool           `json:"pending,omitempty"`
+	Account        Wallet.Address `json:"account"`
+	Weight         bool           `json:"weight,omitempty"`
+	Pending        bool           `json:"pending,omitempty"`
+	Representative bool           `json:"representative,omitempty"`
 	DefaultRequest
 }
 
@@ -47,6 +48,7 @@ type AccountInformation struct {
 	Frontier            Block.BlockHash    `json:"frontier"`
 	OpenBlock           Block.BlockHash    `json:"open_block"`
 	RepresentativeBlock Block.BlockHash    `json:"representative_block"`
+	Representative      Wallet.Address   `json:"representative"`
 	Balance             *Numbers.RawAmount `json:"balance"`
 	BlockCount          uint64             `json:"block_count,string"`
 	Pending             *Numbers.RawAmount `json:"pending,omitempty"`
@@ -63,13 +65,15 @@ type AccountHistoryRequest struct {
 }
 
 type SingleHistory struct {
-	Hash        Block.BlockHash    `json:"hash"`
-	Type        string             `json:"type"`
-	SubType     string             `json:"subtype,omitempty"`
-	Source      Block.BlockHash    `json:"source,omitempty"`
-	Destination Wallet.Address     `json:"destination,omitempty"`
-	Account     Wallet.Address     `json:"account"`
-	Amount      *Numbers.RawAmount `json:"amount"`
+	Hash           Block.BlockHash    `json:"hash"`
+	Type           string             `json:"type"`
+	SubType        string             `json:"subtype,omitempty"`
+	Link           Block.BlockHash    `json:"link"`
+	Representative Wallet.PublicKey   `json:"representative"`
+	Source         Block.BlockHash    `json:"source,omitempty"`
+	Destination    Wallet.Address     `json:"destination,omitempty"`
+	Account        Wallet.Address     `json:"account"`
+	Amount         *Numbers.RawAmount `json:"amount"`
 }
 
 type AccountHistory []SingleHistory

@@ -7,14 +7,14 @@
 package main
 
 import (
-	"path/filepath"
-	"strings"
-	"io/ioutil"
-	"os"
-	"github.com/kib357/less-go"
-	"text/template"
 	"github.com/brokenbydefault/Nanollet/Config"
 	"github.com/brokenbydefault/Nanollet/Util"
+	"github.com/kib357/less-go"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"text/template"
 )
 
 func main() {
@@ -49,7 +49,7 @@ func generateSciter() {
 
 		hex := Util.UnsafeHexEncode(bin)
 
-		bindata := make([]byte, len(bin) * 5)
+		bindata := make([]byte, len(bin)*5)
 		isciter := 0
 		for i := 0; i < len(hex); i += 2 {
 			copy(bindata[isciter:], []byte{0x30, 0x78, hex[i], hex[i+1], 0x2C})

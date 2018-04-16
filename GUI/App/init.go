@@ -1,11 +1,11 @@
 package App
 
 import (
-	"github.com/sciter-sdk/go-sciter/window"
-	"strings"
-	"github.com/sciter-sdk/go-sciter"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
+	"github.com/sciter-sdk/go-sciter"
+	"github.com/sciter-sdk/go-sciter/window"
+	"strings"
 )
 
 func InitApplication(w *window.Window, app guitypes.Application) {

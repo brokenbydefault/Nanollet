@@ -1,12 +1,12 @@
 package internal
 
 import (
-	"crypto/x509"
-	"net/url"
-	"github.com/brokenbydefault/Nanollet/Util"
-	"errors"
 	"crypto/subtle"
+	"crypto/x509"
+	"errors"
 	"github.com/brokenbydefault/Nanollet/Config"
+	"github.com/brokenbydefault/Nanollet/Util"
+	"net/url"
 )
 
 var ErrInvalidCert = errors.New("invalid certificate")

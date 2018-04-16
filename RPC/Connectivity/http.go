@@ -3,15 +3,15 @@
 package Connectivity
 
 import (
-	"encoding/json"
-	"time"
-	"io"
-	"net/http"
 	"bytes"
+	"encoding/json"
+	"io"
 	"io/ioutil"
+	"net/http"
+	"time"
 )
 
-type H struct{
+type H struct {
 	endpoint string
 }
 

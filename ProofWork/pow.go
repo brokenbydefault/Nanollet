@@ -2,8 +2,8 @@ package ProofWork
 
 import (
 	"encoding/binary"
-	"runtime"
 	"golang.org/x/crypto/blake2b"
+	"runtime"
 )
 
 var MinimumWork = uint64(0xffffffc000000000)

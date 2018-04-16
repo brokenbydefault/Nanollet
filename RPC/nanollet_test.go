@@ -1,11 +1,11 @@
 package RPCClient
 
 import (
-	"testing"
-	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Block"
+	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
+	"github.com/brokenbydefault/Nanollet/Wallet"
+	"testing"
 )
 
 func TestGetAccountBalance(t *testing.T) {
@@ -201,7 +201,6 @@ func TestGetAccountPendingOverLimit(t *testing.T) {
 	}
 
 }
-
 
 func TestGetAccountPendingInvalid(t *testing.T) {
 

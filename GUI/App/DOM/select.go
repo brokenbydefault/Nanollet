@@ -1,9 +1,9 @@
 package DOM
 
 import (
-	"github.com/sciter-sdk/go-sciter/window"
-	"github.com/sciter-sdk/go-sciter"
 	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
+	"github.com/sciter-sdk/go-sciter"
+	"github.com/sciter-sdk/go-sciter/window"
 )
 
 type Page string

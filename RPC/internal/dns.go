@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"net"
 	"golang.org/x/net/context"
+	"net"
 )
 
 func DNSResolver(ip string) func(ctx context.Context, network, address string) (net.Conn, error) {

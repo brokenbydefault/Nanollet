@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"github.com/brokenbydefault/Nanollet/Config"
 	"github.com/brokenbydefault/Nanollet/GUI"
+	"github.com/brokenbydefault/Nanollet/GUI/Storage"
 	"github.com/brokenbydefault/Nanollet/RPC"
 	"runtime"
-	"github.com/brokenbydefault/Nanollet/Config"
-	"fmt"
-	"github.com/brokenbydefault/Nanollet/GUI/Storage"
 )
 
 //go:generate go run GUI/Generator/gen.go

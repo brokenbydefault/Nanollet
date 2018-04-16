@@ -12,7 +12,7 @@ import (
 
 type S struct {
 	endpoint string
-	wss net.Conn
+	wss      net.Conn
 }
 
 var Socket = NewSocket()

@@ -1,9 +1,9 @@
 package RPCClient
 
 import (
-	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/Wallet"
 )
 
 type SubscribeRequest struct {
@@ -20,11 +20,11 @@ type Subscription struct {
 }
 
 type CallbackResponse struct {
-	Hash Block.BlockHash
-	Origin Wallet.PublicKey
+	Hash        Block.BlockHash
+	Origin      Wallet.PublicKey
 	Destination Wallet.PublicKey
-	Amount *Numbers.RawAmount
-	Block []byte
+	Amount      *Numbers.RawAmount
+	Block       []byte
 
 	DefaultResponse
 }

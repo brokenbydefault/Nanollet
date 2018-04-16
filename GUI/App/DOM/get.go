@@ -1,12 +1,10 @@
 package DOM
 
 import (
-	"github.com/sciter-sdk/go-sciter/window"
 	"github.com/sciter-sdk/go-sciter"
+	"github.com/sciter-sdk/go-sciter/window"
 	"strings"
 )
-
-
 
 func (p *Page) GetStringValue(w *window.Window, css string) (result string, err error) {
 	input, err := p.SelectFirstElement(w, css)

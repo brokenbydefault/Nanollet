@@ -1,12 +1,12 @@
 package GUI
 
 import (
-	"github.com/sciter-sdk/go-sciter/window"
-	"github.com/sciter-sdk/go-sciter"
-	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/brokenbydefault/Nanollet/GUI/App"
-	"github.com/brokenbydefault/Nanollet/GUI/Storage"
 	"github.com/brokenbydefault/Nanollet/Config"
+	"github.com/brokenbydefault/Nanollet/GUI/App"
+	"github.com/brokenbydefault/Nanollet/GUI/Front"
+	"github.com/brokenbydefault/Nanollet/GUI/Storage"
+	"github.com/sciter-sdk/go-sciter"
+	"github.com/sciter-sdk/go-sciter/window"
 	"path/filepath"
 )
 

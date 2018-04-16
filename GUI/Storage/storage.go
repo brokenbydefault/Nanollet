@@ -1,8 +1,8 @@
 package Storage
 
 import (
-	"github.com/shibukawa/configdir"
 	"github.com/brokenbydefault/Nanollet/Config"
+	"github.com/shibukawa/configdir"
 )
 
 var Permanent *configdir.Config

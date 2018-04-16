@@ -1,10 +1,10 @@
 package Storage
 
 import (
-	"github.com/brokenbydefault/Nanollet/RPC"
-	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/brokenbydefault/Nanollet/Block"
 	"bytes"
+	"github.com/brokenbydefault/Nanollet/Block"
+	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/RPC"
 )
 
 var Amount *Numbers.RawAmount
@@ -47,6 +47,6 @@ func (h *HistoryStore) Add(blk Block.BlockTransaction, amount *Numbers.RawAmount
 	*h = append([]RPCClient.SingleHistory{hist}, *h...)
 }
 
-func (h *HistoryStore) Next(page uint32) () {
+func (h *HistoryStore) Next(page uint32) {
 	//@TODO pagination
 }

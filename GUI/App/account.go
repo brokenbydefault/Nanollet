@@ -1,14 +1,14 @@
 package App
 
 import (
-	"github.com/sciter-sdk/go-sciter/window"
-	"github.com/sciter-sdk/go-sciter"
-	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/GUI/Storage"
-	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
-	"github.com/brokenbydefault/Nanollet/GUI/Front"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
+	"github.com/brokenbydefault/Nanollet/GUI/Front"
+	"github.com/brokenbydefault/Nanollet/GUI/Storage"
+	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
+	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/sciter-sdk/go-sciter"
+	"github.com/sciter-sdk/go-sciter/window"
 	"strconv"
 )
 
