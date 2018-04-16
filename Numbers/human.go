@@ -1,9 +1,9 @@
 package Numbers
 
 import (
+	"errors"
 	"math/big"
 	"strings"
-	"errors"
 )
 
 type UnitBase int
@@ -20,10 +20,10 @@ const (
 	KiloXRB
 	MegaXRB
 	GigaXRB
-	RAW      UnitBase = 0
+	RAW UnitBase = 0
 )
 
-func NewHumanFromString(n string, base UnitBase) (*HumanAmount) {
+func NewHumanFromString(n string, base UnitBase) *HumanAmount {
 	values := make([]string, 2)
 
 	split := strings.Split(n, ".")
@@ -42,7 +42,7 @@ func NewHumanFromString(n string, base UnitBase) (*HumanAmount) {
 	return &r
 }
 
-func NewHumanFromRaw(n *RawAmount) (*HumanAmount) {
+func NewHumanFromRaw(n *RawAmount) *HumanAmount {
 	return NewHumanFromString(n.ToString(), 0)
 }
 

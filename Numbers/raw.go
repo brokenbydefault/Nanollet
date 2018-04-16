@@ -1,17 +1,19 @@
 package Numbers
 
 import (
-	"math/big"
+	"encoding/json"
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Util"
-	"encoding/json"
+	"math/big"
+	"fmt"
 )
 
 type RawAmount struct {
 	bigint *big.Int
 }
 
-var INT128_LIMIT = new(big.Int).SetBytes([]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
+var INT128_MAX = new(big.Int).SetBytes([]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
+var INT128_MIN = new(big.Int).SetInt64(0)
 
 // NewRawFromString creates an RawAmount from numeric string. It returns an error if
 // the string is invalid and nil successful.
@@ -40,11 +42,9 @@ func NewRawFromHex(h string) (*RawAmount, error) {
 // NewRawFromBytes creates an RawAmount from byte-array. It returns an non-nil error if
 // the string is invalid and nil successful.
 func NewRawFromBytes(b []byte) (*RawAmount, error) {
-	i := new(big.Int)
-	i.SetBytes(b)
+	i := new(big.Int).SetBytes(b)
 
 	r := &RawAmount{i}
-
 	if !r.IsValid() {
 		return nil, errors.New("invalid string")
 	}
@@ -66,10 +66,17 @@ func (a *RawAmount) ToHex() string {
 // ToBytes transforms the RawAmount to 16 byte, left zero-padded. It can be used in
 // block signature and in RPC.
 func (a *RawAmount) ToBytes() []byte {
-	b := make([]byte, 16)
-	ba := a.bigint.Bytes()
+	bi := a.bigint.Bytes()
 
-	copy(b[16-len(ba):], ba)
+	// If the value is larger than Uint128 we return,
+	// because it already have more than 16 bytes
+	// however it's a invalid value for the Nano.
+	if l := len(bi); l >= 16 {
+		return bi
+	}
+
+	b := make([]byte, 16)
+	copy(b[16-len(bi):], bi)
 
 	return b
 }

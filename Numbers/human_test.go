@@ -1,8 +1,8 @@
 package Numbers
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func TestHumanToRaw(t *testing.T) {
