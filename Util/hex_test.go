@@ -1,17 +1,16 @@
 package Util
 
 import (
-	"testing"
-	"crypto/rand"
 	"bytes"
+	"crypto/rand"
+	"testing"
 )
-
 
 func TestUnsafeHexEncode(t *testing.T) {
 
-	table := []struct{
+	table := []struct {
 		Message string
-		Result string
+		Result  string
 	}{
 		{"Testing the hex", "54657374696E672074686520686578"},
 		{"Testing the hex?", "54657374696E6720746865206865783F"},
@@ -28,9 +27,9 @@ func TestUnsafeHexEncode(t *testing.T) {
 
 func TestSecureHexEncode(t *testing.T) {
 
-	table := []struct{
+	table := []struct {
 		Message string
-		Result string
+		Result  string
 	}{
 		{"Testing the hex", "54657374696E672074686520686578"},
 		{"Testing the hex?", "54657374696E6720746865206865783F"},
@@ -57,11 +56,11 @@ func TestSecureHexEncode(t *testing.T) {
 
 func TestSecureHexDecode(t *testing.T) {
 
-	table := []struct{
+	table := []struct {
 		Message string
-		Result string
+		Result  string
 	}{
-		{ "54657374696E672074686520686578", "Testing the hex",},
+		{"54657374696E672074686520686578", "Testing the hex"},
 		{"54657374696E6720746865206865783F", "Testing the hex?"},
 		{"6E3F", "n?"},
 		{"6e3f", "n?"},
@@ -72,15 +71,12 @@ func TestSecureHexDecode(t *testing.T) {
 		r, ok := SecureHexDecode(v.Message)
 
 		if string(r) != v.Result {
-			t.Error( r, v.Result , ok)
+			t.Error(r, v.Result, ok)
 		}
 
-
 		if !ok {
-			t.Error(r, v.Result , ok)
+			t.Error(r, v.Result, ok)
 		}
 	}
 
 }
-
-

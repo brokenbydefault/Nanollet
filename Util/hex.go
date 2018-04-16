@@ -1,9 +1,9 @@
 package Util
 
 import (
+	"crypto/subtle"
 	"encoding/hex"
 	"strings"
-	"crypto/subtle"
 )
 
 // UnsafeBase32Encode encodes an byte in non-constant time. It's results
@@ -36,7 +36,7 @@ func SecureHexEncode(b []byte) string {
 		// if(byte > 9) { b += 7 }
 		b1 += ((9 - p1) >> 8) & 7
 		b2 += ((9 - p2) >> 8) & 7
-		
+
 		subtle.ConstantTimeCopy(1, r[i*2:(i*2)+2], []byte{byte(b1), byte(b2)})
 	}
 

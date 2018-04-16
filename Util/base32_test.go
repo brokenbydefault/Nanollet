@@ -4,12 +4,11 @@ import (
 	"testing"
 )
 
-
 func TestUnsafeBase32Encode(t *testing.T) {
 
-	table := []struct{
+	table := []struct {
 		Message string
-		Result string
+		Result  string
 	}{
 		{"Testing the base32", "cjkq8x5bfsmk1x5aeni86rdmensm6"},
 	}
