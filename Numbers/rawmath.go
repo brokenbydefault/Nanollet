@@ -34,5 +34,5 @@ func (a *RawAmount) Compare(b *RawAmount) int {
 
 // IsValid returns true if the value is between 0 to 1<<128-1
 func (a *RawAmount) IsValid() bool {
-	return a.bigint.Cmp(INT128_MIN) >= 0 && a.bigint.Cmp(INT128_MAX) <= 0
+	return a.bigint.Cmp(min) >= 0 && a.bigint.Cmp(max) <= 0
 }

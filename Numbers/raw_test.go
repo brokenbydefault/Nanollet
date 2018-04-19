@@ -11,7 +11,7 @@ func TestNewRawFromString(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	x, err  := NewRawFromString("340282366920938463463374607431768211455")
+	x, err := NewRawFromString("340282366920938463463374607431768211455")
 	if err != nil {
 		panic(err)
 	}
@@ -23,11 +23,11 @@ func TestNewRawFromString(t *testing.T) {
 
 func TestRawAmount_IsValid(t *testing.T) {
 
-	if _, err := NewRawFromString("-1"); err == nil  {
+	if _, err := NewRawFromString("-1"); err == nil {
 		t.Error("is valid a invalid amount")
 	}
 
-	if _, err := NewRawFromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"); err == nil  {
+	if _, err := NewRawFromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"); err == nil {
 		t.Error("is valid a invalid amount")
 	}
 

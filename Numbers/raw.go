@@ -5,15 +5,18 @@ import (
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"math/big"
-	"fmt"
 )
 
 type RawAmount struct {
 	bigint *big.Int
 }
 
-var INT128_MAX = new(big.Int).SetBytes([]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
-var INT128_MIN = new(big.Int).SetInt64(0)
+var max = new(big.Int).SetBytes([]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
+var min = new(big.Int).SetInt64(0)
+
+func NewRaw() *RawAmount {
+	return &RawAmount{new(big.Int).SetInt64(0)}
+}
 
 // NewRawFromString creates an RawAmount from numeric string. It returns an error if
 // the string is invalid and nil successful.
