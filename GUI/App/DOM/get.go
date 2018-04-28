@@ -1,9 +1,10 @@
+// +build !js
+
 package DOM
 
 import (
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
-	"strings"
 )
 
 func (p *Page) GetStringValue(w *window.Window, css string) (result string, err error) {
@@ -30,5 +31,5 @@ func getValue(el *sciter.Element) (result string, err error) {
 		return
 	}
 
-	return strings.TrimSpace(value.String()), nil
+	return value.String(), nil
 }

@@ -1,3 +1,5 @@
+// +build !js
+
 package App
 
 import (
@@ -74,9 +76,9 @@ func StartApplication(w *window.Window, app guitypes.Application) {
 			btnClass, _ := btn.Attr("class")
 			btn.OnClick(func() {
 				go func() {
+					defer sector.ApplyForAll(w, `button, input[type="submit"]`, DOM.EnableElement)
 					sector.ApplyForAll(w, `button, input[type="submit"]`, DOM.DisableElement)
 					page.OnContinue(w, btnClass)
-					sector.ApplyForAll(w, `button, input[type="submit"]`, DOM.EnableElement)
 				}()
 			})
 		}

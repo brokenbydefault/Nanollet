@@ -302,6 +302,13 @@ section.dynamic {
       font-size: 10pt !important;
       padding: 0;
       margin: 0;
+
+      &.checkbox {
+        display: block;
+        width: 300px;
+        line-height: 40px;
+        margin: -5px auto 20px -5px;
+      }
     }
 
     .box {
@@ -385,7 +392,7 @@ section.dynamic {
 
     }
 
-    input, textarea, dropzone, select {
+    input, textarea, dropzone, select, img {
       background: @color-gray-light;
       color: @color-font-secondary;
       margin: 5px auto 20px auto;
@@ -396,6 +403,10 @@ section.dynamic {
       word-wrap: break-word;
       border: 0;
       text-decoration: none;
+    }
+
+    img {
+      width: 300px;
     }
 
     input, textarea, button, dropzone {
@@ -410,6 +421,21 @@ section.dynamic {
         color: @color-font-secondary;
         background: @color-gray-light;
         cursor: not-allowed;
+      }
+
+      &[type="checkbox"] {
+        float: left;
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+
+        &:checked {
+          background: @color-tertiary;
+          width: 20px;
+          height: 20px;
+          overflow: hidden;
+          box-shadow: inset 0px 0px 0px 7px @color-gray-light;
+        }
       }
 
       &[type="password"], &[type="submit"] {

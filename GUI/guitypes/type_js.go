@@ -1,15 +1,15 @@
-// +build !js
+// +build js
 
 package guitypes
 
 import (
 	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/sciter-sdk/go-sciter/window"
+	"honnef.co/go/js/dom"
 )
 
 type Page interface {
-	OnContinue(w *window.Window, action string)
-	OnView(w *window.Window)
+	OnContinue(w dom.Document, action string)
+	OnView(w dom.Document)
 	Name() string
 }
 

@@ -15,7 +15,7 @@
     <section page="generate">
         <div class="middle">
 
-            <label for="seed">COPY YOUR SEEDFY</label>
+            <label>COPY YOUR SEEDFY</label>
             <textarea class="seed" rows="3" spellcheck="false"></textarea>
 
             <input class="continue" type="submit" value="CONTINUE">
@@ -26,7 +26,7 @@
     <section page="import">
         <div class="middle">
 
-            <label for="seed">ENTER YOUR SEEDFY</label>
+            <label>ENTER YOUR SEEDFY</label>
             <textarea class="seed" rows="3" spellcheck="false"></textarea>
 
             <input class="continue" type="submit" value="CONTINUE">
@@ -37,10 +37,24 @@
     <section page="password">
         <div class="middle">
 
-            <label for="pass">PASSWORD</label>
+            <label>PASSWORD</label>
             <input class="password" type="password">
 
+            <label>2FA</label>
+            <label class="checkbox"><input class="ask2fa" type="checkbox" value="true">Ask for two factor authentication</label>
+
             <input class="continue" type="submit" value="CONTINUE">
+
+        </div>
+    </section>
+
+    <section page="mfa">
+        <div class="middle">
+
+            <label>SCAN WITH YOUR NANOLLET 2FA</label>
+            <img src="">
+
+            <input class="continue" type="submit" disabled value="CONTINUE">
 
         </div>
     </section>
@@ -48,7 +62,7 @@
     <section page="address">
         <div class="middle">
 
-            <label for="seed">CHOOSE YOUR ADDRESS</label>
+            <label>CHOOSE YOUR ADDRESS</label>
             <div>
                 <button class="next"><icon class="icon-next" /></button>
                 <button class="previous"><icon class="icon-previous" /></button>
