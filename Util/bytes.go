@@ -10,3 +10,21 @@ func ReverseBytes(b []byte) []byte {
 
 	return b
 }
+
+func ConcatBytes(slice ...[]byte) []byte {
+	var l int
+
+	for _, b := range slice {
+		l += len(b)
+	}
+
+	tmp := make([]byte, l)
+
+	var i int
+	for _, b := range slice {
+		i += copy(tmp[i:], b)
+	}
+
+	return tmp
+
+}
