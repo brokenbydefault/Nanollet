@@ -1,14 +1,17 @@
 package Block
 
 import (
-	"github.com/brokenbydefault/Nanollet/Util"
 	"encoding/json"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 type BlockHash []byte
 
+var universalblockflag = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06}
+
 func (s *SendBlock) Hash() BlockHash {
-	return Util.CreateHash(32, s.Previous, s.Destination, s.Balance.ToBytes())
+	destination, _ := s.Destination.GetPublicKey()
+	return Util.CreateHash(32, s.Previous, destination, s.Balance.ToBytes())
 }
 
 func (s *ReceiveBlock) Hash() BlockHash {
@@ -16,32 +19,27 @@ func (s *ReceiveBlock) Hash() BlockHash {
 }
 
 func (s *OpenBlock) Hash() BlockHash {
-	return Util.CreateHash(32, s.Source, s.Representative, s.Account)
+	account, _ := s.Account.GetPublicKey()
+	representative, _ := s.Representative.GetPublicKey()
+	return Util.CreateHash(32, s.Source, representative, account)
 }
 
 func (s *ChangeBlock) Hash() BlockHash {
-	return Util.CreateHash(32, s.Previous, s.Representative)
+	representative, _ := s.Representative.GetPublicKey()
+	return Util.CreateHash(32, s.Previous, representative)
 }
 
-// It can change in the future, consider "Destination" as "Target".
 func (u *UniversalBlock) Hash() BlockHash {
-	return Util.CreateHash(32, u.Previous, u.Link, u.Representative, u.Balance.ToBytes(), u.Account)
-}
+	var link [32]byte
+	copy(link[:], u.Link)
 
-func (u *UniversalBlock) HashAsSend() BlockHash {
-	return Util.CreateHash(32, u.Previous, u.Destination, u.Balance.ToBytes())
-}
+	var previous [32]byte
+	copy(previous[:], u.Previous)
 
-func (u *UniversalBlock) HashAsReceive() BlockHash {
-	return Util.CreateHash(32, u.Previous, u.Source)
-}
+	account, _ := u.Account.GetPublicKey()
+	representative, _ := u.Representative.GetPublicKey()
 
-func (u *UniversalBlock) HashAsOpen() BlockHash {
-	return Util.CreateHash(32, u.Source, u.Representative, u.Account)
-}
-
-func (u *UniversalBlock) HashAsChange() BlockHash {
-	return Util.CreateHash(32, u.Previous, u.Representative)
+	return Util.CreateHash(32, universalblockflag, account, previous[:], representative, u.Balance.ToBytes(), link[:])
 }
 
 func (d *BlockHash) UnmarshalJSON(data []byte) (err error) {

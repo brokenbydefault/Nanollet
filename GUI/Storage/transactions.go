@@ -39,7 +39,7 @@ func (h *HistoryStore) AlreadyReceived(hash Block.BlockHash) bool {
 
 func (h *HistoryStore) Add(blk Block.BlockTransaction, amount *Numbers.RawAmount) {
 	hist := RPCClient.SingleHistory{}
-	hist.Type = blk.GetType()
+	hist.Type = blk.GetSubType()
 	hist.Amount = amount
 	hist.Destination, hist.Source = blk.GetTarget()
 	hist.Hash = blk.Hash()

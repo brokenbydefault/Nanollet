@@ -1,18 +1,39 @@
 package Storage
 
 import (
+	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/ProofWork"
+	"github.com/brokenbydefault/Nanollet/Wallet"
 )
 
-type FrontierStore []byte
-type PoWStore []byte
+var Representative Wallet.Address
 
-var Frontier []byte
-var PrecomputedPoW []byte
+var Frontier Block.BlockHash
+var LastBlock Block.UniversalBlock
 
-func UpdateFrontier(hash []byte) {
-	Frontier = hash
-	if !ProofWork.IsValidProof(Frontier, PrecomputedPoW) {
-		PrecomputedPoW = ProofWork.GenerateProof(Frontier)
+func UpdateFrontier(blk Block.BlockTransaction) {
+	LastBlock = *blk.SwitchToUniversalBlock()
+	Frontier = LastBlock.SwitchTo(blk.GetSubType()).Hash()
+}
+
+var precomputedPoW = make(chan []byte, 1)
+var lastPoW ProofWork.Work
+
+func UpdatePoW() {
+	hash := Frontier
+	if Frontier == nil {
+		hash = Block.BlockHash(PK)
 	}
+
+	if lastPoW.IsValid(Frontier) {
+		precomputedPoW <- lastPoW
+		return
+	}
+
+	precomputedPoW <- ProofWork.GenerateProof(hash)
+}
+
+func RetrievePrecomputedPoW() []byte {
+	lastPoW = <-precomputedPoW
+	return lastPoW
 }

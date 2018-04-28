@@ -1,19 +1,21 @@
+// +build !js
+
 package App
 
 import (
-	"github.com/sciter-sdk/go-sciter/window"
-	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
-	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
-	"os"
 	"github.com/brokenbydefault/Nanofy"
+	"github.com/brokenbydefault/Nanollet/Block"
+	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
+	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
+	"github.com/brokenbydefault/Nanollet/GUI/Front"
 	"github.com/brokenbydefault/Nanollet/GUI/Storage"
+	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
 	"github.com/brokenbydefault/Nanollet/RPC"
 	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
-	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/sciter-sdk/go-sciter"
+	"github.com/sciter-sdk/go-sciter/window"
+	"os"
 )
 
 type NanofyApp guitypes.App
@@ -61,18 +63,13 @@ func (c *PageSign) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	blks, err := Nanofy.NV0.CreateFileBlocks(file, &Storage.SK, Storage.Amount, Storage.Frontier)
+	blks, err := Nanofy.NewNanofierVersion1().CreateBlock(file, Storage.SK, Storage.Representative, Storage.Amount, &Storage.LastBlock)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem creating a block")
 		return
 	}
 
-	tx := make([]Block.BlockTransaction, 2)
-	for i, blk := range blks {
-		tx[i] = blk
-	}
-
-	err = Background.PublishBlocksToQueue(tx, Nanofy.NV0.Value())
+	err = Background.PublishBlocksToQueue(blks, )
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem sending a block")
 		return
@@ -100,13 +97,15 @@ func (c *PageVerify) OnView(w *window.Window) {
 func (c *PageVerify) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
+	addr, _ := page.GetStringValue(w, ".address")
 	filepath, err := page.GetStringValue(w, ".filepath")
-	if filepath == "" || err != nil {
+	if addr == "" || filepath == "" || err != nil {
 		return
 	}
 
-	addr, _ := page.GetStringValue(w, ".address")
-	if !Wallet.Address(addr).IsValid() {
+	pk, err := Wallet.Address(addr).GetPublicKey()
+	if !Wallet.Address(addr).IsValid() || err != nil {
+		DOM.UpdateNotification(w, "The given address is invalid")
 		return
 	}
 
@@ -116,42 +115,50 @@ func (c *PageVerify) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	statfile, err  := file.Stat()
+	statfile, err := file.Stat()
 	if statfile.IsDir() || err != nil {
 		DOM.UpdateNotification(w, "There was a problem opening the file")
 		return
 	}
 
-	filehash, err := Nanofy.CreateFileHash(file)
+	filehash, err := Nanofy.CreateHash(file)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem hashing the file")
 		return
 	}
 
-	pk, _ := Wallet.Address(addr).GetPublicKey()
-	blks, err := RPCClient.GetBlockByFile(Connectivity.Socket, filehash, pk)
-	if err != nil || blks.Error != "" {
+	retriveblk, err := RPCClient.GetBlockByFile(Connectivity.Socket, filehash, pk)
+	if err != nil || retriveblk.Error != "" {
 		DOM.UpdateNotification(w, "There was a problem retrieving the information")
 		return
 	}
 
-	if !blks.Exist {
+	if !retriveblk.Exist {
 		DOM.UpdateNotification(w, "Wrong! This address never had signed this file")
 		return
 	}
 
-	flagblk, errb1 := RPCClient.GetBlockByHash(Connectivity.Socket, blks.FlagHash)
-	sigblk, errb2 := RPCClient.GetBlockByHash(Connectivity.Socket, blks.SigHash)
+	var blks = make([]Block.UniversalBlock, 3)
+	var previous = retriveblk.FlagHash
+	for i := range blks {
+		blks[i], err = RPCClient.GetBlockByHash(Connectivity.Socket, previous)
+		if err != nil {
+			DOM.UpdateNotification(w, "There was a problem retrieving the information"+err.Error())
+			return
+		}
 
-	if errb1 != nil || errb2 != nil {
-		DOM.UpdateNotification(w, "There was a problem retrieving the information")
+		previous = blks[i].Previous
+	}
+
+	nanofier, err := Nanofy.NewNanofierFromFlagBlock(&blks[0])
+	if err != nil {
+		DOM.UpdateNotification(w, "Nanofy version not supported")
 		return
 	}
 
-
-	if Nanofy.VerifySignature(&pk, filehash, flagblk, sigblk) {
+	if nanofier.VerifySignature(&pk, &blks[0], &blks[1], &blks[2], filehash) {
 		DOM.UpdateNotification(w, "Correct! This address signs this given file")
-	}else{
+	} else {
 		DOM.UpdateNotification(w, "Wrong! This address never had signed this file")
 	}
 

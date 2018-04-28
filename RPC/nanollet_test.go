@@ -156,7 +156,7 @@ func TestGetMultiAccountsPendingOverLimit(t *testing.T) {
 	amm, err := Numbers.NewRawFromString("0")
 
 	_, err = GetMultiAccountsPending(Connectivity.Socket, 100, amm, addr, addr2)
-	if err == nil {
+	if err != nil {
 		t.Error(err)
 		return
 	}
@@ -231,7 +231,7 @@ func TestSendBlock(t *testing.T) {
 	}
 
 	block := &Block.ChangeBlock{}
-	block.Representative, _ = addr.GetPublicKey()
+	block.Representative = addr
 	block.Type = "change"
 	block.Previous = info.Frontier
 	block.Signature, _ = sk.CreateSignature(block.Hash())
@@ -270,7 +270,7 @@ func TestSendBlock2(t *testing.T) {
 		block.Previous = info.Frontier
 		block.Source = v.Hash
 		block.Signature, _ = sk.CreateSignature(block.Hash())
-		block.Work = block.CreateProof()
+		block.PoW = block.Work()
 
 		_, err := BroadcastBlock(Connectivity.Socket, block)
 		if err != nil {

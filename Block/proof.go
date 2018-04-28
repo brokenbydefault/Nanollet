@@ -1,37 +1,56 @@
 package Block
 
 import (
+	"bytes"
 	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
-func (s *SendBlock) CreateProof() []byte {
-	if ProofWork.IsValidProof(s.Previous, s.Work) {
-		return s.Work
+func (s *SendBlock) Work() ProofWork.Work {
+	if !s.PoW.IsValid(s.Previous) {
+		s.PoW = ProofWork.GenerateProof(s.Previous)
 	}
-	s.Work = ProofWork.GenerateProof(s.Previous)
-	return s.Work
+
+	return s.PoW
 }
 
-func (s *ReceiveBlock) CreateProof() []byte {
-	if ProofWork.IsValidProof(s.Previous, s.Work) {
-		return s.Work
+func (s *ReceiveBlock) Work() ProofWork.Work {
+	if !s.PoW.IsValid(s.Previous) {
+		s.PoW = ProofWork.GenerateProof(s.Previous)
 	}
-	s.Work = ProofWork.GenerateProof(s.Previous)
-	return s.Work
+
+	return s.PoW
 }
 
-func (s *OpenBlock) CreateProof() []byte {
-	if ProofWork.IsValidProof(s.Account, s.Work) {
-		return s.Work
+func (s *OpenBlock) Work() ProofWork.Work {
+	var previous, _ = s.Account.GetPublicKey()
+
+	if !s.PoW.IsValid(previous) {
+		s.PoW = ProofWork.GenerateProof(previous)
 	}
-	s.Work = ProofWork.GenerateProof(s.Account)
-	return s.Work
+
+	return s.PoW
 }
 
-func (s *ChangeBlock) CreateProof() []byte {
-	if ProofWork.IsValidProof(s.Previous, s.Work) {
-		return s.Work
+func (s *ChangeBlock) Work() ProofWork.Work {
+	if !s.PoW.IsValid(s.Previous) {
+		s.PoW = ProofWork.GenerateProof(s.Previous)
 	}
-	s.Work = ProofWork.GenerateProof(s.Previous)
-	return s.Work
+
+	return s.PoW
+}
+
+func (u *UniversalBlock) Work() ProofWork.Work {
+	var previous []byte
+
+	if u.Previous == nil || bytes.Equal(u.Previous, make([]byte, 32)) || u.SubType == "open" {
+		previous = BlockHash(u.Account)
+	}else{
+		previous = u.Previous
+	}
+
+	if !u.PoW.IsValid(previous) {
+		u.PoW = ProofWork.GenerateProof(previous)
+	}
+
+	return u.PoW
 }

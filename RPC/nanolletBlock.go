@@ -48,7 +48,7 @@ type AccountInformation struct {
 	Frontier            Block.BlockHash    `json:"frontier"`
 	OpenBlock           Block.BlockHash    `json:"open_block"`
 	RepresentativeBlock Block.BlockHash    `json:"representative_block"`
-	Representative      Wallet.Address   `json:"representative"`
+	Representative      Wallet.Address     `json:"representative"`
 	Balance             *Numbers.RawAmount `json:"balance"`
 	BlockCount          uint64             `json:"block_count,string"`
 	Pending             *Numbers.RawAmount `json:"pending,omitempty"`
@@ -66,8 +66,8 @@ type AccountHistoryRequest struct {
 
 type SingleHistory struct {
 	Hash           Block.BlockHash    `json:"hash"`
-	Type           string             `json:"type"`
-	SubType        string             `json:"subtype,omitempty"`
+	Type           Block.BlockType    `json:"type"`
+	SubType        Block.BlockType    `json:"subtype,omitempty"`
 	Link           Block.BlockHash    `json:"link"`
 	Representative Wallet.PublicKey   `json:"representative"`
 	Source         Block.BlockHash    `json:"source,omitempty"`

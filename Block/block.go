@@ -1,16 +1,20 @@
 package Block
 
 import (
-	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
 type BlockTransaction interface {
 	Serialize() ([]byte, error)
-	CreateProof() []byte
+	SwitchToUniversalBlock() *UniversalBlock
+
+	Work() ProofWork.Work
 	Hash() BlockHash
 
-	GetType() string
+	GetType() BlockType
+	GetSubType() BlockType
 	GetTarget() (destination Wallet.Address, source BlockHash)
 
 	SetWork([]byte)
@@ -22,107 +26,58 @@ type BlockTransaction interface {
 //--------------
 
 type DefaultBlock struct {
-	Type      string `json:"type"`
-	Work      []byte `json:"work"`
-	Signature []byte `json:"signature"`
-}
-
-type SerializedDefaultBlock struct {
-	Type      string `json:"type"`
-	Work      string `json:"work"`
-	Signature string `json:"signature"`
+	Type      BlockType        `json:"type"`
+	SubType   BlockType        `json:"subtype,omitempty"`
+	PoW       ProofWork.Work   `json:"work"`
+	Signature Wallet.Signature `json:"signature"`
 }
 
 //--------------
 
 type SendBlock struct {
-	Previous    []byte
-	Destination Wallet.PublicKey
-	Balance     *Numbers.RawAmount
 	DefaultBlock
-}
-
-type SerializedSendBlock struct {
-	Previous    string `json:"previous"`
-	Destination string `json:"destination"`
-	Balance     string `json:"balance"`
-	SerializedDefaultBlock
+	Previous    BlockHash          `json:"previous"`
+	Destination Wallet.Address     `json:"destination"`
+	Balance     *Numbers.RawAmount `json:"balance"`
 }
 
 //--------------
 
 type ReceiveBlock struct {
-	Previous []byte
-	Source   []byte
 	DefaultBlock
-}
-
-type SerializedReceiveBlock struct {
-	Previous string `json:"previous"`
-	Source   string `json:"source"`
-	SerializedDefaultBlock
+	Previous BlockHash `json:"previous"`
+	Source   BlockHash `json:"source"`
 }
 
 //--------------
 
 type OpenBlock struct {
-	Source         []byte
-	Representative Wallet.PublicKey
-	Account        Wallet.PublicKey
 	DefaultBlock
-}
-
-type SerializedOpenBlock struct {
-	Source         string `json:"source"`
-	Representative string `json:"representative"`
-	Account        string `json:"account"`
-	SerializedDefaultBlock
+	Account        Wallet.Address `json:"account"`
+	Representative Wallet.Address `json:"representative"`
+	Source         BlockHash      `json:"source"`
 }
 
 //--------------
 
 type ChangeBlock struct {
-	Previous       []byte
-	Representative Wallet.PublicKey
 	DefaultBlock
-}
-
-type SerializedChangeBlock struct {
-	Previous       string `json:"previous"`
-	Representative string `json:"representative"`
-	SerializedDefaultBlock
+	Previous       BlockHash      `json:"previous"`
+	Representative Wallet.Address `json:"representative"`
 }
 
 //--------------
 
-type SerializedUniversalBlock struct {
-	Account        string `json:"account"`
-	Previous       string `json:"previous"`
-	Representative string `json:"representative"`
-	Balance        string `json:"balance"`
-	Amount         string `json:"amount"`
-
-	Link           string `json:"target"`
-	LinkAccount	   string `json:"link_as_account"`
-
-	Destination string `json:"destination"`
-	Source      string `json:"source"`
-
-	SerializedDefaultBlock
-}
-
 type UniversalBlock struct {
-	Account        Wallet.PublicKey
-	Previous       []byte
-	Representative Wallet.PublicKey
-	Balance        *Numbers.RawAmount
-	Amount         *Numbers.RawAmount
-
-	Link           []byte
-	LinkAccount   Wallet.Address `json:"link_as_account"`
-
-	Destination Wallet.PublicKey
-	Source      []byte
-
 	DefaultBlock
+	Account        Wallet.Address     `json:"account"`
+	Previous       BlockHash          `json:"previous"`
+	Representative Wallet.Address     `json:"representative"`
+	Balance        *Numbers.RawAmount `json:"balance"`
+	Link           BlockHash          `json:"link"`
+
+	LinkAccount Wallet.Address     `json:"link_as_account,omitempty"`
+	Amount      *Numbers.RawAmount `json:"amount,omitempty"`
+	Destination Wallet.Address     `json:"destination,omitempty"`
+	Source      BlockHash          `json:"source,omitempty"`
 }

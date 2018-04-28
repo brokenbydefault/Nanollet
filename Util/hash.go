@@ -6,19 +6,10 @@ import (
 
 // CreateHash returns the Blake2b hash of message with specified size.
 func CreateHash(size int, messagebyte ...[]byte) []byte {
-	hash, err := blake2b.New(size, nil)
-	if err != nil {
-		panic("hashing failed")
-	}
-
-	for _, mb := range messagebyte {
-		hash.Write(mb)
-	}
-
-	return hash.Sum(nil)
+	return CreateKeyedHash(size, nil, messagebyte...)
 }
 
-// CreateHash returns the Blake2b hash of message with specified size.
+// CreateHash returns the Blake2b hash of message with specified size using a secret-key.
 func CreateKeyedHash(size int, key []byte, messagebyte ...[]byte) []byte {
 	hash, err := blake2b.New(size, key)
 	if err != nil {
@@ -44,7 +35,11 @@ func CreateKeyedXOFHash(size uint32, key []byte, messagebyte ...[]byte) []byte {
 	}
 
 	r := make([]byte, size)
-	hash.Read(r)
+
+	_, err = hash.Read(r)
+	if err != nil {
+		panic("hashing failed")
+	}
 
 	return r
 }

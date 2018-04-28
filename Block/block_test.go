@@ -1,12 +1,10 @@
 package Block
 
 import (
-	"testing"
-	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-
-
+	"testing"
 )
 
 func TestSendBlock_Hash(t *testing.T) {
@@ -15,6 +13,5 @@ func TestSendBlock_Hash(t *testing.T) {
 	sb.Balance, _ = Numbers.NewRawFromString("3000000000000000000000000")
 	sb.Destination, _ = Wallet.Address("xrb_3yxxyyrdeapnxe1dyx1fha759syhxou4risfkzibe8bfdjj3663d7ppy1enb").GetPublicKey()
 	sb.Work, _ = Util.UnsafeHexDecode("d000000000070080")
-
 
 }

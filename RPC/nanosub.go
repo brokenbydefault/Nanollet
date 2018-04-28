@@ -20,11 +20,10 @@ func Subscribe(c rpctypes.Connection, pk Wallet.PublicKey) (err error) {
 	err = c.SendRequestJSON(&req, &resp)
 
 	if subtle.ConstantTimeCompare(resp.PublicKey, pk) == 0 {
-		err = errors.New("not subscribed")
-		return
+		return errors.New("not subscribed")
 	}
 
-	return
+	return err
 }
 
 func Unsubscribe(c rpctypes.Connection) (err error) {
@@ -42,5 +41,5 @@ func Unsubscribe(c rpctypes.Connection) (err error) {
 		return errors.New("still subscribed")
 	}
 
-	return
+	return err
 }

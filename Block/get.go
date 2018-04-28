@@ -5,6 +5,25 @@ import (
 	"github.com/brokenbydefault/Nanollet/Wallet"
 )
 
+func (d *DefaultBlock) SetWork(w []byte) {
+	d.PoW = w
+}
+
+func (d *DefaultBlock) SetSignature(s []byte) {
+	d.Signature = s
+}
+
+func (d *DefaultBlock) GetType() BlockType {
+	return d.Type
+}
+
+func (d *DefaultBlock) GetSubType() BlockType {
+	if d.SubType == "" {
+		return d.Type
+	}
+	return d.SubType
+}
+
 func (s *SendBlock) SetFrontier(h BlockHash) {
 	s.Previous = h
 }
@@ -14,10 +33,18 @@ func (s *ReceiveBlock) SetFrontier(h BlockHash) {
 }
 
 func (s *OpenBlock) SetFrontier(h BlockHash) {
+	s.Source = h
 }
 
 func (s *ChangeBlock) SetFrontier(h BlockHash) {
 	s.Previous = h
+}
+
+func (u *UniversalBlock) SetFrontier(h BlockHash) {
+	var hash [32]byte
+	copy(hash[:], h)
+
+	u.Previous = hash[:]
 }
 
 func (s *SendBlock) SetBalance(n *Numbers.RawAmount) {
@@ -36,20 +63,12 @@ func (s *ChangeBlock) SetBalance(n *Numbers.RawAmount) {
 	// no-op
 }
 
-func (d *DefaultBlock) SetWork(w []byte) {
-	d.Work = w
-}
-
-func (d *DefaultBlock) SetSignature(s []byte) {
-	d.Signature = s
-}
-
-func (d *DefaultBlock) GetType() string {
-	return d.Type
+func (u *UniversalBlock) SetBalance(n *Numbers.RawAmount) {
+	u.Balance = n
 }
 
 func (s *SendBlock) GetTarget() (Wallet.Address, BlockHash) {
-	return s.Destination.CreateAddress(), nil
+	return s.Destination, nil
 }
 
 func (s *ReceiveBlock) GetTarget() (Wallet.Address, BlockHash) {
@@ -63,4 +82,26 @@ func (s *OpenBlock) GetTarget() (Wallet.Address, BlockHash) {
 func (s *ChangeBlock) GetTarget() (Wallet.Address, BlockHash) {
 	// no-op
 	return "", nil
+}
+
+func (u *UniversalBlock) GetTarget() (destination Wallet.Address, source BlockHash) {
+
+	switch u.GetSubType() {
+	case Send:
+		if u.Link == nil {
+			destination = u.Destination
+		} else {
+			destination = Wallet.PublicKey(u.Link).CreateAddress()
+		}
+	case Receive:
+		fallthrough // Same of Open
+	case Open:
+		if u.Link == nil {
+			source = u.Source
+		} else {
+			source = u.Link
+		}
+	}
+
+	return
 }

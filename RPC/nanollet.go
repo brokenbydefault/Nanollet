@@ -203,7 +203,7 @@ func BroadcastBlock(c rpctypes.Connection, block Block.BlockTransaction) (resp P
 		return resp, errors.New("invalid block")
 	}
 
-	block.CreateProof()
+	block.Work()
 
 	blk, err := block.Serialize()
 	if err != nil {

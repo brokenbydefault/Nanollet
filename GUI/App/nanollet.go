@@ -1,17 +1,19 @@
+// +build !js
+
 package App
 
 import (
-	"github.com/sciter-sdk/go-sciter/window"
-	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
+	"github.com/brokenbydefault/Nanollet/Block"
+	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
-	"github.com/sciter-sdk/go-sciter"
+	"github.com/brokenbydefault/Nanollet/GUI/Front"
 	"github.com/brokenbydefault/Nanollet/GUI/Storage"
+	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Util"
-	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
+	"github.com/sciter-sdk/go-sciter"
+	"github.com/sciter-sdk/go-sciter/window"
 	"strings"
 )
 
@@ -90,7 +92,7 @@ func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	blk, err := Block.CreateSignedSendBlock(&Storage.SK, amm, Storage.Amount, Storage.Frontier, &address)
+	blk, err := Block.CreateSignedUniversalSendBlock(Storage.SK, Storage.Representative, Storage.Amount, amm, Storage.Frontier, address)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem creating a block")
 		return
@@ -153,7 +155,7 @@ func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	blk, err := Block.CreateSignedChangeBlock(&Storage.SK, Storage.Frontier, &address)
+	blk, err := Block.CreateSignedUniversalChangeBlock(Storage.SK, address, Storage.Amount, Storage.Frontier)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem creating a block")
 		return
@@ -170,7 +172,6 @@ func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
 	page.ApplyForIt(w, ".address", DOM.ClearValue)
 }
 
-
 type PageList guitypes.Sector
 
 func (c *PageList) Name() string {
@@ -181,7 +182,7 @@ func (c *PageList) OnView(w *window.Window) {
 	page := DOM.SetSector(c)
 
 	balance, _ := Numbers.NewHumanFromRaw(Storage.Amount).ConvertToBase(Numbers.MegaXRB, int(Numbers.MegaXRB))
-	display, _:= page.SelectFirstElement(w, ".fullamount")
+	display, _ := page.SelectFirstElement(w, ".fullamount")
 	display.SetValue(sciter.NewValue(balance))
 
 	if len(Storage.History) == 0 {
@@ -206,7 +207,7 @@ func (c *PageList) OnView(w *window.Window) {
 
 		txdiv := DOM.CreateElementAppendTo("div", "", "item", "", txbox)
 
-		DOM.CreateElementAppendTo("div", strings.ToUpper(blktype), "type", "", txdiv)
+		DOM.CreateElementAppendTo("div", strings.ToUpper(string(blktype)), "type", "", txdiv)
 		DOM.CreateElementAppendTo("div", amm, "amount", "", txdiv)
 
 		if i == 4 {

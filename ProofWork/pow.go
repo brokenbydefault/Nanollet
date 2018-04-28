@@ -4,7 +4,11 @@ import (
 	"encoding/binary"
 	"golang.org/x/crypto/blake2b"
 	"runtime"
+	"encoding/json"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
+
+type Work []byte
 
 var MinimumWork = uint64(0xffffffc000000000)
 
@@ -16,7 +20,7 @@ var MinimumWork = uint64(0xffffffc000000000)
 // Now you need to use this value as one UINT64 and compare against the minimum work:
 // LitleEndian(Blake2(...)) > MinimumWork
 // If it's correct then you have in hand one correct nonce/pow, you need to reverse it so use the BigEndian.
-func GenerateProof(blockHash []byte) []byte {
+func GenerateProof(blockHash []byte) Work {
 	limit := uint64(runtime.NumCPU())
 	shard := uint64(1<<64-1) / limit
 
@@ -35,12 +39,12 @@ func GenerateProof(blockHash []byte) []byte {
 	n := make([]byte, 8)
 	binary.BigEndian.PutUint64(n, nonce)
 
-	return n
+	return Work(n)
 }
 
-func IsValidProof(blockHash []byte, proof []byte) bool {
+func (w Work) IsValid(blockHash []byte) bool {
 	n := make([]byte, 8)
-	copy(n, proof)
+	copy(n, w)
 
 	binary.LittleEndian.PutUint64(n, binary.BigEndian.Uint64(n))
 
@@ -80,4 +84,24 @@ func clear(r chan uint64) {
 	for len(r) > 0 {
 		<-r
 	}
+}
+
+func (d *Work) MarshalJSON() ([]byte, error) {
+	return json.Marshal(Util.UnsafeHexEncode(*d))
+}
+
+func (d *Work) UnmarshalJSON(data []byte) (err error) {
+	var str string
+	err = json.Unmarshal(data, &str)
+	if err != nil {
+		return
+	}
+
+	v, err := Util.UnsafeHexDecode(str)
+	if err != nil {
+		return
+	}
+
+	*d = v
+	return
 }

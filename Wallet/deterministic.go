@@ -22,10 +22,10 @@ var SupportedTypes = [...]Type{Nanollet, MFA}
 type Version uint8
 
 const (
-	V1 Version = iota
+	V0 Version = iota
 )
 
-var SupportedVersions = [...]Version{V1}
+var SupportedVersions = [...]Version{V0}
 
 type Currency uint32
 
@@ -86,6 +86,10 @@ func NewCustomFY(v Version, t Type, time uint8, memory uint8) (sf SeedFY, err er
 func ReadSeedFY(s string) (sf SeedFY, err error) {
 	sb, ok := Util.SecureHexDecode(s)
 	if !ok {
+		return sf, ErrImpossibleDecode
+	}
+
+	if len(sb) < 6 {
 		return sf, ErrImpossibleDecode
 	}
 

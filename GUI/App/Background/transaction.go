@@ -2,8 +2,8 @@ package Background
 
 import (
 	"github.com/brokenbydefault/Nanollet/Block"
-	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/GUI/Storage"
+	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/RPC"
 	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
 )
@@ -22,10 +22,10 @@ var queue = make(queueup, 32)
 
 func PublishBlocksToQueue(blk []Block.BlockTransaction, amount ...*Numbers.RawAmount) error {
 	var rt = make(WaitConfirmation)
-	var amm *Numbers.RawAmount
 	defer close(rt)
 
 	// amount is optional, set default of 0 if missing
+	var amm *Numbers.RawAmount
 	if len(amount) == 0 {
 		amm, _ = Numbers.NewRawFromString("0")
 	} else {
@@ -46,57 +46,63 @@ func PublishBlockToQueue(blk Block.BlockTransaction, amount ...*Numbers.RawAmoun
 }
 
 func StartTransaction() {
-	go execute()
+	go listen()
 }
 
-func execute() {
+func listen() {
 
 	for tx := range queue {
-		var geterr error = nil
-
+		var err error
 		for _, blk := range tx.blocks {
-			var err error = nil
-			var balance *Numbers.RawAmount
-
-			switch blk.GetType() {
-			case "send":
-				balance = Storage.Amount.Subtract(tx.amount)
-			case "open":
-				balance = Storage.Amount.Add(tx.amount)
-			case "receive":
-				balance = Storage.Amount.Add(tx.amount)
-			default:
-				balance = Storage.Amount
-			}
-
-			blk.SetFrontier(Storage.Frontier)
-			blk.SetWork(Storage.PrecomputedPoW)
-			blk.SetBalance(balance)
-
-			hash := blk.Hash()
-			sig, err := Storage.SK.CreateSignature(hash)
+			err = processBlock(blk, tx.amount)
 			if err != nil {
-				geterr = err
 				break
-			}
-			blk.SetSignature(sig)
-
-			_, err = RPCClient.BroadcastBlock(Connectivity.Socket, blk)
-			if err != nil {
-				geterr = err
-				break
-			}
-
-			Storage.Amount = balance
-			Storage.History.Add(blk, tx.amount)
-			Storage.Frontier = hash
-
-			if len(queue) == 0 {
-				go Storage.UpdateFrontier(hash)
 			}
 		}
 
-		tx.returning <- geterr
+		tx.returning <- err
 	}
 
+}
+
+func processBlock(blk Block.BlockTransaction, amm *Numbers.RawAmount) error {
+	defer func() {
+		go Storage.UpdatePoW()
+	}()
+
+	var err error = nil
+	var balance *Numbers.RawAmount
+
+	switch blk.GetSubType() {
+	case Block.Send:
+		balance = Storage.Amount.Subtract(amm)
+	case Block.Open:
+		balance = Storage.Amount.Add(amm)
+	case Block.Receive:
+		balance = Storage.Amount.Add(amm)
+	default:
+		balance = Storage.Amount
+	}
+
+	blk.SetFrontier(Storage.Frontier)
+	blk.SetWork(Storage.RetrievePrecomputedPoW())
+	blk.SetBalance(balance)
+
+	hash := blk.Hash()
+	sig, err := Storage.SK.CreateSignature(hash)
+	if err != nil {
+		return err
+	}
+	blk.SetSignature(sig)
+
+	_, err = RPCClient.BroadcastBlock(Connectivity.Socket, blk)
+	if err != nil {
+		return err
+	}
+
+	Storage.Amount = balance
+	Storage.History.Add(blk, amm)
+	Storage.UpdateFrontier(blk)
+
+	return nil
 }

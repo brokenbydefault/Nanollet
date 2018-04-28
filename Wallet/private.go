@@ -8,6 +8,7 @@ import (
 	"github.com/Inkeliz/blakEd25519"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"io"
+	"encoding/json"
 )
 
 type SecretKey []byte
@@ -33,7 +34,7 @@ func createKeyPair(r io.Reader) (PublicKey, SecretKey, error) {
 // PublicKeyFromSecretKey extract the Ed25519 public-key
 // from the secret key and return the public-key.
 func (sk SecretKey) PublicKey() (PublicKey, error) {
-	if len(sk) != 64 {
+	if len(sk) != blakEd25519.PrivateKeySize {
 		return nil, errors.New("wrong size of secret-key")
 	}
 
@@ -43,10 +44,25 @@ func (sk SecretKey) PublicKey() (PublicKey, error) {
 	return PublicKey(pk), nil
 }
 
+// Checksum creates the checksum for given public-key, it returns the checksum
+// in byte format.
+func (pk PublicKey) CreateChecksum() []byte {
+	return Util.ReverseBytes(Util.CreateHash(5, pk))
+}
+
+// CompareChecksum check the publick-key with arbitrary given checksum, it will return
+// true if the checksum matches and false otherwise.
+func (pk PublicKey) CompareChecksum(checksum []byte) bool {
+	return subtle.ConstantTimeCompare(pk.CreateChecksum(), checksum) == 1
+	// It's not need to be constant-time since both inputs are public. But this code can be recycled in future, been used in other circumstances.
+}
+
+type Signature []byte
+
 // CreateSignature signs the message with the private-key. It return
 // the signature.
-func (sk SecretKey) CreateSignature(message []byte) ([]byte, error) {
-	if len(sk) != 64 {
+func (sk SecretKey) CreateSignature(message []byte) (Signature, error) {
+	if len(sk) != blakEd25519.PrivateKeySize {
 		return nil, errors.New("wrong size of secret-key")
 	}
 
@@ -64,21 +80,28 @@ func (sk SecretKey) CreateSignature(message []byte) ([]byte, error) {
 	return sig, nil
 }
 
-// Checksum creates the checksum for given public-key, it returns the checksum
-// in byte format.
-func (pk PublicKey) CreateChecksum() []byte {
-	return Util.ReverseBytes(Util.CreateHash(5, pk))
-}
-
-// CompareChecksum check the publick-key with arbitrary given checksum, it will return
-// true if the checksum matches and false otherwise.
-func (pk PublicKey) CompareChecksum(checksum []byte) bool {
-	return subtle.ConstantTimeCompare(pk.CreateChecksum(), checksum) == 1
-	// It's not need to be constant-time since both inputs are public. But this code can be recycled in future, been used in other circumstances.
-}
-
-// CompareSignature checks the autencity of the signature based on public-key, it returns
-// false if is wrong.
+// CompareSignature checks the authenticity of the signature based on public-key, it returns
+// false if wrong.
 func (pk PublicKey) CompareSignature(message, sig []byte) bool {
 	return blakEd25519.Verify(blakEd25519.PublicKey(pk), message, sig)
+}
+
+func (d Signature) MarshalJSON() ([]byte, error) {
+	return json.Marshal(Util.SecureHexEncode(d))
+}
+
+func (d *Signature) UnmarshalJSON(data []byte) (err error) {
+	var str string
+	err = json.Unmarshal(data, &str)
+	if err != nil {
+		return
+	}
+
+	v, ok := Util.SecureHexDecode(str)
+	if !ok {
+		return
+	}
+
+	*d = v
+	return
 }

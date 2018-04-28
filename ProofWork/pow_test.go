@@ -19,7 +19,7 @@ func TestGenerateProof(t *testing.T) {
 }
 
 func TestIsValidProof(t *testing.T) {
-	if !IsValidProof(Genesis, GenerateProof(Genesis)) {
+	if !GenerateProof(Genesis).IsValid(Genesis) {
 		t.Error("valid proof reported as invalid")
 	}
 }
