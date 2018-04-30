@@ -86,21 +86,12 @@ func (s *ChangeBlock) GetTarget() (Wallet.Address, BlockHash) {
 
 func (u *UniversalBlock) GetTarget() (destination Wallet.Address, source BlockHash) {
 
-	switch u.GetSubType() {
-	case Send:
-		if u.Link == nil {
-			destination = u.Destination
-		} else {
-			destination = Wallet.PublicKey(u.Link).CreateAddress()
-		}
-	case Receive:
-		fallthrough // Same of Open
-	case Open:
-		if u.Link == nil {
-			source = u.Source
-		} else {
-			source = u.Link
-		}
+	if u.Link == nil {
+		source = u.Link
+		destination = u.Destination
+	} else {
+		source = u.Source
+		destination = Wallet.PublicKey(u.Link).CreateAddress()
 	}
 
 	return

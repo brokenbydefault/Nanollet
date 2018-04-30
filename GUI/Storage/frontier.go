@@ -13,7 +13,7 @@ var LastBlock Block.UniversalBlock
 
 func UpdateFrontier(blk Block.BlockTransaction) {
 	LastBlock = *blk.SwitchToUniversalBlock()
-	Frontier = LastBlock.SwitchTo(blk.GetSubType()).Hash()
+	Frontier = LastBlock.SwitchTo(blk.GetType()).Hash()
 }
 
 var precomputedPoW = make(chan []byte, 1)
