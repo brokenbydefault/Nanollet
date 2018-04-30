@@ -3,16 +3,16 @@
 package Connectivity
 
 import (
-	"golang.org/x/net/websocket"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/brokenbydefault/Nanollet/Config"
+	"github.com/brokenbydefault/Nanollet/RPC/internal"
+	"golang.org/x/net/websocket"
+	"io"
 	"net"
 	"time"
-	"io"
-	"crypto/tls"
-	"github.com/brokenbydefault/Nanollet/Config"
-	"fmt"
-	"github.com/brokenbydefault/Nanollet/RPC/internal"
 )
 
 type S struct {
@@ -60,7 +60,14 @@ func (c *S) StartWebsocket() (err error) {
 	return
 }
 
+func (c *S) CloseWebsocket() (err error) {
+	return c.wss.Close()
+}
+
+// @TODO Improve reliability
 func (c *S) ReceiveAllMessages(message []byte, response chan []byte) error {
+	defer close(response)
+
 	if message != nil {
 		resp, err := c.SendRequest(message)
 		if err == nil {
@@ -73,7 +80,6 @@ func (c *S) ReceiveAllMessages(message []byte, response chan []byte) error {
 	for {
 		var msg []byte
 		if err := websocket.Message.Receive(c.wss, &msg); err != nil {
-			close(response)
 			return ErrConnectionLost
 		}
 
