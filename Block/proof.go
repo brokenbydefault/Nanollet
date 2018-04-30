@@ -42,8 +42,8 @@ func (s *ChangeBlock) Work() ProofWork.Work {
 func (u *UniversalBlock) Work() ProofWork.Work {
 	var previous []byte
 
-	if u.Previous == nil || bytes.Equal(u.Previous, make([]byte, 32)) || u.SubType == "open" {
-		previous = BlockHash(u.Account)
+	if u.Previous == nil || bytes.Equal(u.Previous, make([]byte, 32)) || u.SubType == Open {
+		previous, _ = u.Account.GetPublicKey()
 	}else{
 		previous = u.Previous
 	}
