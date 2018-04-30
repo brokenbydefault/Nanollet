@@ -65,9 +65,17 @@ func realtimeupdate(w *window.Window) {
 	if err != nil {
 		time.Sleep(2 * time.Second)
 		realtimeupdate(w)
+		return
 	}
 
-	go conn.ReceiveAllMessages(nil, pends)
+	go func(){
+		if err := conn.ReceiveAllMessages(nil, pends); err != nil {
+			time.Sleep(2 * time.Second)
+			pendings(w)
+			realtimeupdate(w)
+			return
+		}
+	}()
 
 	for p := range pends {
 		pend := RPCClient.CallbackResponse{}
@@ -95,9 +103,6 @@ func realtimeupdate(w *window.Window) {
 		DOM.UpdateAmount(w)
 		DOM.UpdateNotification(w, "You had received a new payment")
 	}
-
-	pendings(w)
-	realtimeupdate(w)
 }
 
 func pendings(w *window.Window) {

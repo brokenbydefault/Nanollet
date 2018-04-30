@@ -1,3 +1,5 @@
+// +build !js
+
 package App
 
 import (
@@ -10,6 +12,14 @@ import (
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
 	"strconv"
+	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
+	"github.com/brokenbydefault/Nanollet/RPC"
+	"github.com/brokenbydefault/MFA"
+	"image/color"
+	"bytes"
+	"encoding/json"
+	"github.com/brokenbydefault/MFA/mfatypes"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 type AccountApp guitypes.App
@@ -33,6 +43,7 @@ func (c *AccountApp) Pages() []guitypes.Page {
 		&PageImport{},
 		&PagePassword{},
 		&PageAddress{},
+		&PageMFA{},
 	}
 }
 
@@ -64,7 +75,7 @@ func (c *PageGenerate) Name() string {
 func (c *PageGenerate) OnView(w *window.Window) {
 	page := DOM.SetSector(c)
 
-	seed, err := Wallet.NewSeedFY(Wallet.V1, Wallet.Nanollet)
+	seed, err := Wallet.NewSeedFY(Wallet.V0, Wallet.Nanollet)
 	if err != nil {
 		return
 	}
@@ -107,8 +118,13 @@ func (c *PageImport) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	_, err = Wallet.ReadSeedFY(seed)
+	sf, err := Wallet.ReadSeedFY(seed)
 	if err != nil {
+		DOM.UpdateNotification(w, "There was a problem interpreting your SEEDFY, it's wrong or isn't supported anymore")
+		return
+	}
+
+	if ok := sf.IsValid(Wallet.Version(sf.Version), Wallet.Nanollet); !ok {
 		DOM.UpdateNotification(w, "There was a problem interpreting your SEEDFY, it's wrong or isn't supported anymore")
 		return
 	}
@@ -140,6 +156,7 @@ func (c *PagePassword) OnContinue(w *window.Window, _ string) {
 		DOM.UpdateNotification(w, "There was a problem with your password, this is too short")
 		return
 	}
+	DOM.ApplyForIt(w, ".password", DOM.ClearValue)
 
 	seed, err := Storage.Permanent.ReadFile("wallet.dat")
 	if err != nil {
@@ -153,9 +170,101 @@ func (c *PagePassword) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
+	need2FA, err := page.GetStringValue(w, ".ask2fa")
+	if err == nil && need2FA != "" {
+		Storage.PASSWORD = password
+		ViewPage(w, &PageMFA{})
+		return
+	}
+
 	Storage.SEED = seedfy.RecoverSeed(password, nil)
 	ViewPage(w, &PageAddress{})
-	DOM.ApplyForIt(w, ".password", DOM.ClearValue)
+}
+
+type PageMFA guitypes.Sector
+
+func (c *PageMFA) Name() string {
+	return "mfa"
+}
+
+func (c *PageMFA) OnView(w *window.Window) {
+	page := DOM.SetSector(c)
+
+	keypinning, _ := Storage.Permanent.ReadFile("mfa.dat")
+
+	MFAConn := Connectivity.NewSocket()
+	envs := make(chan []byte, 16)
+
+	receiver := MFA.NewReceiver()
+	receiverPK := receiver.Ephemeral.PublicKey()
+
+	qrcodespace, _ := page.SelectFirstElement(w, ".qrcode")
+	DOM.ClearHTML(qrcodespace)
+	DOM.CreateQRCodeAppendTo(Util.SecureHexEncode(receiverPK[:]), color.RGBA{220, 220, 223, 1}, 300, qrcodespace)
+
+	// @TODO Improve code
+	err := RPCClient.SubscribeMFA(MFAConn, receiverPK)
+	if err != nil {
+		DOM.UpdateNotification(w, "There was a critical problem connecting to our servers, please try again")
+		return
+	}
+
+	// @TODO Remove goroutines here
+	go func() {
+		if err := MFAConn.ReceiveAllMessages(nil, envs); err != nil {
+			return
+		}
+	}()
+
+	go func() {
+		defer MFAConn.CloseWebsocket()
+
+		for e := range envs {
+			jsn := mfatypes.CallbackResponse{}
+
+			if err := json.Unmarshal(e, &jsn); err != nil {
+				continue
+			}
+
+			token, sender, err := receiver.OpenEnvelope(jsn.Envelope)
+			if err != nil || keypinning != nil && !bytes.Equal(sender, keypinning) {
+				continue
+			}
+
+			Storage.TOKENMFA = token
+			Storage.Permanent.WriteFile("mfa.dat", sender)
+			receiver.Ephemeral = nil
+			c.OnContinue(w, "")
+
+			return
+		}
+	}()
+
+	return
+}
+
+func (c *PageMFA) OnContinue(w *window.Window, _ string) {
+	if Storage.TOKENMFA == nil {
+		return
+	}
+
+	seed, err := Storage.Permanent.ReadFile("wallet.dat")
+	if err != nil {
+		DOM.UpdateNotification(w, "There was a problem reading your seed or it doesn't exist anymore")
+		return
+	}
+
+	seedfy, err := Wallet.ReadSeedFY(string(seed))
+	if err != nil {
+		DOM.UpdateNotification(w, "There was a problem reading your SEEDFY, this is incorrect or isn't supported")
+		return
+	}
+
+	Storage.SEED = seedfy.RecoverSeed(Storage.PASSWORD, Storage.TOKENMFA)
+	Storage.TOKENMFA = nil
+	Storage.PASSWORD = ""
+
+	ViewPage(w, &PageAddress{})
 }
 
 type PageAddress guitypes.Sector
@@ -199,23 +308,15 @@ func (c *PageAddress) UpdateList(w *window.Window, min, max uint32) {
 			panic(err)
 		}
 
-		opt := DOM.CreateElementAppendTo("option", string(pk.CreateAddress()), "item", "", selectbox)
+		addr := string(pk.CreateAddress())
+
+		opt := DOM.CreateElementAppendTo("option", addr[0:16]+" ... "+addr[48:64], "item", "", selectbox)
 		opt.SetAttr("value", strconv.FormatUint(uint64(i), 10))
 
 		if value.String() != "" && uint32(value.Int64()) == i {
 			DOM.Checked(opt)
 		}
 	}
-
-	go func() {
-		if min == 0 {
-			page.ApplyForIt(w, "previous", DOM.DisableElement)
-		}
-
-		if max == 1<<32-1 {
-			page.ApplyForIt(w, "next", DOM.DisableElement)
-		}
-	}()
 }
 
 func (c *PageAddress) Next(w *window.Window) {

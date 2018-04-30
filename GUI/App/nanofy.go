@@ -63,13 +63,14 @@ func (c *PageSign) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	blks, err := Nanofy.NewNanofierVersion1().CreateBlock(file, Storage.SK, Storage.Representative, Storage.Amount, &Storage.LastBlock)
+	nanofier := Nanofy.NewNanofierVersion1()
+	blks, err := nanofier.CreateBlock(file, Storage.SK, Storage.Representative, Storage.Amount, &Storage.LastBlock)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem creating a block")
 		return
 	}
 
-	err = Background.PublishBlocksToQueue(blks, )
+	err = Background.PublishBlocksToQueue(blks, nanofier.Amount())
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem sending a block")
 		return
@@ -143,7 +144,7 @@ func (c *PageVerify) OnContinue(w *window.Window, _ string) {
 	for i := range blks {
 		blks[i], err = RPCClient.GetBlockByHash(Connectivity.Socket, previous)
 		if err != nil {
-			DOM.UpdateNotification(w, "There was a problem retrieving the information"+err.Error())
+			DOM.UpdateNotification(w, "There was a problem retrieving the information")
 			return
 		}
 

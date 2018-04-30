@@ -7,7 +7,6 @@ import (
 	"github.com/brokenbydefault/Nanollet/Util"
 	"golang.org/x/crypto/argon2"
 	"runtime"
-	"runtime/debug"
 )
 
 type Type uint8
@@ -30,7 +29,7 @@ var SupportedVersions = [...]Version{V0}
 type Currency uint32
 
 const (
-	Base Currency = iota
+	Base   Currency = iota
 	Nano
 	Banano
 )
@@ -168,12 +167,10 @@ type Seed []byte
 // RecoverSeedFromSeedFY returns the Seed based on given password and hex-encoded SeedFY.
 // SEEDFY: [version][type][time][memory][thread][salt]
 func (sf *SeedFY) RecoverSeed(password string, additionaldata []byte) Seed {
+	defer Util.FreeMemory()
+
 	salt := Util.CreateKeyedHash(32, sf.Salt, additionaldata)
-
-	kdf := argon2.IDKey([]byte(password), salt, uint32(sf.Time), uint32(1<<sf.Memory), sf.Thread, 32)
-	debug.FreeOSMemory()
-
-	return kdf
+	return argon2.IDKey([]byte(password), salt, uint32(sf.Time), uint32(1<<sf.Memory), sf.Thread, 32)
 }
 
 // CreateKeyPair creates the public-key and secret-key using the given currency and index.
