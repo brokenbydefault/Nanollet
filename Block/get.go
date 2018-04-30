@@ -87,10 +87,10 @@ func (s *ChangeBlock) GetTarget() (Wallet.Address, BlockHash) {
 func (u *UniversalBlock) GetTarget() (destination Wallet.Address, source BlockHash) {
 
 	if u.Link == nil {
-		source = u.Link
+		source = u.Source
 		destination = u.Destination
 	} else {
-		source = u.Source
+		source = u.Link
 		destination = Wallet.PublicKey(u.Link).CreateAddress()
 	}
 
