@@ -42,27 +42,6 @@ That is hard for, but challenges are good. Create one completely hardware wallet
 
 *Much more features should be added.*
 
-----------
-### Technology:
-The entire Nanollet was written in Golang, the GUI uses the Sciter, consequently we have CSS/HTML, you can find information to how compile it under wiki.
-
-#### Dependencies:
-The Nanofy tries to avoid dependencies, but Golang don't have GUI system by default. Here is listed all external dependencies. Remember that using `go get -x` will automatically download.
-
-##### GUI:
-- github.com/sciter-sdk/go-sciter
-	- github.com/lxn/win
-- github.com/shibukawa/configdir
-
-##### Generator:
-- github.com/kib357/less-go
-	- gopkg.in/olebedev/go-duktape.v2
-
-#### License:
-
-- Sciter: https://sciter.com/prices/
-- Icons8: https://icons8.com/
-
 ---------
 
 ### Support the project:
