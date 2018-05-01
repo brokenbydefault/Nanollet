@@ -1,3 +1,4 @@
+![Nanollet](./README-Image1.png)
 
 # Nanollet
 
@@ -23,6 +24,9 @@ In the wiki you can find some resource about the Nanollet, or any app that is su
 - **Nanofy:** 
 That allows you to sign one file, or arbitrary data, using Nano. This is so easy, simple and fast to be verified, also it’s almost free.
 
+- **Nanollet 2FA**:
+You can only send one transaction with hold your mobile phone. If someone stole one of your keys they don’t have the ability to move your money. It’s not secure as the multi-sig, but better than a simply password.
+
 #### Internal:
 
 - **SeedFY:** 
@@ -30,17 +34,11 @@ That is the secure seed. The SeedFY can be consider as one part of your seed, th
 
 ### Planned features:
 
-- “2FA”:
-You can only send one transaction with hold your mobile phone, for instance. It someone stole one of your keys they don’t have the ability to move your money. It’s not secure as the multi-sig, but Nano not have any kind of multi-sig.
-
-- “Nanofy with Universal Blocks”
-Yes, the version two is already at the door, we expect to take advantage of the universal blocks, which have more size and room to store data.
-
 - “Alias”:
 The Nanode already allow you to set one alias, but we want to take different approach and even more decentralized and, of course, secure to anyone.
 
-- "Hardwallet":
-That is hard for, but challenges are good. Create one completely hardware wallet will be very nice to anyone, the places where your private-key can sleep in peace.
+- "Hardware Wallet":
+That is hard for, but challenges are good. Create one completely hardware wallet will be very nice to anyone.
 
 *Much more features should be added.*
 
