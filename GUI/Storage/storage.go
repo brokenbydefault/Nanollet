@@ -1,18 +1,14 @@
 package Storage
 
 import (
-	"github.com/brokenbydefault/Nanollet/Config"
 	"github.com/shibukawa/configdir"
+	"github.com/brokenbydefault/Nanollet/Config"
 )
 
-var Permanent *configdir.Config
+var (
+	Permanent *configdir.Config
+)
 
-func Start() {
-	name := "Nanollet"
-
-	if Config.IsDebugEnabled() {
-		name = "Nanollet-DEBUG"
-	}
-
-	Permanent = configdir.New("BrokenByDefault", name).QueryFolders(configdir.Global)[0]
+func init() {
+	Permanent = configdir.New("BrokenByDefault", Config.Configuration().DefaultFolder).QueryFolders(configdir.Global)[0]
 }

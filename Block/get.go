@@ -85,14 +85,5 @@ func (s *ChangeBlock) GetTarget() (Wallet.Address, BlockHash) {
 }
 
 func (u *UniversalBlock) GetTarget() (destination Wallet.Address, source BlockHash) {
-
-	if u.Link == nil {
-		source = u.Source
-		destination = u.Destination
-	} else {
-		source = u.Link
-		destination = Wallet.PublicKey(u.Link).CreateAddress()
-	}
-
-	return
+	return Wallet.PublicKey(u.Link).CreateAddress(), u.Link
 }

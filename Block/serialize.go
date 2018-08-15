@@ -86,8 +86,6 @@ func (s *SendBlock) SwitchToUniversalBlock() *UniversalBlock {
 		Representative: "",
 		Balance:        s.Balance,
 		Link:           BlockHash(destpk),
-		Destination:    s.Destination,
-		Source:         nil,
 	}
 }
 
@@ -107,8 +105,6 @@ func (s *ReceiveBlock) SwitchToUniversalBlock() *UniversalBlock {
 		Representative: "",
 		Balance:        Numbers.NewRaw(),
 		Link:           s.Source,
-		Destination:    "",
-		Source:         s.Source,
 	}
 }
 
@@ -128,8 +124,6 @@ func (s *OpenBlock) SwitchToUniversalBlock() *UniversalBlock {
 		Representative: s.Representative,
 		Balance:        Numbers.NewRaw(),
 		Link:           s.Source,
-		Destination:    "",
-		Source:         s.Source,
 	}
 }
 
@@ -149,8 +143,6 @@ func (s *ChangeBlock) SwitchToUniversalBlock() *UniversalBlock {
 		Representative: s.Representative,
 		Balance:        Numbers.NewRaw(),
 		Link:           make([]byte, 32),
-		Destination:    "",
-		Source:         make([]byte, 32),
 	}
 }
 

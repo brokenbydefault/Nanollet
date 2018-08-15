@@ -46,7 +46,7 @@ func (c *S) StartWebsocket() (err error) {
 	}
 
 	config.TlsConfig = &tls.Config{
-		InsecureSkipVerify:       Config.IsDebugEnabled(),
+		InsecureSkipVerify:       Config.Configuration().DebugStatus,
 		MinVersion:               tls.VersionTLS12,
 		CurvePreferences:         []tls.CurveID{tls.X25519},
 		VerifyPeerCertificate:    internal.VerifyPeerCertificate(c.publickey, c.endpoint),
@@ -83,7 +83,7 @@ func (c *S) ReceiveAllMessages(message []byte, response chan []byte) error {
 			return ErrConnectionLost
 		}
 
-		if Config.IsDebugEnabled() {
+		if Config.Configuration().DebugStatus {
 			fmt.Println("Received at:")
 			fmt.Println(string(msg))
 		}
@@ -99,7 +99,7 @@ func (c *S) SendRequest(b []byte) (msg []byte, err error) {
 		}
 	}
 
-	if Config.IsDebugEnabled() {
+	if Config.Configuration().DebugStatus {
 		fmt.Println("Requesting:")
 		fmt.Println(string(b))
 	}
@@ -112,7 +112,7 @@ func (c *S) SendRequest(b []byte) (msg []byte, err error) {
 
 	err = websocket.Message.Receive(c.wss, &msg)
 
-	if Config.IsDebugEnabled() {
+	if Config.Configuration().DebugStatus {
 		fmt.Println("Response:")
 		fmt.Println(string(msg))
 	}

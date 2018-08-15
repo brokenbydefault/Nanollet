@@ -1,8 +1,8 @@
-// +build ignore
 // This program generates html.go/css.go. It can be invoked by running
 // This package is way to have the best performance aspect, however the `go generate` should only run one time,
 // so I choose to have a more readable file. The `go generate` creates the code, so is important to anyone understand
 // what generated.
+
 // go generate
 package main
 
@@ -92,7 +92,7 @@ type cssStruct struct {
 
 func generateCSS() {
 	strc := cssStruct{}
-	strc.IsDebug = Config.IsDebugEnabled()
+	strc.IsDebug = Config.Configuration().DebugStatus
 
 	// If debug is enable the Nanollet will read the file directly, making possible to change the HTML/CSS without
 	// need to `go generate` again.
@@ -131,7 +131,7 @@ type htmlStruct struct {
 
 func generateHTML() {
 	strc := htmlStruct{}
-	strc.IsDebug = Config.IsDebugEnabled()
+	strc.IsDebug = Config.Configuration().DebugStatus
 
 	pages, _ := filepath.Glob("GUI/Front/html/*")
 	for _, path := range pages {

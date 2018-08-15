@@ -10,6 +10,18 @@ import (
 	"path/filepath"
 )
 
+func init() {
+	if Config.Configuration().DebugStatus {
+		return
+	}
+
+	if err := Storage.Permanent.WriteFile("sciter.link", Front.Sciter); err != nil {
+		panic(err)
+	}
+
+	sciter.SetDLL(filepath.Join(Storage.Permanent.Path, "sciter.link"))
+}
+
 func Start() {
 
 	w, err := window.New(sciter.SW_MAIN|sciter.SW_RESIZEABLE|sciter.SW_OWNS_VM|sciter.SW_GLASSY, sciter.NewRect(200, 200, 900, 600))
@@ -17,7 +29,7 @@ func Start() {
 		panic(err)
 	}
 
-	if Config.IsDebugEnabled() {
+	if Config.Configuration().DebugStatus {
 		w.SetOption(sciter.SCITER_SET_DEBUG_MODE, 1)
 	}
 
@@ -37,15 +49,4 @@ func Start() {
 	w.Show()
 	w.Run()
 
-}
-
-func Unpack() {
-	if Config.IsDebugEnabled() {
-		return
-	}
-
-	if err := Storage.Permanent.WriteFile("sciter.link", Front.Sciter); err != nil {
-		panic(err)
-	}
-	sciter.SetDLL(filepath.Join(Storage.Permanent.Path, "sciter.link"))
 }

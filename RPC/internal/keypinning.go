@@ -14,7 +14,7 @@ var ErrInvalidCert = errors.New("invalid certificate")
 func VerifyPeerCertificate(expectedhash []byte, uri string) func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 	return func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 		// KeyPinning is ignored when debug is enabled
-		if Config.IsDebugEnabled() {
+		if Config.Configuration().DebugStatus {
 			return nil
 		}
 

@@ -22,7 +22,7 @@ func StartAddress(w *window.Window) error {
 	if err != nil {
 		if err.Error() == RPCClient.ErrNotOpenedAccount.Error() {
 			info.Balance, _ = Numbers.NewRawFromString("0")
-			info.Representative = Config.DefaultRepresentative
+			info.Representative = Config.Configuration().DefaultRepresentative
 		} else {
 			return err
 		}

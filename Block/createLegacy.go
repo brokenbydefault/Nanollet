@@ -8,7 +8,7 @@ import (
 )
 
 func CreateSignedSendBlock(sk Wallet.SecretKey, sending, balance *Numbers.RawAmount, previous []byte, destination Wallet.Address) (BlockTransaction, error) {
-	blk, err := CreateSignedUniversalSendBlock(sk, Config.DefaultRepresentative, balance, sending, previous, destination)
+	blk, err := CreateSignedUniversalSendBlock(sk, Config.Configuration().DefaultRepresentative, balance, sending, previous, destination)
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +17,7 @@ func CreateSignedSendBlock(sk Wallet.SecretKey, sending, balance *Numbers.RawAmo
 }
 
 func CreateSignedOpenBlock(sk Wallet.SecretKey, source []byte) (BlockTransaction, error) {
-	blk, err := CreateSignedUniversalOpenBlock(sk, Config.DefaultRepresentative, Numbers.NewRaw(), source)
+	blk, err := CreateSignedUniversalOpenBlock(sk, Config.Configuration().DefaultRepresentative, Numbers.NewRaw(), source)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +26,7 @@ func CreateSignedOpenBlock(sk Wallet.SecretKey, source []byte) (BlockTransaction
 }
 
 func CreateSignedReceiveBlock(sk Wallet.SecretKey, source, previous []byte) (BlockTransaction, error) {
-	blk, err := CreateSignedUniversalReceiveBlock(sk, Config.DefaultRepresentative, Numbers.NewRaw(), Numbers.NewRaw(), previous, source)
+	blk, err := CreateSignedUniversalReceiveBlock(sk, Config.Configuration().DefaultRepresentative, Numbers.NewRaw(), Numbers.NewRaw(), previous, source)
 	if err != nil {
 		return nil, err
 	}

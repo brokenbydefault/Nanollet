@@ -76,8 +76,5 @@ type UniversalBlock struct {
 	Balance        *Numbers.RawAmount `json:"balance"`
 	Link           BlockHash          `json:"link"`
 
-	LinkAccount Wallet.Address     `json:"link_as_account,omitempty"`
 	Amount      *Numbers.RawAmount `json:"amount,omitempty"`
-	Destination Wallet.Address     `json:"destination,omitempty"`
-	Source      BlockHash          `json:"source,omitempty"`
 }
