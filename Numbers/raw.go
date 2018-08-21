@@ -55,6 +55,16 @@ func NewRawFromBytes(b []byte) (*RawAmount, error) {
 	return r, nil
 }
 
+func (a *RawAmount) Copy(src []byte) (i int, err error) {
+	amm, err := NewRawFromBytes(src)
+	if err != nil {
+		return 0, err
+	}
+
+	*a = *amm
+	return len(src), nil
+}
+
 // ToString transforms the RawAmount to string, which can be printable.
 func (a *RawAmount) ToString() string {
 	return new(big.Int).Set(a.bigint).String()
