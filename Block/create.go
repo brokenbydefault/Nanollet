@@ -1,57 +1,48 @@
 package Block
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"crypto/subtle"
-	"bytes"
 )
 
-func NewBlockFromJSON(jsn []byte) (UniversalBlock, error) {
-	ub := UniversalBlock{
-		Balance: Numbers.NewRaw(),
-		Amount:  Numbers.NewRaw(),
+var (
+	ErrNotABlock         = errors.New("not a block")
+	ErrInvalidBlock     = errors.New("invalid block")
+	ErrInvalidBlockType = errors.New("invalid type")
+)
+
+func NewTransaction(blockType BlockType) (blk Transaction, size int, err error) {
+	switch blockType & 0x0F {
+	case Send:
+		blk = &SendBlock{}
+		size = SendSize
+	case Receive:
+		blk = &ReceiveBlock{}
+		size = ReceiveSize
+	case Change:
+		blk = &ChangeBlock{}
+		size = ChangeSize
+	case Open:
+		blk = &OpenBlock{}
+		size = OpenSize
+	case State:
+		blk = &UniversalBlock{DefaultBlock: DefaultBlock{SubType: blockType & 0xF0}}
+		size = StateSize
+	case Invalid:
+		err = ErrInvalidBlock
+	case NotABlock:
+		err = ErrNotABlock
+	default:
+		err = ErrInvalidBlockType
 	}
 
-	// RPC INCONSISTENCY: All calls uses `balance` as numeric string, but the
-	// `Send` (the legacy-one) uses hex.
-	fixme := struct {
-		Type BlockType
-		Balance string
-	}{}
-	json.Unmarshal(jsn, &fixme)
-
-	if fixme.Type == Send {
-		amm, err := Numbers.NewRawFromHex(fixme.Balance)
-		if err != nil {
-			return ub, err
-		}
-		jsn = bytes.Replace(jsn, []byte(`"balance": "`+fixme.Balance+`"`), []byte(`"balance": "`+amm.ToString()+`"`), 1)
-	}
-	//////////////////////////////////////////////////////////////////////
-
-	return ub, json.Unmarshal(jsn, &ub)
+	return blk, size, err
 }
 
-func parseAccount(errs []error, f func() (Wallet.PublicKey, error)) Wallet.Address {
-	pk, err := f()
-	errs = append(errs, err)
-
-	return pk.CreateAddress()
-}
-
-func parseRepresentative(errs []error, addr Wallet.Address) Wallet.Address {
-	if !addr.IsValid() {
-		errs = append(errs, errors.New("invalid representative"))
-	}
-
-	return addr
-}
-
-func parseDestination(errs []error, f func() (Wallet.PublicKey, error)) Wallet.PublicKey {
+func parseAccount(errs []error, f func() (Wallet.PublicKey, error)) Wallet.PublicKey {
 	pk, err := f()
 	errs = append(errs, err)
 
@@ -66,7 +57,7 @@ func parseBalance(errs []error, n *Numbers.RawAmount) *Numbers.RawAmount {
 	return n
 }
 
-func attachSignature(sk Wallet.SecretKey, blk BlockTransaction) (BlockTransaction, error) {
+func attachSignature(sk Wallet.SecretKey, blk Transaction) (Transaction, error) {
 	sig, err := sk.CreateSignature(blk.Hash())
 	if err != nil {
 		return nil, err
@@ -76,7 +67,7 @@ func attachSignature(sk Wallet.SecretKey, blk BlockTransaction) (BlockTransactio
 	return blk, err
 }
 
-func CreateSignedUniversalSendBlock(sk Wallet.SecretKey, representative Wallet.Address, balance, sending *Numbers.RawAmount, previous BlockHash, destination Wallet.Address) (BlockTransaction, error) {
+func CreateSignedUniversalSendBlock(sk Wallet.SecretKey, representative Wallet.PublicKey, balance, sending *Numbers.RawAmount, previous BlockHash, destination Wallet.PublicKey) (Transaction, error) {
 	var errs []error
 
 	blk := &UniversalBlock{
@@ -85,10 +76,10 @@ func CreateSignedUniversalSendBlock(sk Wallet.SecretKey, representative Wallet.A
 			SubType: Send,
 		},
 		Account:        parseAccount(errs, sk.PublicKey),
-		Representative: parseRepresentative(errs, representative),
+		Representative: representative,
 		Balance:        parseBalance(errs, balance.Subtract(sending)),
 		Previous:       previous,
-		Link:           BlockHash(parseDestination(errs, destination.GetPublicKey)),
+		Link:           BlockHash(destination),
 	}
 
 	if err := Util.CheckError(errs); err != nil {
@@ -98,7 +89,7 @@ func CreateSignedUniversalSendBlock(sk Wallet.SecretKey, representative Wallet.A
 	return attachSignature(sk, blk)
 }
 
-func CreateSignedUniversalOpenBlock(sk Wallet.SecretKey, representative Wallet.Address, receiving *Numbers.RawAmount, source BlockHash) (BlockTransaction, error) {
+func CreateSignedUniversalOpenBlock(sk Wallet.SecretKey, representative Wallet.PublicKey, receiving *Numbers.RawAmount, source BlockHash) (Transaction, error) {
 	var errs []error
 
 	blk := &UniversalBlock{
@@ -107,7 +98,7 @@ func CreateSignedUniversalOpenBlock(sk Wallet.SecretKey, representative Wallet.A
 			SubType: Open,
 		},
 		Account:        parseAccount(errs, sk.PublicKey),
-		Representative: parseRepresentative(errs, representative),
+		Representative: representative,
 		Balance:        parseBalance(errs, receiving),
 		Previous:       make([]byte, 32),
 		Link:           source,
@@ -120,7 +111,7 @@ func CreateSignedUniversalOpenBlock(sk Wallet.SecretKey, representative Wallet.A
 	return attachSignature(sk, blk)
 }
 
-func CreateSignedUniversalReceiveBlock(sk Wallet.SecretKey, representative Wallet.Address, balance, receiving *Numbers.RawAmount, previous BlockHash, source BlockHash) (BlockTransaction, error) {
+func CreateSignedUniversalReceiveBlock(sk Wallet.SecretKey, representative Wallet.PublicKey, balance, receiving *Numbers.RawAmount, previous BlockHash, source BlockHash) (Transaction, error) {
 	var errs []error
 
 	blk := &UniversalBlock{
@@ -129,7 +120,7 @@ func CreateSignedUniversalReceiveBlock(sk Wallet.SecretKey, representative Walle
 			SubType: Receive,
 		},
 		Account:        parseAccount(errs, sk.PublicKey),
-		Representative: parseRepresentative(errs, representative),
+		Representative: representative,
 		Balance:        parseBalance(errs, balance.Add(receiving)),
 		Previous:       previous,
 		Link:           source,
@@ -142,7 +133,7 @@ func CreateSignedUniversalReceiveBlock(sk Wallet.SecretKey, representative Walle
 	return attachSignature(sk, blk)
 }
 
-func CreateSignedUniversalChangeBlock(sk Wallet.SecretKey, representative Wallet.Address, balance *Numbers.RawAmount, previous BlockHash) (BlockTransaction, error) {
+func CreateSignedUniversalChangeBlock(sk Wallet.SecretKey, representative Wallet.PublicKey, balance *Numbers.RawAmount, previous BlockHash) (Transaction, error) {
 	var errs []error
 
 	blk := &UniversalBlock{
@@ -151,7 +142,7 @@ func CreateSignedUniversalChangeBlock(sk Wallet.SecretKey, representative Wallet
 			SubType: Change,
 		},
 		Account:        parseAccount(errs, sk.PublicKey),
-		Representative: parseRepresentative(errs, representative),
+		Representative: representative,
 		Balance:        parseBalance(errs, balance),
 		Previous:       previous,
 		Link:           make([]byte, 32),
@@ -164,7 +155,7 @@ func CreateSignedUniversalChangeBlock(sk Wallet.SecretKey, representative Wallet
 	return attachSignature(sk, blk)
 }
 
-func CreateSignedUniversalReceiveOrOpenBlock(sk Wallet.SecretKey, representative Wallet.Address, balance, receiving *Numbers.RawAmount, previous BlockHash, source BlockHash) (BlockTransaction, error) {
+func CreateSignedUniversalReceiveOrOpenBlock(sk Wallet.SecretKey, representative Wallet.PublicKey, balance, receiving *Numbers.RawAmount, previous BlockHash, source BlockHash) (Transaction, error) {
 	pk, err := sk.PublicKey()
 	if err != nil {
 		return nil, err

@@ -6,21 +6,22 @@ import (
 	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
-type BlockTransaction interface {
-	Serialize() ([]byte, error)
-	SwitchToUniversalBlock() *UniversalBlock
+type Transaction interface {
+	Encode() (data []byte)
+	Decode(data []byte) (err error)
+	SwitchToUniversalBlock(previousBlock *UniversalBlock, amm *Numbers.RawAmount) *UniversalBlock
 
 	Work() ProofWork.Work
 	Hash() BlockHash
 
 	GetType() BlockType
 	GetSubType() BlockType
-	GetTarget() (destination Wallet.Address, source BlockHash)
+	GetTarget() (destination Wallet.PublicKey, source BlockHash)
 
-	SetWork([]byte)
-	SetSignature([]byte)
-	SetFrontier(BlockHash)
-	SetBalance(*Numbers.RawAmount)
+	SetWork(pow []byte)
+	SetSignature(sig []byte)
+	SetFrontier(hash BlockHash)
+	SetBalance(balance *Numbers.RawAmount)
 }
 
 //--------------
@@ -30,6 +31,7 @@ type DefaultBlock struct {
 	SubType   BlockType        `json:"subtype,omitempty"`
 	PoW       ProofWork.Work   `json:"work"`
 	Signature Wallet.Signature `json:"signature"`
+	hash      BlockHash
 }
 
 //--------------
@@ -37,7 +39,7 @@ type DefaultBlock struct {
 type SendBlock struct {
 	DefaultBlock
 	Previous    BlockHash          `json:"previous"`
-	Destination Wallet.Address     `json:"destination"`
+	Destination Wallet.PublicKey   `json:"destination"`
 	Balance     *Numbers.RawAmount `json:"balance"`
 }
 
@@ -53,28 +55,26 @@ type ReceiveBlock struct {
 
 type OpenBlock struct {
 	DefaultBlock
-	Account        Wallet.Address `json:"account"`
-	Representative Wallet.Address `json:"representative"`
-	Source         BlockHash      `json:"source"`
+	Account        Wallet.PublicKey `json:"account"`
+	Representative Wallet.PublicKey `json:"representative"`
+	Source         BlockHash        `json:"source"`
 }
 
 //--------------
 
 type ChangeBlock struct {
 	DefaultBlock
-	Previous       BlockHash      `json:"previous"`
-	Representative Wallet.Address `json:"representative"`
+	Previous       BlockHash        `json:"previous"`
+	Representative Wallet.PublicKey `json:"representative"`
 }
 
 //--------------
 
 type UniversalBlock struct {
 	DefaultBlock
-	Account        Wallet.Address     `json:"account"`
+	Account        Wallet.PublicKey   `json:"account"`
 	Previous       BlockHash          `json:"previous"`
-	Representative Wallet.Address     `json:"representative"`
+	Representative Wallet.PublicKey   `json:"representative"`
 	Balance        *Numbers.RawAmount `json:"balance"`
 	Link           BlockHash          `json:"link"`
-
-	Amount      *Numbers.RawAmount `json:"amount,omitempty"`
 }

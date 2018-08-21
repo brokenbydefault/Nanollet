@@ -22,10 +22,8 @@ func (s *ReceiveBlock) Work() ProofWork.Work {
 }
 
 func (s *OpenBlock) Work() ProofWork.Work {
-	var previous, _ = s.Account.GetPublicKey()
-
-	if !s.PoW.IsValid(previous) {
-		s.PoW = ProofWork.GenerateProof(previous)
+	if !s.PoW.IsValid(s.Account) {
+		s.PoW = ProofWork.GenerateProof(s.Account)
 	}
 
 	return s.PoW
@@ -43,7 +41,7 @@ func (u *UniversalBlock) Work() ProofWork.Work {
 	var previous []byte
 
 	if u.Previous == nil || bytes.Equal(u.Previous, make([]byte, 32)) || u.SubType == Open {
-		previous, _ = u.Account.GetPublicKey()
+		previous = u.Account
 	}else{
 		previous = u.Previous
 	}

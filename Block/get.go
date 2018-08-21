@@ -18,7 +18,7 @@ func (d *DefaultBlock) GetType() BlockType {
 }
 
 func (d *DefaultBlock) GetSubType() BlockType {
-	if d.SubType == "" {
+	if d.SubType == Invalid {
 		return d.Type
 	}
 	return d.SubType
@@ -67,23 +67,22 @@ func (u *UniversalBlock) SetBalance(n *Numbers.RawAmount) {
 	u.Balance = n
 }
 
-func (s *SendBlock) GetTarget() (Wallet.Address, BlockHash) {
+func (s *SendBlock) GetTarget() (Wallet.PublicKey, BlockHash) {
 	return s.Destination, nil
 }
 
-func (s *ReceiveBlock) GetTarget() (Wallet.Address, BlockHash) {
-	return "", s.Source
+func (s *ReceiveBlock) GetTarget() (Wallet.PublicKey, BlockHash) {
+	return nil, s.Source
 }
 
-func (s *OpenBlock) GetTarget() (Wallet.Address, BlockHash) {
-	return "", s.Source
+func (s *OpenBlock) GetTarget() (Wallet.PublicKey, BlockHash) {
+	return nil, s.Source
 }
 
-func (s *ChangeBlock) GetTarget() (Wallet.Address, BlockHash) {
-	// no-op
-	return "", nil
+func (s *ChangeBlock) GetTarget() (Wallet.PublicKey, BlockHash) {
+	return nil, nil
 }
 
-func (u *UniversalBlock) GetTarget() (destination Wallet.Address, source BlockHash) {
-	return Wallet.PublicKey(u.Link).CreateAddress(), u.Link
+func (u *UniversalBlock) GetTarget() (destination Wallet.PublicKey, source BlockHash) {
+	return Wallet.PublicKey(u.Link), u.Link
 }
