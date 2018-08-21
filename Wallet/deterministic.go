@@ -166,11 +166,11 @@ type Seed []byte
 
 // RecoverSeedFromSeedFY returns the Seed based on given password and hex-encoded SeedFY.
 // SEEDFY: [version][type][time][memory][thread][salt]
-func (sf *SeedFY) RecoverSeed(password string, additionaldata []byte) Seed {
+func (sf *SeedFY) RecoverSeed(password []byte, additionaldata []byte) Seed {
 	defer Util.FreeMemory()
 
 	salt := Util.CreateKeyedHash(32, sf.Salt, additionaldata)
-	return argon2.IDKey([]byte(password), salt, uint32(sf.Time), uint32(1<<sf.Memory), sf.Thread, 32)
+	return argon2.IDKey(password, salt, uint32(sf.Time), uint32(1<<sf.Memory), sf.Thread, 32)
 }
 
 // CreateKeyPair creates the public-key and secret-key using the given currency and index.

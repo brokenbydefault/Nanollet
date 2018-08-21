@@ -5,7 +5,7 @@ import (
 )
 
 var TOKENMFA []byte
-var PASSWORD string
+var PASSWORD []byte
 var SEED Wallet.Seed
 
 var SK Wallet.SecretKey

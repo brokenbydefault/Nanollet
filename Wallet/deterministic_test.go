@@ -82,7 +82,7 @@ func TestSeed_CreateKeyPair(t *testing.T) {
 	p.Thread = 16
 	p.Time = 10
 
-	seed := p.RecoverSeed("myamazingpasswordthatisverygoodenough", nil)
+	seed := p.RecoverSeed([]byte("myamazingpasswordthatisverygoodenough"), nil)
 
 	for i, expected := range expectedsecretkey {
 		_, sk, _ := seed.CreateKeyPair(Nano, i)

@@ -172,12 +172,12 @@ func (c *PagePassword) OnContinue(w *window.Window, _ string) {
 
 	need2FA, err := page.GetStringValue(w, ".ask2fa")
 	if err == nil && need2FA != "" {
-		Storage.PASSWORD = password
+		Storage.PASSWORD = []byte(password)
 		ViewPage(w, &PageMFA{})
 		return
 	}
 
-	Storage.SEED = seedfy.RecoverSeed(password, nil)
+	Storage.SEED = seedfy.RecoverSeed([]byte(password), nil)
 	ViewPage(w, &PageAddress{})
 }
 
