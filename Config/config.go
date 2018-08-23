@@ -3,6 +3,8 @@ package Config
 import (
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"net"
+	"github.com/brokenbydefault/Nanollet/Node/Peer"
 )
 
 type Config struct {
@@ -15,17 +17,26 @@ type Config struct {
 	DefaultFolder string
 
 	DefaultMinimumAmount *Numbers.RawAmount
+
+	DefaultUDPNetwork *net.UDPAddr
+	DefaultPeers []*Peer.Peer
 }
 
-var Default = Config{
+var defaultConfig = Config{
 	DebugStatus: false,
 
 	DefaultRepresentative: Wallet.Address("xrb_1ywcdyz7djjdaqbextj4wh1db3wykze5ueh9wnmbgrcykg3t5k1se7zyjf95"),
 	DefaultFolder:         "Nanollet",
 
-	DefaultMinimumAmount:  Numbers.NewRaw(),
+	DefaultMinimumAmount: Numbers.NewRaw(),
+
+	DefaultUDPNetwork: &net.UDPAddr{
+		Port: 6000,
+	},
+
+	DefaultPeers: Peer.NewPeersFromString("rai-beta.raiblocks.net:54000"),
 }
 
 func Configuration() Config {
-	return Default
+	return defaultConfig
 }

@@ -17,6 +17,7 @@ type Transaction interface {
 	GetType() BlockType
 	GetSubType() BlockType
 	GetTarget() (destination Wallet.PublicKey, source BlockHash)
+	GetPrevious() BlockHash
 
 	SetWork(pow []byte)
 	SetSignature(sig []byte)

@@ -11,8 +11,8 @@ var Representative Wallet.Address
 var Frontier Block.BlockHash
 var LastBlock Block.UniversalBlock
 
-func UpdateFrontier(blk Block.BlockTransaction) {
-	LastBlock = *blk.SwitchToUniversalBlock()
+func UpdateFrontier(blk Block.Transaction) {
+//	LastBlock = *blk.SwitchToUniversalBlock()
 	Frontier = LastBlock.SwitchTo(blk.GetType()).Hash()
 }
 

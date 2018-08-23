@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrNotABlock         = errors.New("not a block")
+	ErrEndBlock         = errors.New("not a block")
 	ErrInvalidBlock     = errors.New("invalid block")
 	ErrInvalidBlockType = errors.New("invalid type")
 )
@@ -34,7 +34,7 @@ func NewTransaction(blockType BlockType) (blk Transaction, size int, err error) 
 	case Invalid:
 		err = ErrInvalidBlock
 	case NotABlock:
-		err = ErrNotABlock
+		err = ErrEndBlock
 	default:
 		err = ErrInvalidBlockType
 	}

@@ -20,7 +20,7 @@ const (
 	KiloXRB
 	MegaXRB
 	GigaXRB
-	RAW UnitBase = 0
+	RAW      UnitBase = 0
 )
 
 func NewHumanFromString(n string, base UnitBase) *HumanAmount {

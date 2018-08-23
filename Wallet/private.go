@@ -8,7 +8,6 @@ import (
 	"github.com/Inkeliz/blakEd25519"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"io"
-	"encoding/json"
 )
 
 type SecretKey []byte
@@ -73,35 +72,15 @@ func (sk SecretKey) CreateSignature(message []byte) (Signature, error) {
 		return nil, err
 	}
 
-	if !pk.CompareSignature(message, sig) {
+	if !pk.IsValidSignature(message, sig) {
 		return nil, errors.New("signature is not correct")
 	}
 
 	return sig, nil
 }
 
-// CompareSignature checks the authenticity of the signature based on public-key, it returns
+// IsValidSignature checks the authenticity of the signature based on public-key, it returns
 // false if wrong.
-func (pk PublicKey) CompareSignature(message, sig []byte) bool {
+func (pk PublicKey) IsValidSignature(message, sig []byte) bool {
 	return blakEd25519.Verify(blakEd25519.PublicKey(pk), message, sig)
-}
-
-func (d Signature) MarshalJSON() ([]byte, error) {
-	return json.Marshal(Util.SecureHexEncode(d))
-}
-
-func (d *Signature) UnmarshalJSON(data []byte) (err error) {
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return
-	}
-
-	v, ok := Util.SecureHexDecode(str)
-	if !ok {
-		return
-	}
-
-	*d = v
-	return
 }

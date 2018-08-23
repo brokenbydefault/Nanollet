@@ -1,7 +1,6 @@
 package Numbers
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"math/big"
@@ -21,10 +20,10 @@ func NewRaw() *RawAmount {
 // NewRawFromString creates an RawAmount from numeric string. It returns an error if
 // the string is invalid and nil successful.
 func NewRawFromString(s string) (*RawAmount, error) {
-	i, success := new(big.Int).SetString(s, 10)
+	i, ok := new(big.Int).SetString(s, 10)
 	r := &RawAmount{i}
 
-	if !success || !r.IsValid() {
+	if !ok {
 		return nil, errors.New("invalid string")
 	}
 
@@ -39,46 +38,52 @@ func NewRawFromHex(h string) (*RawAmount, error) {
 		return nil, errors.New("invalid hex")
 	}
 
-	return NewRawFromBytes(b)
+	return NewRawFromBytes(b), nil
 }
 
 // NewRawFromBytes creates an RawAmount from byte-array. It returns an non-nil error if
 // the string is invalid and nil successful.
-func NewRawFromBytes(b []byte) (*RawAmount, error) {
-	i := new(big.Int).SetBytes(b)
-
-	r := &RawAmount{i}
-	if !r.IsValid() {
-		return nil, errors.New("invalid string")
+func NewRawFromBytes(b []byte) *RawAmount {
+	return &RawAmount{
+		bigint: new(big.Int).SetBytes(b),
 	}
-
-	return r, nil
 }
 
-func (a *RawAmount) Copy(src []byte) (i int, err error) {
-	amm, err := NewRawFromBytes(src)
-	if err != nil {
-		return 0, err
+func (a *RawAmount) Copy(src []byte) (i int) {
+	if a == nil {
+		*a = RawAmount{}
 	}
 
-	*a = *amm
-	return len(src), nil
+	*a = *NewRawFromBytes(src)
+	return len(src)
 }
 
 // ToString transforms the RawAmount to string, which can be printable.
 func (a *RawAmount) ToString() string {
+	if a == nil {
+		return ""
+	}
+
 	return new(big.Int).Set(a.bigint).String()
 }
 
 // ToPaddedHex transforms the RawAmount to hexadecimal string with 16 byte,
 // left zero-padded. It can be used in RPC.
 func (a *RawAmount) ToHex() string {
+	if a == nil {
+		return ""
+	}
+
 	return Util.UnsafeHexEncode(a.ToBytes())
 }
 
 // ToBytes transforms the RawAmount to 16 byte, left zero-padded. It can be used in
 // block signature and in RPC.
 func (a *RawAmount) ToBytes() []byte {
+	if a == nil {
+		return nil
+	}
+
 	bi := a.bigint.Bytes()
 
 	// If the value is larger than Uint128 we return,
@@ -92,24 +97,4 @@ func (a *RawAmount) ToBytes() []byte {
 	copy(b[16-len(bi):], bi)
 
 	return b
-}
-
-func (d *RawAmount) MarshalJSON() ([]byte, error) {
-	return json.Marshal(d.ToString())
-}
-
-func (d *RawAmount) UnmarshalJSON(data []byte) (err error) {
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return
-	}
-
-	v, err := NewRawFromString(str)
-	if err != nil {
-		return
-	}
-
-	*d = *v
-	return
 }
