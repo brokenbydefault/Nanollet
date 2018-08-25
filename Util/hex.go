@@ -53,7 +53,7 @@ func SecureHexDecode(s string) (r []byte, ok bool) {
 	}
 
 	r = make([]byte, length/2)
-	e := 0
+	e, st := 0, -1
 
 	for i := 0; i < length; i++ {
 
@@ -67,7 +67,7 @@ func SecureHexDecode(s string) (r []byte, ok bool) {
 		// if (b < 0 | b > 15) { err = 1 }
 		e |= ((b >> 8) | (15-b)>>8) & 1
 
-		st := ^((i & 1) << 8) & (i / 2)
+		st += (i+1) & 1
 		r[st] <<= 4
 		r[st] |= byte(b)
 
