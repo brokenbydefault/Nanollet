@@ -51,7 +51,7 @@ func (pk PublicKey) CreateChecksum() []byte {
 
 // CompareChecksum check the publick-key with arbitrary given checksum, it will return
 // true if the checksum matches and false otherwise.
-func (pk PublicKey) CompareChecksum(checksum []byte) bool {
+func (pk PublicKey) IsValidChecksum(checksum []byte) bool {
 	return subtle.ConstantTimeCompare(pk.CreateChecksum(), checksum) == 1
 	// It's not need to be constant-time since both inputs are public. But this code can be recycled in future, been used in other circumstances.
 }

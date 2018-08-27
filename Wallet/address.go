@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-const ADDRESS_PREFIX = "xrb"
+const ADDRESS_PREFIX = "nano"
 
-var ALLOWED_PREFIX = [...]string{"xrb"}
+var ALLOWED_PREFIX = [...]string{"xrb", "nano"}
 
 type Address string
 
@@ -25,7 +25,7 @@ func (pk PublicKey) CreateAddress() Address {
 	return Address(addr)
 }
 
-// PublicKeyFromFromAddress gets the Ed25519 public-key from the encoded address,
+// GetPublicKey gets the Ed25519 public-key from the encoded address,
 // returning the public-key. It's return an non-nil error if something bad happens.
 func (addr Address) GetPublicKey() (PublicKey, error) {
 	if addr.IsCorrectlyFormatted() == false {
@@ -40,6 +40,16 @@ func (addr Address) GetPublicKey() (PublicKey, error) {
 	}
 
 	return PublicKey(pkBytes[3:]), nil
+}
+
+// MustGetPublicKey is a wrapper from GePublicKey, which removes the error response and throws panic if error.
+func (addr Address) MustGetPublicKey() PublicKey {
+	pk, err := addr.GetPublicKey()
+	if err != nil {
+		panic(err)
+	}
+
+	return pk
 }
 
 // GetChecksum extract the existing checksum of the address, returns the checksum
@@ -74,7 +84,12 @@ func (addr Address) UpdatePrefix() Address {
 // RemovePrefix remove the prefix of the address, returns an address
 // without the prefix.
 func (addr Address) RemovePrefix() Address {
-	return Address(strings.SplitN(string(addr), "_", 2)[1])
+	split := strings.SplitN(string(addr), "_", 2)
+	if len(split) != 2 {
+		return addr
+	}
+
+	return Address(split[1])
 }
 
 // IsValid returns true if the given encoded address have an correct formatting and
@@ -90,13 +105,13 @@ func (addr Address) IsValid() bool {
 		return false
 	}
 
-	return pk.CompareChecksum(checksum)
+	return pk.IsValidChecksum(checksum)
 }
 
 // IsCorrectlyFormatted returns true if the given encoded address have an correct
 // format. It return true if had an valid prefix and length, but checksum doesn't matter.
 func (addr Address) IsCorrectlyFormatted() bool {
-	if len(addr) == 0 || string(addr) == addr.GetPrefix() || len(addr.RemovePrefix()) != 60 {
+	if len(addr) == 0 || len(addr.RemovePrefix()) != 60 {
 		return false
 	}
 
@@ -108,39 +123,4 @@ func (addr Address) IsCorrectlyFormatted() bool {
 	}
 
 	return false
-}
-
-func (d *Address) UnmarshalJSON(data []byte) (err error) {
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return
-	}
-
-	*d = Address(str)
-	return
-}
-
-func (d *Address) MarshalJSON() ([]byte, error) {
-	return json.Marshal(string(*d))
-}
-
-func (d *PublicKey) UnmarshalJSON(data []byte) (err error) {
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return
-	}
-
-	v, ok := Util.SecureHexDecode(str)
-	if !ok {
-		return
-	}
-
-	*d = v
-	return
-}
-
-func (d PublicKey) MarshalJSON() ([]byte, error) {
-	return json.Marshal(Util.SecureHexEncode(d))
 }
