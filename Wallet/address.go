@@ -1,7 +1,6 @@
 package Wallet
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"strings"
