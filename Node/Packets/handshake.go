@@ -13,9 +13,8 @@ type HandshakePackage struct {
 }
 
 const (
-	nodeHandshakeChallengeSize = 32
-	nodeHandshakeResponseSize  = blakEd25519.PublicKeySize + blakEd25519.SignatureSize
-	NodeHandshakePackageSize   = nodeHandshakeChallengeSize + nodeHandshakeResponseSize
+	NodeHandshakePackageSizeMin = 32
+	NodeHandshakePackageSizeMax   = NodeHandshakePackageSizeMin + blakEd25519.PublicKeySize + blakEd25519.SignatureSize
 )
 
 const (
@@ -43,11 +42,11 @@ func NewHandshakePackage(lChallenge []byte, rChallenge []byte) (packet *Handshak
 
 func (p *HandshakePackage) Encode(lHeader *Header, rHeader *Header) (data []byte) {
 	if p == nil {
-		*p = HandshakePackage{}
+		return
 	}
 
-	p.ModifyHeader(lHeader)
-	bi, data := lHeader.Encode(NodeHandshakePackageSize)
+	data = make([]byte, NodeHandshakePackageSizeMax)
+	bi := 0
 
 	if bytes.Equal(p.Challenge[:], make([]byte, 32)) == false {
 		bi += copy(data[bi:], p.Challenge[0:])
@@ -63,13 +62,20 @@ func (p *HandshakePackage) Encode(lHeader *Header, rHeader *Header) (data []byte
 
 func (p *HandshakePackage) Decode(rHeader *Header, data []byte) (err error) {
 	if p == nil {
-		*p = HandshakePackage{}
+		return
+	}
+
+	if rHeader == nil {
+		return ErrInvalidHeaderParameters
+	}
+
+	if l := len(data); l > NodeHandshakePackageSizeMax || l < NodeHandshakePackageSizeMin {
+		return ErrInvalidMessageSize
 	}
 
 	bi := 0
-
 	if rHeader.ExtensionType.Is(Challenge) {
-		bi += copy(p.Challenge[:], data[bi:32])
+		bi += copy(p.Challenge[:], data[0:32])
 	}
 
 	if rHeader.ExtensionType.Is(Response) {
@@ -86,11 +92,11 @@ func (p *HandshakePackage) ModifyHeader(h *Header) {
 	h.MessageType = NodeHandshake
 
 	if bytes.Equal(p.Challenge[:], make([]byte, 32)) == false {
-		h.ExtensionType |= Challenge
+		h.ExtensionType.Add(Challenge)
 	}
 
 	if p.Signature != nil && p.PublicKey != nil {
-		h.ExtensionType |= Response
+		h.ExtensionType.Add(Response)
 	}
 
 }

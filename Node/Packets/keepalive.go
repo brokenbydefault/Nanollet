@@ -2,7 +2,6 @@ package Packets
 
 import (
 	"net"
-	"errors"
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
 )
 
@@ -11,10 +10,6 @@ const (
 
 	KeepAlivePackageNPeers = 8
 	KeepAlivePackageSize   = KeepAlivePackageNPeers * PeerSize
-)
-
-var (
-	ErrInvalidKeepAlivePackageSize = errors.New("invalid keep alive size")
 )
 
 type KeepAlivePackage [KeepAlivePackageNPeers]*Peer.Peer
@@ -38,12 +33,12 @@ func NewKeepAlivePackage(peer []*Peer.Peer) (packet *KeepAlivePackage) {
 
 func (p *KeepAlivePackage) Encode(lHeader *Header, rHeader *Header) (data []byte) {
 	if p == nil {
-		*p = KeepAlivePackage{}
+		return
 	}
 
-	p.ModifyHeader(lHeader)
-	bi, data := lHeader.Encode(PeerSize*KeepAlivePackageNPeers)
+	data = make([]byte, KeepAlivePackageSize)
 
+	bi := 0
 	for _, peer := range *p {
 		bi += copy(data[bi:], peer.RawIP())
 		bi += copy(data[bi:], peer.RawPort())
@@ -54,13 +49,13 @@ func (p *KeepAlivePackage) Encode(lHeader *Header, rHeader *Header) (data []byte
 
 func (p *KeepAlivePackage) Decode(rHeader *Header, data []byte) (err error) {
 	if p == nil {
-		*p = KeepAlivePackage{}
+		return
 	}
 
 	// The packet should have at least 18 bytes and multiples by 18.
 	l := len(data)
 	if l%PeerSize != 0 {
-		return ErrInvalidKeepAlivePackageSize
+		return ErrInvalidMessageSize
 	}
 
 	// Maximum should be KeepAlivePackageNPeers, or less than KeepAlivePackageNPeers if not have enough peers.
@@ -75,7 +70,7 @@ func (p *KeepAlivePackage) Decode(rHeader *Header, data []byte) (err error) {
 		be := bi + PeerSize
 		dataPeer := data[bi:be]
 
-		p[i] = Peer.NewPeer(dataPeer[:net.IPv6len], int(data[16]) | int(data[17]) << 8)
+		p[i] = Peer.NewPeer(dataPeer[:net.IPv6len], int(data[16])|int(data[17])<<8)
 
 		bi = be
 	}
@@ -86,4 +81,3 @@ func (p *KeepAlivePackage) Decode(rHeader *Header, data []byte) (err error) {
 func (p *KeepAlivePackage) ModifyHeader(h *Header) {
 	h.MessageType = KeepAlive
 }
-

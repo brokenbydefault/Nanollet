@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"golang.org/x/crypto/blake2b"
 	"runtime"
-	"encoding/json"
 	"github.com/brokenbydefault/Nanollet/Util"
 )
 
@@ -20,7 +19,9 @@ var MinimumWork = uint64(0xffffffc000000000)
 // Now you need to use this value as one UINT64 and compare against the minimum work:
 // LitleEndian(Blake2(...)) > MinimumWork
 // If it's correct then you have in hand one correct nonce/pow, you need to reverse it so use the BigEndian.
-func GenerateProof(blockHash []byte) Work {
+func GenerateProof(blockHash []byte) (nonce Work) {
+	nonce = make([]byte, 8)
+
 	limit := uint64(runtime.NumCPU())
 	shard := uint64(1<<64-1) / limit
 
@@ -31,28 +32,25 @@ func GenerateProof(blockHash []byte) Work {
 		go createProof(blockHash, i*shard, result, stop)
 	}
 
-	nonce := <-result
+	n := <-result
 	close(stop)
 	close(result)
 	clear(result)
 
-	n := make([]byte, 8)
-	binary.BigEndian.PutUint64(n, nonce)
+	binary.BigEndian.PutUint64(nonce[:], n)
 
-	return Work(n)
+	return nonce
 }
 
-func (w Work) IsValid(blockHash []byte) bool {
-	n := make([]byte, 8)
-	copy(n, w)
+func (w Work) IsValid(previous []byte) bool {
+	if len(w) != 8 {
+		return false
+	}
 
-	binary.LittleEndian.PutUint64(n, binary.BigEndian.Uint64(n))
+	nonce := make([]byte, 8)
+	binary.LittleEndian.PutUint64(nonce, binary.BigEndian.Uint64(w))
 
-	h, _ := blake2b.New(8, nil)
-	h.Write(n)
-	h.Write(blockHash)
-
-	return binary.LittleEndian.Uint64(h.Sum(nil)) >= MinimumWork
+	return binary.LittleEndian.Uint64(Util.CreateHash(8, nonce, previous)) >= MinimumWork
 }
 
 func createProof(blockHash []byte, attempt uint64, result chan uint64, stop chan bool) {
@@ -84,24 +82,4 @@ func clear(r chan uint64) {
 	for len(r) > 0 {
 		<-r
 	}
-}
-
-func (d *Work) MarshalJSON() ([]byte, error) {
-	return json.Marshal(Util.UnsafeHexEncode(*d))
-}
-
-func (d *Work) UnmarshalJSON(data []byte) (err error) {
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return
-	}
-
-	v, err := Util.UnsafeHexDecode(str)
-	if err != nil {
-		return
-	}
-
-	*d = v
-	return
 }

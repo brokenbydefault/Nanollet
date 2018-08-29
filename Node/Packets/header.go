@@ -44,8 +44,8 @@ func (t ExtensionType) Is(expected ExtensionType) (ok bool) {
 	return t&expected == expected
 }
 
-func (t ExtensionType) Add(extension ExtensionType) {
-	t |= extension
+func (t *ExtensionType) Add(extension ExtensionType) {
+	*t |= extension
 }
 
 func (t ExtensionType) GetBlockType() Block.BlockType {
@@ -82,14 +82,12 @@ func NewHeader() *Header {
 	}
 }
 
-func (h *Header) Encode(size int) (n int, data []byte) {
+func (h *Header) Encode() (data []byte) {
 	if h == nil {
-		*h = *NewHeader()
+		return
 	}
 
-	data = make([]byte, HeaderSize+size)
-
-	n = copy(data, []byte{
+	data = append(data, []byte{
 		byte(h.MagicNumber),
 		byte(h.NetworkType),
 		byte(h.VersionMax),
@@ -98,12 +96,10 @@ func (h *Header) Encode(size int) (n int, data []byte) {
 		byte(h.MessageType),
 		byte(h.ExtensionType),
 		byte(h.ExtensionType >> 8),
-	})
+	}...)
 
-	return n, data
+	return data
 }
-
-
 
 func (h *Header) Decode(data []byte) (err error) {
 	if len(data) < HeaderSize {
@@ -118,7 +114,7 @@ func (h *Header) Decode(data []byte) (err error) {
 	h.MessageType = MessageType(data[5])
 	h.ExtensionType = ExtensionType(uint16(data[6]) | uint16(data[7])<<8)
 
-	if h.MagicNumber != 82 {
+	if h.MagicNumber != []byte("R")[0] {
 		return ErrInvalidHeaderParameters
 	}
 
@@ -140,4 +136,3 @@ func (h *Header) Decode(data []byte) (err error) {
 
 	return nil
 }
-

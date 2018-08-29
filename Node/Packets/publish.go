@@ -15,22 +15,22 @@ func NewPushPackage(transaction Block.Transaction) (packet *PushPackage) {
 }
 
 func (p *PushPackage) Encode(lHeader *Header, rHeader *Header) (data []byte) {
-	tx := p.Transaction
-
-	 /**
-	if !rHeader.ExtensionType.Is(ExtendedNode) {
-		if tx.GetType() == Block.State && tx.GetSubType() != Block.Invalid {
-			tx = tx.SwitchToUniversalBlock(nil, nil).SwitchTo(tx.GetSubType())
-		}
-
-		return tx.Encode()[1:]
+	if p == nil {
+		return nil
 	}
-	**/
 
-	return tx.Encode()[1:]
+	return p.Transaction.Encode()[1:]
 }
 
 func (p *PushPackage) Decode(rHeader *Header, data []byte) (err error) {
+	if p == nil {
+		return nil
+	}
+
+	if rHeader == nil {
+		return ErrInvalidHeaderParameters
+	}
+
 	p.Transaction, _, err = Block.NewTransaction(rHeader.ExtensionType.GetBlockType())
 	if err != nil {
 		return err
@@ -41,5 +41,5 @@ func (p *PushPackage) Decode(rHeader *Header, data []byte) (err error) {
 
 func (p *PushPackage) ModifyHeader(h *Header) {
 	h.MessageType = Publish
-	h.ExtensionType |= ExtensionType(uint8(p.Transaction.GetType())&0x0F) << 8
+	h.ExtensionType |= ExtensionType(uint8(p.Transaction.GetType())) << 8
 }

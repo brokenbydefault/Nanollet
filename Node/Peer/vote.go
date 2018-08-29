@@ -38,10 +38,10 @@ type vote struct {
 func (v *Votes) Add(pk Wallet.PublicKey, seq int64, tx Block.Transaction) {
 	previous := string(tx.SwitchToUniversalBlock(nil, nil).Previous)
 
-	if vote, ok := v.list[previous][string(pk)]; !ok || vote.Sequence <= seq {
-		v.list[previous][string(pk)] = vote{
+	if val, ok := v.list[previous][string(pk)]; !ok || val.Sequence <= seq {
+		v.list[previous][string(pk)] = vote {
 			Sequence: seq,
-			Hash:     vote.Hash,
+			Hash:     val.Hash,
 		}
 	}
 

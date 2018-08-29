@@ -12,6 +12,7 @@ const (
 
 var (
 	ErrUnsupportedMessage = errors.New("unsupported message type")
+	ErrInvalidMessageSize = errors.New("invalid message")
 )
 
 type PacketUDP interface {
@@ -26,6 +27,16 @@ type PacketTCP interface {
 	Decode(rHeader *Header, src io.Reader) (err error)
 
 	ModifyHeader(h *Header)
+}
+
+func EncodePacketUDP(lHeader, rHeader *Header, packet PacketUDP) []byte {
+	if lHeader == nil {
+		lHeader = NewHeader()
+	}
+
+	packet.ModifyHeader(lHeader)
+
+	return append(lHeader.Encode(), packet.Encode(lHeader, rHeader)...)
 }
 
 func DecodePacketUDP(data []byte) (header Header, packet PacketUDP, err error) {

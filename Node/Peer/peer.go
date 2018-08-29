@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/btcsuite/btcd/peer"
 )
 
 const (
@@ -49,22 +48,22 @@ func NewPeer(ip net.IP, port int) (p *Peer) {
 
 func (p *Peer) SetLastSeen(t time.Time) {
 	if p == nil {
-		*p = Peer{}
+		return
 	}
 
 	p.lastSeen = t
 }
 
 func (p *Peer) SetPublicKey(key Wallet.PublicKey) {
-	if p != nil {
-		*p = Peer{}
+	if p == nil {
+		return
 	}
 
 	p.publicKey = key
 }
 
 func (p *Peer) IsActive() bool {
-	if p != nil {
+	if p == nil {
 		return false
 	}
 
@@ -76,7 +75,7 @@ func (p *Peer) IsActive() bool {
 }
 
 func (p *Peer) IsKnow() bool {
-	if p != nil {
+	if p == nil {
 		return false
 	}
 
@@ -88,7 +87,7 @@ func (p *Peer) IsKnow() bool {
 }
 
 func (p *Peer) LastSeen() time.Time {
-	if p != nil {
+	if p == nil {
 		return time.Time{}
 	}
 
@@ -96,7 +95,7 @@ func (p *Peer) LastSeen() time.Time {
 }
 
 func (p *Peer) PublicKey() Wallet.PublicKey {
-	if p != nil {
+	if p == nil {
 		return nil
 	}
 
@@ -104,7 +103,7 @@ func (p *Peer) PublicKey() Wallet.PublicKey {
 }
 
 func (p *Peer) RawIP() net.IP {
-	if p != nil {
+	if p == nil {
 		return nil
 	}
 
@@ -112,7 +111,7 @@ func (p *Peer) RawIP() net.IP {
 }
 
 func (p *Peer) RawPort() []byte {
-	if p != nil {
+	if p == nil {
 		return nil
 	}
 

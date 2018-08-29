@@ -18,12 +18,6 @@ func NewBulkPull(transactions []Block.Transaction) (packet *BulkPullPackage) {
 
 func (p *BulkPullPackage) Encode(lHeader *Header, rHeader *Header, dst io.Writer) {
 	for _, tx := range p.Transactions {
-		if !rHeader.ExtensionType.Is(ExtendedNode) {
-			if tx.GetType() == Block.State && tx.GetSubType() != Block.Invalid {
-				tx = tx.SwitchToUniversalBlock(nil, nil).SwitchTo(tx.GetSubType())
-			}
-		}
-
 		dst.Write(tx.Encode())
 	}
 }
