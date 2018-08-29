@@ -19,8 +19,8 @@ type Transaction interface {
 	GetTarget() (destination Wallet.PublicKey, source BlockHash)
 	GetPrevious() BlockHash
 
-	SetWork(pow []byte)
-	SetSignature(sig []byte)
+	SetWork(pow ProofWork.Work)
+	SetSignature(sig Wallet.Signature)
 	SetFrontier(hash BlockHash)
 	SetBalance(balance *Numbers.RawAmount)
 }

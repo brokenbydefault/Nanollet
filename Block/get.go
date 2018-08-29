@@ -3,18 +3,15 @@ package Block
 import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
-func (d *DefaultBlock) SetWork(w []byte) {
+func (d *DefaultBlock) SetWork(w ProofWork.Work) {
 	d.PoW = w
 }
 
-func (d *DefaultBlock) SetSignature(s []byte) {
+func (d *DefaultBlock) SetSignature(s Wallet.Signature) {
 	d.Signature = s
-}
-
-func (d *DefaultBlock) GetType() BlockType {
-	return d.Type
 }
 
 func (d *DefaultBlock) GetSubType() BlockType {
@@ -22,6 +19,26 @@ func (d *DefaultBlock) GetSubType() BlockType {
 		return d.Type
 	}
 	return d.SubType
+}
+
+func (s *SendBlock) GetType() BlockType {
+	return Send
+}
+
+func (s *ReceiveBlock) GetType() BlockType {
+	return Receive
+}
+
+func (s *OpenBlock) GetType() BlockType {
+	return Open
+}
+
+func (s *ChangeBlock) GetType() BlockType {
+	return Change
+}
+
+func (u *UniversalBlock) GetType() BlockType {
+	return State
 }
 
 func (s *SendBlock) SetFrontier(h BlockHash) {

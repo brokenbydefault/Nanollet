@@ -4,7 +4,6 @@ import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
 type BlockType byte
@@ -38,8 +37,9 @@ const (
 )
 
 var (
-	ErrInvalidSize = errors.New("invalid size")
-	ErrInvalidPoW  = errors.New("invlid PoW")
+	ErrInvalidSize      = errors.New("invalid size")
+	ErrInvalidPoW       = errors.New("invalid PoW")
+	ErrInvalidSignature = errors.New("invalid signature")
 )
 
 func (u *UniversalBlock) Encode() (data []byte) {
@@ -76,13 +76,17 @@ func (u *UniversalBlock) Decode(data []byte) (err error) {
 		DefaultBlock: DefaultBlock{
 			Type:      State,
 			SubType:   State,
-			Signature: blk[144:176],
-			PoW:       blk[176:208],
+			Signature: blk[144:208],
+			PoW:       blk[208:216],
 		},
 	}
 
-	if !u.PoW.IsValid(u.Hash()) {
+	if !u.PoW.IsValid(u.Previous) {
 		return ErrInvalidPoW
+	}
+
+	if !u.Account.IsValidSignature(u.Hash(), u.Signature) {
+		return ErrInvalidSignature
 	}
 
 	return nil
