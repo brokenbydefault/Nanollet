@@ -18,6 +18,16 @@ func UnsafeHexDecode(s string) ([]byte, error) {
 	return hex.DecodeString(s)
 }
 
+// UnsafeHexMustDecode is a wrapper from UnsafeHexDecode, which panic if error.
+func UnsafeHexMustDecode(s string) []byte {
+	b, err := UnsafeHexDecode(s)
+	if err != nil {
+		panic(err)
+	}
+
+	return b
+}
+
 // SecureHexEncode decodes an byte without table-lookup. It's results
 // the hexadecimal string representation.
 func SecureHexEncode(b []byte) string {
@@ -75,3 +85,15 @@ func SecureHexDecode(s string) (r []byte, ok bool) {
 
 	return r, e == 0
 }
+
+// SecureHexMustDecode is a wrapper from SecureHexDecode, which panic if error.
+func SecureHexMustDecode(s string) []byte {
+	b, ok := SecureHexDecode(s)
+	if !ok {
+		panic("decode error")
+	}
+
+	return b
+}
+
+
