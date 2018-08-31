@@ -1,13 +1,12 @@
 package RPCClient
 
 import (
-	"crypto/subtle"
-	"errors"
 	"github.com/brokenbydefault/Nanollet/RPC/rpctypes"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 )
 
 func Subscribe(c rpctypes.Connection, pk Wallet.PublicKey) (err error) {
+	/**
 	req := SubscribeRequest{
 		PublicKey: pk,
 		DefaultRequest: DefaultRequest{
@@ -23,10 +22,12 @@ func Subscribe(c rpctypes.Connection, pk Wallet.PublicKey) (err error) {
 		return errors.New("not subscribed")
 	}
 
+	**/
 	return err
 }
 
 func Unsubscribe(c rpctypes.Connection) (err error) {
+	/**
 	req := SubscribeRequest{
 		DefaultRequest: DefaultRequest{
 			Action: "unsubscribe",
@@ -40,6 +41,7 @@ func Unsubscribe(c rpctypes.Connection) (err error) {
 	if resp.PublicKey != nil {
 		return errors.New("still subscribed")
 	}
+	**/
 
 	return err
 }

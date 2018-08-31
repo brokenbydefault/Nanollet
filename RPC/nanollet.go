@@ -83,6 +83,7 @@ func NewAccountHistory(limit int, addr Wallet.Address) AccountHistoryRequest {
 }
 
 func (d *AccountHistory) UnmarshalJSON(data []byte) (err error) {
+	/**
 	var def []SingleHistory
 
 	var teststring string
@@ -106,15 +107,16 @@ func (d *AccountHistory) UnmarshalJSON(data []byte) (err error) {
 		}
 		if hist.Link != nil {
 			switch hist.SubType {
-			case "send":
+			case Block.Send:
 				def[i].Destination = Wallet.Address(hist.Link)
-			case "receive":
+			case Block.Receive:
 				def[i].Source = hist.Link
 			}
 		}
 	}
 
 	*d = def
+	**/
 	return err
 }
 
@@ -172,6 +174,7 @@ func (d *AccountsPendingOriginal) UnmarshalJSON(data []byte) (err error) {
 }
 
 func GetMultiAccountsPending(c rpctypes.Connection, limit int, minimum *Numbers.RawAmount, addr ...Wallet.Address) (MultiplesAccountsPending, error) {
+	/**
 	var reqresp struct {
 		Blocks map[Wallet.Address]AccountsPendingOriginal
 		DefaultResponse
@@ -194,21 +197,19 @@ func GetMultiAccountsPending(c rpctypes.Connection, limit int, minimum *Numbers.
 		}
 	}
 
-	return resp, err
+	**/
+	return MultiplesAccountsPending{}, nil
 }
 
 // BroadcastBlock will perform the PoW and broadcast the block to the network
-func BroadcastBlock(c rpctypes.Connection, block Block.BlockTransaction) (resp ProcessBlock, err error) {
+func BroadcastBlock(c rpctypes.Connection, block Block.Transaction) (resp ProcessBlock, err error) {
 	if block == nil {
 		return resp, errors.New("invalid block")
 	}
 
 	block.Work()
 
-	blk, err := block.Serialize()
-	if err != nil {
-		return
-	}
+	blk := block.Encode()
 
 	req := internal.ProcessBlockRequest{}
 	req.App = "nanollet"
@@ -225,12 +226,12 @@ func BroadcastBlock(c rpctypes.Connection, block Block.BlockTransaction) (resp P
 		return resp, errors.New("error to process the block")
 	}
 
-	h, err := Util.UnsafeHexDecode(reqresp.Hash)
+	//h, err := Util.UnsafeHexDecode(reqresp.Hash)
 	if err != nil {
 		return
 	}
 
-	resp.Hash = h
+	//resp.Hash = h
 	return
 }
 
@@ -247,11 +248,7 @@ func GetBlockByStringHash(c rpctypes.Connection, hash string) (Block.UniversalBl
 
 	reqresp := internal.RetrieveBlockResponse{}
 	err := c.SendRequestJSON(&req, &reqresp)
-	if err != nil {
-		return Block.UniversalBlock{}, err
-	}
-
-	return Block.NewBlockFromJSON([]byte(reqresp.Contents))
+	return Block.UniversalBlock{}, err
 }
 
 func GetBlockByHash(c rpctypes.Connection, hash []byte) (Block.UniversalBlock, error) {

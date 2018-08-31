@@ -6,11 +6,10 @@ import (
 	"github.com/brokenbydefault/Nanollet/Config"
 	"time"
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
-	"github.com/brokenbydefault/Nanollet/GUI/Storage"
+	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"bytes"
 	"github.com/brokenbydefault/Nanollet/Util"
-	"golang.org/x/crypto/openpgp/packet"
+	"fmt"
 )
 
 var Connection Server
@@ -42,7 +41,7 @@ func (srv Server) KeepAlive(peers *Storage.PeersBox) {
 					peers.Remove(peer)
 				}
 
-				if peer.PublicKey() != nil {
+				if pk := peer.PublicKey(); Util.IsEmpty(pk[:]) {
 					srv.SendUDP(peer, nil, nil, msg)
 				} else {
 					srv.SendUDP(peer, nil, nil, Packets.NewHandshakePackage(peers.Challenge.Derivative(peer.RawIP()), nil))
@@ -73,43 +72,37 @@ func (srv Server) SendUDP(dest *Peer.Peer, lHeader *Packets.Header, rHeader *Pac
 
 func (srv Server) SendMultiUDP(dests []*Peer.Peer, lHeader *Packets.Header, rHeader *Packets.Header, packet Packets.PacketUDP) {
 	for _, dest := range dests {
-		srv.UDP.WriteTo(packet.Encode(lHeader, rHeader), dest.UDPAddr())
+		srv.UDP.WriteTo(Packets.EncodePacketUDP(lHeader, rHeader, packet), dest.UDPAddr())
 	}
 }
 
 func (srv Server) SendMultiByMapUDP(dests map[string]*Peer.Peer, lHeader *Packets.Header, rHeader *Packets.Header, packet Packets.PacketUDP) {
 	for _, dest := range dests {
-		srv.UDP.WriteTo(packet.Encode(lHeader, rHeader), dest.UDPAddr())
+		srv.UDP.WriteTo(Packets.EncodePacketUDP(lHeader, rHeader, packet), dest.UDPAddr())
 	}
 }
 
 func (srv Server) ReadUDP(peers *Storage.PeersBox) {
 	go func() {
 		for {
-			b := make([]byte, Packets.HeaderSize + Packets.MessageSize)
+			b := make([]byte, Packets.HeaderSize+Packets.MessageSize)
 			h := new(Packets.Header)
 
-			n, dest, err := srv.UDP.ReadFromUDP(b)
+			end, dest, err := srv.UDP.ReadFromUDP(b)
 			if err != nil {
 				continue
 			}
 
 			go func() {
-				defer BytesBuffPool.Put(b)
-
-				if err := h.Decode(b[:n]); err != nil {
+				if err := h.Decode(b[:end]); err != nil {
 					return
 				}
 
-				peer, ok := peers.Get(dest.IP.String())
-				if !ok {
-					return
-				}
-
-				if peer.IsKnow() && peer.IsActive() {
+				b = b[Packets.HeaderSize:end]
+				if peer, ok := peers.Get(dest.IP.String()); ok && peer.IsKnow() && peer.IsActive() {
 					switch h.MessageType {
 					case Packets.KeepAlive:
-						KeepAliveHandler(dest, h, b[Packets.HeaderSize:], peers)
+						KeepAliveHandler(dest, h, b, peers)
 					case Packets.Publish:
 						PublishHandler(dest, h, b, Storage.PK, Storage.TransactionStorage)
 					case Packets.ConfirmReq:
@@ -141,9 +134,9 @@ func KeepAliveHandler(dest *net.UDPAddr, rHeader *Packets.Header, msg []byte, pe
 
 	if peer, ok := peers.Get(dest.IP.String()); ok {
 		peer.SetLastSeen(time.Now())
+	} else {
+		peers.Add(packet.List...)
 	}
-
-	peers.Add(packet[:]...)
 }
 
 func HandshakeHandler(dest *net.UDPAddr, rHeader *Packets.Header, msg []byte, peers *Storage.PeersBox) {
@@ -157,9 +150,13 @@ func HandshakeHandler(dest *net.UDPAddr, rHeader *Packets.Header, msg []byte, pe
 
 	if rHeader.ExtensionType.Is(Packets.Response) {
 		if packet.PublicKey.IsValidSignature(challenge, packet.Signature) {
-			if peer, ok := peers.Get(dest.IP.String()); ok {
-				peer.SetPublicKey(packet.PublicKey)
+			peer, ok := peers.Get(dest.IP.String())
+			if !ok {
+				peer = Peer.NewPeer(dest.IP, dest.Port)
+				peers.Add(peer)
 			}
+
+			peer.SetPublicKey(packet.PublicKey)
 		}
 	}
 
@@ -182,7 +179,7 @@ func PublishHandler(dest *net.UDPAddr, rHeader *Packets.Header, msg []byte, pk W
 		return
 	}
 
-	if dest, _ := packet.Transaction.GetTarget(); !bytes.Equal(dest, pk) {
+	if dest, _ := packet.Transaction.GetTarget(); dest != pk {
 		return
 	}
 
@@ -207,14 +204,14 @@ func ConfirmACKHandler(dest *net.UDPAddr, rHeader *Packets.Header, msg []byte, t
 
 	if packet.Transaction != nil {
 		if _, _, ok := txs.GetByHash(packet.Transaction.Hash()); ok {
-			txs.Votes.Add(packet.PublicKey, packet.Sequence, packet.Transaction)
+			txs.Votes.Add(packet.PublicKey, Util.BytesToUint(packet.Sequence[:], Util.BigEndian), packet.Transaction)
 		}
 	}
 
 	if packet.Hashes != nil {
 		for _, hash := range packet.Hashes {
 			if tx, _, ok := txs.GetByHash(hash); ok {
-				txs.Votes.Add(packet.PublicKey, packet.Sequence, tx)
+				txs.Votes.Add(packet.PublicKey, Util.BytesToUint(packet.Sequence[:], Util.BigEndian), tx)
 			}
 		}
 	}

@@ -15,30 +15,30 @@ type Address string
 // CreateAddress creates the encoded address using the public-key. It returns
 // the address (with identifier, public-key and checksum) as string, encoded
 // with base32.
-func (pk PublicKey) CreateAddress() Address {
-	addr := ADDRESS_PREFIX
+func (pk PublicKey) CreateAddress() (addr Address) {
+	addr = ADDRESS_PREFIX
 	addr += "_"
-	addr += Util.UnsafeBase32Encode(append([]byte{0, 0, 0}, []byte(pk)...))[4:]
-	addr += Util.UnsafeBase32Encode(pk.CreateChecksum())
+	addr += Address(Util.UnsafeBase32Encode(append([]byte{0, 0, 0}, pk[:]...))[4:])
+	addr += Address(Util.UnsafeBase32Encode(pk.CreateChecksum()))
 
-	return Address(addr)
+	return addr
 }
 
 // GetPublicKey gets the Ed25519 public-key from the encoded address,
 // returning the public-key. It's return an non-nil error if something bad happens.
-func (addr Address) GetPublicKey() (PublicKey, error) {
+func (addr Address) GetPublicKey() (pk PublicKey, err error) {
 	if addr.IsCorrectlyFormatted() == false {
-		return nil, errors.New("invalid address")
+		return pk, errors.New("invalid address")
 	}
 
 	addr = "1111" + addr.RemovePrefix()
 
-	pkBytes, err := Util.UnsafeBase32Decode(string(addr[:56]))
+	pkb, err := Util.UnsafeBase32Decode(string(addr[:56]))
 	if err != nil {
-		return nil, err
+		return pk, err
 	}
 
-	return PublicKey(pkBytes[3:]), nil
+	return NewPublicKey(pkb[3:]), nil
 }
 
 // MustGetPublicKey is a wrapper from GePublicKey, which removes the error response and throws panic if error.

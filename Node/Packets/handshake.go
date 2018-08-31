@@ -3,7 +3,7 @@ package Packets
 import (
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/Inkeliz/blakEd25519"
-	"bytes"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 type HandshakePackage struct {
@@ -14,7 +14,7 @@ type HandshakePackage struct {
 
 const (
 	NodeHandshakePackageSizeMin = 32
-	NodeHandshakePackageSizeMax   = NodeHandshakePackageSizeMin + blakEd25519.PublicKeySize + blakEd25519.SignatureSize
+	NodeHandshakePackageSizeMax = NodeHandshakePackageSizeMin + blakEd25519.PublicKeySize + blakEd25519.SignatureSize
 )
 
 const (
@@ -40,27 +40,28 @@ func NewHandshakePackage(lChallenge []byte, rChallenge []byte) (packet *Handshak
 	return packet
 }
 
-func (p *HandshakePackage) Encode(lHeader *Header, rHeader *Header) (data []byte) {
+func (p *HandshakePackage) Encode(_ *Header, dst []byte) (n int, err error) {
 	if p == nil {
 		return
 	}
 
-	data = make([]byte, NodeHandshakePackageSizeMax)
-	bi := 0
-
-	if bytes.Equal(p.Challenge[:], make([]byte, 32)) == false {
-		bi += copy(data[bi:], p.Challenge[0:])
+	if len(dst) < NodeHandshakePackageSizeMax {
+		return 0, ErrDestinationLenghtNotEnough
 	}
 
-	if p.Signature != nil && p.PublicKey != nil {
-		bi += copy(data[bi:], p.PublicKey)
-		bi += copy(data[bi:], p.Signature)
+	if !Util.IsEmpty(p.Challenge[:]) {
+		n += copy(dst[n:], p.Challenge[:])
 	}
 
-	return data[:bi]
+	if !Util.IsEmpty(p.Signature[:]) && !Util.IsEmpty(p.PublicKey[:]) {
+		n += copy(dst[n:], p.PublicKey[:])
+		n += copy(dst[n:], p.Signature[:])
+	}
+
+	return n, err
 }
 
-func (p *HandshakePackage) Decode(rHeader *Header, data []byte) (err error) {
+func (p *HandshakePackage) Decode(rHeader *Header, src []byte) (err error) {
 	if p == nil {
 		return
 	}
@@ -69,20 +70,18 @@ func (p *HandshakePackage) Decode(rHeader *Header, data []byte) (err error) {
 		return ErrInvalidHeaderParameters
 	}
 
-	if l := len(data); l > NodeHandshakePackageSizeMax || l < NodeHandshakePackageSizeMin {
+	if l := len(src); l > NodeHandshakePackageSizeMax || l < NodeHandshakePackageSizeMin {
 		return ErrInvalidMessageSize
 	}
 
 	bi := 0
 	if rHeader.ExtensionType.Is(Challenge) {
-		bi += copy(p.Challenge[:], data[0:32])
+		bi += copy(p.Challenge[:], src[bi:bi+32])
 	}
 
 	if rHeader.ExtensionType.Is(Response) {
-		p.PublicKey, p.Signature = make([]byte, 32), make([]byte, 64)
-
-		bi += copy(p.PublicKey, data[bi:bi+32])
-		bi += copy(p.Signature, data[bi:bi+64])
+		bi += copy(p.PublicKey[:], src[bi:bi+32])
+		bi += copy(p.Signature[:], src[bi:bi+64])
 	}
 
 	return nil
@@ -91,11 +90,11 @@ func (p *HandshakePackage) Decode(rHeader *Header, data []byte) (err error) {
 func (p *HandshakePackage) ModifyHeader(h *Header) {
 	h.MessageType = NodeHandshake
 
-	if bytes.Equal(p.Challenge[:], make([]byte, 32)) == false {
+	if !Util.IsEmpty(p.Challenge[:]) {
 		h.ExtensionType.Add(Challenge)
 	}
 
-	if p.Signature != nil && p.PublicKey != nil {
+	if !Util.IsEmpty(p.Signature[:]) && !Util.IsEmpty(p.PublicKey[:]) {
 		h.ExtensionType.Add(Response)
 	}
 

@@ -68,6 +68,8 @@ type Header struct {
 	VersionMin    byte
 	MessageType   MessageType
 	ExtensionType ExtensionType
+
+	removeHeader bool
 }
 
 func NewHeader() *Header {
@@ -79,15 +81,28 @@ func NewHeader() *Header {
 		VersionMin:    13,
 		MessageType:   Invalid,
 		ExtensionType: 0,
+		removeHeader:  false,
 	}
 }
 
-func (h *Header) Encode() (data []byte) {
+func (h *Header) SetRemoveHeader(opt bool) {
+	h.removeHeader = opt
+}
+
+func (h *Header) Encode(dst []byte) (n int, err error) {
 	if h == nil {
 		return
 	}
 
-	data = append(data, []byte{
+	if len(dst) < HeaderSize {
+		return 0, ErrDestinationLenghtNotEnough
+	}
+
+	if h.removeHeader {
+		return 0, nil
+	}
+
+	n = copy(dst, []byte{
 		byte(h.MagicNumber),
 		byte(h.NetworkType),
 		byte(h.VersionMax),
@@ -96,23 +111,23 @@ func (h *Header) Encode() (data []byte) {
 		byte(h.MessageType),
 		byte(h.ExtensionType),
 		byte(h.ExtensionType >> 8),
-	}...)
+	})
 
-	return data
+	return n, err
 }
 
-func (h *Header) Decode(data []byte) (err error) {
-	if len(data) < HeaderSize {
+func (h *Header) Decode(src []byte) (err error) {
+	if len(src) < HeaderSize {
 		return ErrInvalidHeaderSize
 	}
 
-	h.MagicNumber = data[0]
-	h.NetworkType = NetworkType(data[1])
-	h.VersionMax = data[2]
-	h.VersionUsing = data[3]
-	h.VersionMin = data[4]
-	h.MessageType = MessageType(data[5])
-	h.ExtensionType = ExtensionType(uint16(data[6]) | uint16(data[7])<<8)
+	h.MagicNumber = src[0]
+	h.NetworkType = NetworkType(src[1])
+	h.VersionMax = src[2]
+	h.VersionUsing = src[3]
+	h.VersionMin = src[4]
+	h.MessageType = MessageType(src[5])
+	h.ExtensionType = ExtensionType(uint16(src[6]) | uint16(src[7])<<8)
 
 	if h.MagicNumber != []byte("R")[0] {
 		return ErrInvalidHeaderParameters

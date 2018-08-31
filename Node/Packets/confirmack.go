@@ -5,8 +5,8 @@ import (
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"time"
 	"github.com/brokenbydefault/Nanollet/Util"
-	"encoding/binary"
 	"errors"
+	"golang.org/x/crypto/blake2b"
 )
 
 //@TODO Support votes by blocks
@@ -15,7 +15,7 @@ type ConfirmACKPackage struct {
 	PublicKey    Wallet.PublicKey
 	secretKey    Wallet.SecretKey
 	Signature    Wallet.Signature
-	Sequence     int64
+	Sequence     [8]byte
 	Transaction  Block.Transaction
 	transactions []Block.Transaction
 	Hashes       []Block.BlockHash
@@ -23,7 +23,7 @@ type ConfirmACKPackage struct {
 
 const (
 	ConfirmACKPackageSizeMin = 32 + 64 + 8 + 32
-	ConfirmACKPackageSizeMax = PackageSize
+	ConfirmACKPackageSizeMax = MessageSize
 )
 
 var (
@@ -33,53 +33,53 @@ var (
 var votePrefix = []byte("vote ")
 
 func NewConfirmACKPackage(sk Wallet.SecretKey, txs ...Block.Transaction) (packet *ConfirmACKPackage) {
-	pk, _ := sk.PublicKey()
-
-	return &ConfirmACKPackage{
-		PublicKey:    pk,
+	packet = &ConfirmACKPackage{
+		PublicKey:    sk.PublicKey(),
 		secretKey:    sk,
-		Sequence:     time.Now().Unix(),
 		transactions: txs,
 	}
+
+	copy(packet.Sequence[:], Util.UintToBytes(uint64(time.Now().Unix()), Util.BigEndian))
+	return packet
 }
 
-func (p *ConfirmACKPackage) Encode(lHeader *Header, rHeader *Header) (data []byte) {
+func (p *ConfirmACKPackage) Encode(rHeader *Header, dst []byte) (n int, err error) {
 	if p == nil || p.transactions == nil {
-		return nil
+		return 0, nil
 	}
 
-	data = make([]byte, ConfirmACKPackageSizeMax)
+	if len(dst) < ConfirmACKPackageSizeMax {
+		return 0, ErrDestinationLenghtNotEnough
+	}
 
-	copy(data[0:32], p.PublicKey)
-	binary.LittleEndian.PutUint64(data[96:104], uint64(p.Sequence))
-
-	var end = 104
+	var blk []byte
 	if len(p.transactions) > 1 {
 		for _, tx := range p.transactions {
-			end += copy(data[end:], tx.Hash())
+			hash := tx.Hash()
+			blk = append(blk, hash[:]...)
 		}
 
-		sig, err := p.secretKey.CreateSignature(Util.CreateHash(32, votePrefix, data[104:end], data[96:104]))
-		if err != nil {
-			return nil
-		}
-
-		copy(data[32:96], sig)
+		p.Signature, err = p.secretKey.CreateSignature(Util.CreateHash(32, votePrefix, blk, p.Sequence[:]))
 	} else {
-		end += copy(data[104:], p.transactions[0].Encode()[1:])
+		blk = p.transactions[0].Encode()[1:]
 
-		sig, err := p.secretKey.CreateSignature(Util.CreateHash(32, p.transactions[0].Hash(), data[96:104]))
-		if err != nil {
-			return nil
-		}
-
-		copy(data[32:96], sig)
+		hash := p.transactions[0].Hash()
+		p.Signature, err = p.secretKey.CreateSignature(Util.CreateHash(32, hash[:], p.Sequence[:]))
 	}
 
-	return data[:end]
+	if err != nil {
+		return 0, err
+	}
+
+	n += copy(dst[n:], p.PublicKey[:])
+	n += copy(dst[n:], p.Signature[:])
+	n += copy(dst[n:], p.Sequence[:])
+	n += copy(dst[n:], blk)
+
+	return n, nil
 }
 
-func (p *ConfirmACKPackage) Decode(rHeader *Header, data []byte) (err error) {
+func (p *ConfirmACKPackage) Decode(rHeader *Header, src []byte) (err error) {
 	if p == nil {
 		return
 	}
@@ -88,43 +88,40 @@ func (p *ConfirmACKPackage) Decode(rHeader *Header, data []byte) (err error) {
 		return ErrInvalidHeaderParameters
 	}
 
-	if l := len(data); l <= ConfirmACKPackageSizeMin || l > ConfirmACKPackageSizeMax {
+	if l := len(src); l <= ConfirmACKPackageSizeMin || l > ConfirmACKPackageSizeMax {
 		return ErrInvalidMessageSize
 	}
 
-	p.PublicKey, p.Signature = make([]byte, 32), make([]byte, 64)
-
 	bi := 0
-	bi += copy(p.PublicKey, data[bi:bi+32])
-	bi += copy(p.Signature, data[bi:bi+64])
-	p.Sequence = int64(binary.LittleEndian.Uint64(data[bi:bi+8]))
-	bi += 8
+	bi += copy(p.PublicKey[:], src[bi:32])
+	bi += copy(p.Signature[:], src[bi:bi+64])
+	bi += copy(p.Sequence[:], src[bi:bi+8])
 
 	if blktype := rHeader.ExtensionType.GetBlockType(); blktype == Block.NotABlock {
-		if l := len(data) - bi; l <= 0 || l%32 != 0 {
+		l := len(src)
+		if l-bi <= 0 || (l-bi)%blake2b.Size256 != 0 {
 			return ErrInvalidMessageSize
 		}
 
-		for bi = 104; bi < len(data); bi += 32 {
-			p.Hashes = append(p.Hashes, data[bi:])
+		for i := bi; i < l; i += blake2b.Size256 {
+			p.Hashes = append(p.Hashes, Block.NewBlockHash(src[bi:]))
 		}
 
-		if ok := p.PublicKey.IsValidSignature(Util.CreateHash(32, votePrefix, data[104:], data[96:104]), p.Signature); !ok {
+		if ok := p.PublicKey.IsValidSignature(Util.CreateHash(32, votePrefix, src[bi:], p.Sequence[:]), p.Signature); !ok {
 			return ErrInvalidSignature
 		}
 	} else {
-		tx, _, err := Block.NewTransaction(rHeader.ExtensionType.GetBlockType())
+		p.Transaction, _, err = Block.NewTransaction(rHeader.ExtensionType.GetBlockType())
 		if err != nil {
 			return err
 		}
 
-		p.Transaction = tx
-
-		if err = p.Transaction.Decode(data[bi:]); err != nil {
+		if err = p.Transaction.Decode(src[bi:]); err != nil {
 			return err
 		}
 
-		if ok := p.PublicKey.IsValidSignature(Util.CreateHash(32, p.Transaction.Hash(), data[96:104]), p.Signature); !ok {
+		hash := p.Transaction.Hash()
+		if ok := p.PublicKey.IsValidSignature(Util.CreateHash(32, hash[:], p.Sequence[:]), p.Signature); !ok {
 			return ErrInvalidSignature
 		}
 	}
@@ -135,12 +132,12 @@ func (p *ConfirmACKPackage) Decode(rHeader *Header, data []byte) (err error) {
 func (p *ConfirmACKPackage) ModifyHeader(h *Header) {
 	h.MessageType = ConfirmACK
 
-	if p.Transaction != nil {
-		h.ExtensionType.Add(ExtensionType(uint8(p.Transaction.GetType())) << 8)
-	}
-
-	if len(p.transactions) == 1 {
-		h.ExtensionType.Add(ExtensionType(uint8(p.transactions[0].GetType())) << 8)
+	if p.Transaction != nil || len(p.transactions) == 1 {
+		if p.Transaction != nil {
+			h.ExtensionType.Add(ExtensionType(uint8(p.Transaction.GetType())) << 8)
+		} else {
+			h.ExtensionType.Add(ExtensionType(uint8(p.transactions[0].GetType())) << 8)
+		}
 	}
 
 	if p.Hashes != nil || len(p.transactions) > 1 {

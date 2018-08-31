@@ -4,6 +4,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
 	"net"
 	"math/rand"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 var (
@@ -64,7 +65,8 @@ func (h *PeersBox) IsAllowedIP(dest net.IP) bool {
 		return false
 	}
 
-	if !peer.IsActive() || peer.PublicKey() == nil {
+	pk := peer.PublicKey()
+	if !peer.IsActive() || Util.IsEmpty(pk[:]) {
 		return false
 	}
 
@@ -89,6 +91,6 @@ func (h *PeersBox) Remove(peers ...*Peer.Peer) {
 	}
 
 	for _, peer := range peers {
-		delete(p.List, peer.RawIP().String())
+		delete(h.List, peer.RawIP().String())
 	}
 }

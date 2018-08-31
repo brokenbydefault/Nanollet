@@ -3,6 +3,7 @@ package Peer
 import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 type Quorum struct {
@@ -31,15 +32,15 @@ type Votes struct {
 }
 
 type vote struct {
-	Sequence int64
+	Sequence uint64
 	Hash     Block.BlockHash
 }
 
-func (v *Votes) Add(pk Wallet.PublicKey, seq int64, tx Block.Transaction) {
-	previous := string(tx.SwitchToUniversalBlock(nil, nil).Previous)
+func (v *Votes) Add(pk Wallet.PublicKey, seq uint64, tx Block.Transaction) {
+	previous := string(tx.SwitchToUniversalBlock(nil, nil).Previous[:])
 
-	if val, ok := v.list[previous][string(pk)]; !ok || val.Sequence <= seq {
-		v.list[previous][string(pk)] = vote {
+	if val, ok := v.list[previous][string(pk[:])]; !ok || val.Sequence <= seq {
+		v.list[previous][string(pk[:])] = vote {
 			Sequence: seq,
 			Hash:     val.Hash,
 		}
@@ -52,7 +53,7 @@ func (v *Votes) Remove(previous Block.BlockHash) {
 		return
 	}
 
-	delete(v.list, string(previous))
+	delete(v.list, string(previous[:]))
 }
 
 // @TODO Speedup and simply
@@ -65,12 +66,12 @@ func (v *Votes) Confirmed(pks []Wallet.PublicKey, quorum *Quorum) (txs []Block.B
 		result := map[string]int{}
 
 		for _, pk := range pks {
-			vote := vote[string(pk)]
+			vote := vote[string(pk[:])]
 
-			if _, ok := result[string(vote.Hash)]; ok {
-				result[string(vote.Hash)]++
+			if _, ok := result[string(vote.Hash[:])]; ok {
+				result[string(vote.Hash[:])]++
 			} else {
-				result[string(vote.Hash)] = 1
+				result[string(vote.Hash[:])] = 1
 			}
 		}
 
@@ -81,11 +82,11 @@ func (v *Votes) Confirmed(pks []Wallet.PublicKey, quorum *Quorum) (txs []Block.B
 
 		for hash, votes := range result {
 			if votes > qWinner && votes > vWinner {
-				hWinner, vWinner = Block.BlockHash(hash), votes
+				hWinner, vWinner = Block.NewBlockHash([]byte(hash)), votes
 			}
 		}
 
-		if hWinner != nil {
+		if !Util.IsEmpty(hWinner[:]) {
 			txs = append(txs, hWinner)
 		}
 	}

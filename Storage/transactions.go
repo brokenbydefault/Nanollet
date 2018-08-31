@@ -1,7 +1,6 @@
 package Storage
 
 import (
-	"bytes"
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/RPC"
@@ -10,6 +9,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
 	"github.com/brokenbydefault/Nanollet/Config"
 	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 var Amount *Numbers.RawAmount
@@ -51,7 +51,7 @@ func (ts *TransactionsShelter) KeepUpdated(pk Wallet.PublicKey) {
 			}
 
 			for _, tx := range ts.Unconfirmed.GetByFrontier(hash) {
-				if dest, _ := tx.GetTarget(); bytes.Equal(dest, pk) {
+				if dest, _ := tx.GetTarget(); dest == pk {
 					if _, ok := ts.Confirmed.GetByLinkHash(tx.Hash()); !ok {
 						ts.Pending.Add(tx)
 						continue
@@ -65,8 +65,7 @@ func (ts *TransactionsShelter) KeepUpdated(pk Wallet.PublicKey) {
 	}
 }
 
-
-func (ts *TransactionsShelter) GetByHash(b Block.BlockHash) (tx Block.Transaction, t int, ok bool){
+func (ts *TransactionsShelter) GetByHash(b Block.BlockHash) (tx Block.Transaction, t int, ok bool) {
 	if ts == nil {
 		return
 	}
@@ -84,13 +83,13 @@ func (ts *TransactionsShelter) GetByLinkHash(b Block.BlockHash) (tx Block.Transa
 		return
 	}
 
-	for i, txs := range []TransactionBox{ts.Unconfirmed, h.Pending, st.Confirmed} {
+	for i, txs := range []TransactionBox{ts.Unconfirmed, ts.Pending, ts.Confirmed} {
 		if tx, ok = txs.GetByLinkHash(b); ok {
 			return tx, i, ok
 		}
 	}
 
-	return nil, 0,false
+	return nil, 0, false
 }
 
 func (ts *TransactionsShelter) GetByPreviousHash(b Block.BlockHash) (tx Block.Transaction, t int, ok bool) {
@@ -104,7 +103,7 @@ func (ts *TransactionsShelter) GetByPreviousHash(b Block.BlockHash) (tx Block.Tr
 		}
 	}
 
-	return nil, 0,false
+	return nil, 0, false
 }
 
 func (h *TransactionBox) Listen() <-chan *Transaction {
@@ -129,23 +128,23 @@ func (h *TransactionBox) notifyListeners(new *Transaction) {
 	}
 }
 
-func (h *TransactionBox) GetByHash(b Block.BlockHash) (item *Transaction, ok bool) {
-	if h == nil || b == nil  {
+func (h *TransactionBox) GetByHash(hash Block.BlockHash) (item *Transaction, ok bool) {
+	if h == nil || Util.IsEmpty(hash[:]) {
 		return
 	}
 
-	item, ok = h.list[string(b)]
+	item, ok = h.list[string(hash[:])]
 	return
 }
 
-func (h *TransactionBox) GetByLinkHash(b Block.BlockHash) (item Block.Transaction, ok bool) {
+func (h *TransactionBox) GetByLinkHash(hash Block.BlockHash) (item Block.Transaction, ok bool) {
 	if h == nil {
 		return
 	}
 
 	for _, tx := range h.list {
 		if tx.Transaction.GetType() == Block.Receive {
-			if _, src := tx.GetTarget(); bytes.Equal(src, b) {
+			if _, src := tx.GetTarget(); src == hash {
 				return tx, true
 			}
 		}
@@ -154,13 +153,13 @@ func (h *TransactionBox) GetByLinkHash(b Block.BlockHash) (item Block.Transactio
 	return nil, false
 }
 
-func (h *TransactionBox) GetByPreviousHash(b Block.BlockHash) (item Block.Transaction, ok bool) {
+func (h *TransactionBox) GetByPreviousHash(hash Block.BlockHash) (item Block.Transaction, ok bool) {
 	if h == nil {
 		return
 	}
 
 	for _, tx := range h.list {
-		if bytes.Equal(tx.GetPrevious(), b) {
+		if tx.GetPrevious() == hash {
 			return tx, true
 		}
 	}
@@ -172,7 +171,7 @@ func (h *TransactionBox) GetByFrontier(b Block.BlockHash) (items []Block.Transac
 	for {
 
 		tx, ok := h.GetByHash(b)
-		if  !ok {
+		if !ok {
 			break
 		}
 
@@ -251,12 +250,12 @@ func (h *TransactionBox) Add(transactions ...Block.Transaction) {
 		hash := tx.Hash()
 
 		if _, ok := h.GetByHash(hash); !ok {
-			h.list[string(hash)] = &Transaction{
+			h.list[string(hash[:])] = &Transaction{
 				Transaction: tx,
 				date:        time.Now(),
 			}
 
-			h.notifyListeners(h.list[string(hash)])
+			h.notifyListeners(h.list[string(hash[:])])
 
 		}
 	}
@@ -271,7 +270,7 @@ func (h *TransactionBox) Remove(txs ...Block.Transaction) {
 		hash := tx.Hash()
 
 		if _, ok := h.GetByHash(hash); !ok {
-			delete(h.list, string(hash))
+			delete(h.list, string(hash[:]))
 		}
 	}
 }
@@ -286,7 +285,7 @@ func (h *HistoryStore) Set(hist []RPCClient.SingleHistory) {
 
 func (h *HistoryStore) ExistHash(hash Block.BlockHash) bool {
 	for _, blk := range *h {
-		if bytes.Equal(blk.Hash, hash) {
+		if blk.Hash == hash {
 			return true
 		}
 	}
@@ -296,7 +295,7 @@ func (h *HistoryStore) ExistHash(hash Block.BlockHash) bool {
 
 func (h *HistoryStore) AlreadyReceived(hash Block.BlockHash) bool {
 	for _, blk := range *h {
-		if bytes.Equal(blk.Source, hash) {
+		if blk.Source == hash {
 			return true
 		}
 	}

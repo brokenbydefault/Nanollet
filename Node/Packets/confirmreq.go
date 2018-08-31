@@ -12,7 +12,7 @@ type ConfirmReqPackage struct {
 
 const (
 	ConfirmReqPackageSizeMin = Block.ReceiveSize
-	ConfirmReqPackageSizeMax = PackageSize
+	ConfirmReqPackageSizeMax = MessageSize
 )
 
 func NewConfirmReqPackage(tx Block.Transaction) (packet *ConfirmReqPackage) {
@@ -21,15 +21,21 @@ func NewConfirmReqPackage(tx Block.Transaction) (packet *ConfirmReqPackage) {
 	}
 }
 
-func (p *ConfirmReqPackage) Encode(lHeader *Header, rHeader *Header) (data []byte) {
+func (p *ConfirmReqPackage) Encode(rHeader *Header, dst []byte) (n int, err error) {
 	if p == nil {
 		return
 	}
 
-	return p.Transaction.Encode()[1:]
+	if len(dst) < ConfirmReqPackageSizeMax {
+		return 0, ErrDestinationLenghtNotEnough
+	}
+
+	n += copy(dst, p.Transaction.Encode()[1:])
+
+	return n, err
 }
 
-func (p *ConfirmReqPackage) Decode(rHeader *Header, data []byte) (err error) {
+func (p *ConfirmReqPackage) Decode(rHeader *Header, src []byte) (err error) {
 	if p == nil {
 		return
 	}
@@ -43,7 +49,7 @@ func (p *ConfirmReqPackage) Decode(rHeader *Header, data []byte) (err error) {
 		return err
 	}
 
-	if err := p.Transaction.Decode(data); err != nil {
+	if err = p.Transaction.Decode(src); err != nil {
 		return err
 	}
 

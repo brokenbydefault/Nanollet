@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 	"github.com/brokenbydefault/Nanollet/Wallet"
+	"encoding"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 const (
@@ -25,6 +27,7 @@ var (
 )
 
 type Peer struct {
+	encoding.BinaryMarshaler
 	connection Connection
 	lastSeen   time.Time
 	publicKey  Wallet.PublicKey
@@ -79,7 +82,7 @@ func (p *Peer) IsKnow() bool {
 		return false
 	}
 
-	if p.PublicKey() == nil {
+	if pk := p.PublicKey(); Util.IsEmpty(pk[:]) {
 		return false
 	}
 
@@ -94,9 +97,9 @@ func (p *Peer) LastSeen() time.Time {
 	return p.lastSeen
 }
 
-func (p *Peer) PublicKey() Wallet.PublicKey {
+func (p *Peer) PublicKey() (pk Wallet.PublicKey) {
 	if p == nil {
-		return nil
+		return pk
 	}
 
 	return p.publicKey

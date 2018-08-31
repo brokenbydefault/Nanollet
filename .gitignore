@@ -15,3 +15,5 @@
 .idea
 /GUI/Front/.idea
 *.css
+
+test/

@@ -12,48 +12,46 @@ const (
 	KeepAlivePackageSize   = KeepAlivePackageNPeers * PeerSize
 )
 
-type KeepAlivePackage [KeepAlivePackageNPeers]*Peer.Peer
-
-func NewKeepAlivePackage(peer []*Peer.Peer) (packet *KeepAlivePackage) {
-	packet = new(KeepAlivePackage)
-
-	// Maximum should be KeepAlivePackageNPeers or less than KeepAlivePackageNPeers, if not have enough peers.
-	// It ignores other peers, keeping only the firsts.
-	max := len(peer)
-	if max > KeepAlivePackageNPeers {
-		max = KeepAlivePackageNPeers
-	}
-
-	for i, peer := range peer[:max] {
-		packet[i] = peer
-	}
-
-	return packet
+type KeepAlivePackage struct {
+	List []*Peer.Peer
 }
 
-func (p *KeepAlivePackage) Encode(lHeader *Header, rHeader *Header) (data []byte) {
+func NewKeepAlivePackage(peer []*Peer.Peer) (packet *KeepAlivePackage) {
+	return &KeepAlivePackage{
+		List: peer,
+	}
+}
+
+func (p *KeepAlivePackage) Encode(_ *Header, dst []byte) (n int, err error) {
 	if p == nil {
 		return
 	}
 
-	data = make([]byte, KeepAlivePackageSize)
-
-	bi := 0
-	for _, peer := range *p {
-		bi += copy(data[bi:], peer.RawIP())
-		bi += copy(data[bi:], peer.RawPort())
+	if len(dst) < KeepAlivePackageSize {
+		return 0, ErrDestinationLenghtNotEnough
 	}
 
-	return data
+	max := len(p.List)
+	if len(p.List) > KeepAlivePackageNPeers {
+		max = KeepAlivePackageNPeers
+	}
+
+	bi := 0
+	for _, peer := range p.List[:max] {
+		bi += copy(dst[bi:], peer.RawIP())
+		bi += copy(dst[bi:], peer.RawPort())
+	}
+
+	return bi, nil
 }
 
-func (p *KeepAlivePackage) Decode(rHeader *Header, data []byte) (err error) {
+func (p *KeepAlivePackage) Decode(_ *Header, src []byte) (err error) {
 	if p == nil {
 		return
 	}
 
 	// The packet should have at least 18 bytes and multiples by 18.
-	l := len(data)
+	l := len(src)
 	if l%PeerSize != 0 {
 		return ErrInvalidMessageSize
 	}
@@ -68,9 +66,9 @@ func (p *KeepAlivePackage) Decode(rHeader *Header, data []byte) (err error) {
 	bi := 0
 	for i := 0; i < max; i++ {
 		be := bi + PeerSize
-		dataPeer := data[bi:be]
+		dataPeer := src[bi:be]
 
-		p[i] = Peer.NewPeer(dataPeer[:net.IPv6len], int(data[16])|int(data[17])<<8)
+		p.List = append(p.List, Peer.NewPeer(dataPeer[:net.IPv6len], int(src[16])|int(src[17])<<8))
 
 		bi = be
 	}

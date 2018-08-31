@@ -4,6 +4,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/ProofWork"
 	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 var Representative Wallet.Address
@@ -21,19 +22,20 @@ var lastPoW ProofWork.Work
 
 func UpdatePoW() {
 	hash := Frontier
-	if Frontier == nil {
+	if Util.IsEmpty(Frontier[:]) {
 		hash = Block.BlockHash(PK)
 	}
 
-	if lastPoW.IsValid(Frontier) {
-		precomputedPoW <- lastPoW
+	if lastPoW.IsValid(Frontier[:]) {
+		precomputedPoW <- lastPoW[:]
 		return
 	}
 
-	precomputedPoW <- ProofWork.GenerateProof(hash)
+	pow := ProofWork.GenerateProof(hash[:])
+	precomputedPoW <- pow[:]
 }
 
 func RetrievePrecomputedPoW() []byte {
-	lastPoW = <-precomputedPoW
-	return lastPoW
+	lastPoW = ProofWork.NewWork(<-precomputedPoW)
+	return lastPoW[:]
 }

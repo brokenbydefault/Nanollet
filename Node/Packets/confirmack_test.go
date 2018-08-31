@@ -6,19 +6,19 @@ import (
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"bytes"
+	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
 func TestConfirmACKPackage_Decode(t *testing.T) {
-	tx := Block.UniversalBlock{
+	expected := Block.UniversalBlock{
 		Account:        Wallet.Address("xrb_3dm8nb5xenwobdk3agbi3soyqpi9jzygwer377btgcn9f5jg7tfjpf7kwas5").MustGetPublicKey(),
 		Representative: Wallet.Address("xrb_1beta4nkzb3g6b1a1qhae89earmz3gk3kfrp3f8hyztm8qyjkeyz9kajfutq").MustGetPublicKey(),
-		Previous:       Util.SecureHexMustDecode("770FFBF8756C883CF78189A1D7E5A1A013E0E11C41324E4215A8AFFC728813E5"),
-		Link:           Util.SecureHexMustDecode("82F94DE07379887A7B0C822E2F6F1FD7DEE1C5C3D6CB1BCE1947413949AEB604"),
+		Previous:       Block.NewBlockHash(Util.SecureHexMustDecode("770FFBF8756C883CF78189A1D7E5A1A013E0E11C41324E4215A8AFFC728813E5")),
+		Link:           Block.NewBlockHash(Util.SecureHexMustDecode("82F94DE07379887A7B0C822E2F6F1FD7DEE1C5C3D6CB1BCE1947413949AEB604")),
 		Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("00007B426FAB61F00DE36398FF693D50")),
 		DefaultBlock: Block.DefaultBlock{
-			Signature: Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05"),
-			PoW:       Util.SecureHexMustDecode("B34A5DE4C3F98B14"),
+			Signature: Wallet.NewSignature(Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05")),
+			PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
 		},
 	}
 
@@ -35,7 +35,7 @@ func TestConfirmACKPackage_Decode(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !bytes.Equal(tx.Hash(), pack.Transaction.Hash()) {
+	if expected.Hash() != pack.Transaction.Hash() {
 		t.Error("invalid decode")
 	}
 }
@@ -44,24 +44,27 @@ func TestConfirmACKPackage_Encode(t *testing.T) {
 	tx := &Block.UniversalBlock{
 		Account:        Wallet.Address("xrb_3dm8nb5xenwobdk3agbi3soyqpi9jzygwer377btgcn9f5jg7tfjpf7kwas5").MustGetPublicKey(),
 		Representative: Wallet.Address("xrb_1beta4nkzb3g6b1a1qhae89earmz3gk3kfrp3f8hyztm8qyjkeyz9kajfutq").MustGetPublicKey(),
-		Previous:       Util.SecureHexMustDecode("770FFBF8756C883CF78189A1D7E5A1A013E0E11C41324E4215A8AFFC728813E5"),
-		Link:           Util.SecureHexMustDecode("82F94DE07379887A7B0C822E2F6F1FD7DEE1C5C3D6CB1BCE1947413949AEB604"),
+		Previous:       Block.NewBlockHash(Util.SecureHexMustDecode("770FFBF8756C883CF78189A1D7E5A1A013E0E11C41324E4215A8AFFC728813E5")),
+		Link:           Block.NewBlockHash(Util.SecureHexMustDecode("82F94DE07379887A7B0C822E2F6F1FD7DEE1C5C3D6CB1BCE1947413949AEB604")),
 		Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("00007B426FAB61F00DE36398FF693D50")),
 		DefaultBlock: Block.DefaultBlock{
-			Signature: Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05"),
-			PoW:       Util.SecureHexMustDecode("B34A5DE4C3F98B14"),
+			Signature: Wallet.NewSignature(Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05")),
+			PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
 		},
 	}
 
 	_, sk, _ := Wallet.GenerateRandomKeyPair()
-	header := NewHeader()
 
 	pack := NewConfirmACKPackage(sk, tx)
-	encoded := pack.Encode(header, nil)
-	pack.ModifyHeader(header)
+	encoded := EncodePacketUDP(nil, nil, pack)
+
+	header := new(Header)
+	if err := header.Decode(encoded); err != nil {
+		t.Error(err)
+	}
 
 	depack := new(ConfirmACKPackage)
-	err := depack.Decode(header, encoded)
+	err := depack.Decode(header, encoded[HeaderSize:])
 	if err != nil {
 		t.Error(err)
 	}
@@ -74,36 +77,39 @@ func TestConfirmACKPackage_Encode_ByHash(t *testing.T) {
 		&Block.UniversalBlock{
 			Account:        Wallet.Address("xrb_3dm8nb5xenwobdk3agbi3soyqpi9jzygwer377btgcn9f5jg7tfjpf7kwas5").MustGetPublicKey(),
 			Representative: Wallet.Address("xrb_1beta4nkzb3g6b1a1qhae89earmz3gk3kfrp3f8hyztm8qyjkeyz9kajfutq").MustGetPublicKey(),
-			Previous:       Util.SecureHexMustDecode("770FFBF8756C883CF78189A1D7E5A1A013E0E11C41324E4215A8AFFC728813E5"),
-			Link:           Util.SecureHexMustDecode("82F94DE07379887A7B0C822E2F6F1FD7DEE1C5C3D6CB1BCE1947413949AEB604"),
+			Previous:       Block.NewBlockHash(Util.SecureHexMustDecode("770FFBF8756C883CF78189A1D7E5A1A013E0E11C41324E4215A8AFFC728813E5")),
+			Link:           Block.NewBlockHash(Util.SecureHexMustDecode("82F94DE07379887A7B0C822E2F6F1FD7DEE1C5C3D6CB1BCE1947413949AEB604")),
 			Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("00007B426FAB61F00DE36398FF693D50")),
 			DefaultBlock: Block.DefaultBlock{
-				Signature: Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05"),
-				PoW:       Util.SecureHexMustDecode("B34A5DE4C3F98B14"),
+				Signature: Wallet.NewSignature(Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05")),
+				PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
 			},
 		},
 		&Block.UniversalBlock{
 			Account:        Wallet.Address("xrb_3dm8nb5xenwobdk3agbi3soyqpi9jzygwer377btgcn9f5jg7tfjpf7kwas5").MustGetPublicKey(),
 			Representative: Wallet.Address("xrb_1beta4nkzb3g6b1a1qhae89earmz3gk3kfrp3f8hyztm8qyjkeyz9kajfutq").MustGetPublicKey(),
-			Previous:       Util.SecureHexMustDecode("770FFBF8756C883CF78189A1D7E5A1A013E0E11C41324E4215A8AFFC728813E5"),
-			Link:           Util.SecureHexMustDecode("82F94DE07379887A7B0C822E2F6F1FD7DEE1C5C3D6CB1BCE1947413949AEB604"),
+			Previous:       Block.NewBlockHash(Util.SecureHexMustDecode("770FFBF8756C883CF78189A1D7E5A1A013E0E11C41324E4215A8AFFC728813E5")),
+			Link:           Block.NewBlockHash(Util.SecureHexMustDecode("82F94DE07379887A7B0C822E2F6F1FD7DEE1C5C3D6CB1BCE1947413949AEB604")),
 			Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("00007B426FAB61F00DE36398FF693D50")),
 			DefaultBlock: Block.DefaultBlock{
-				Signature: Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05"),
-				PoW:       Util.SecureHexMustDecode("B34A5DE4C3F98B14"),
+				Signature: Wallet.NewSignature(Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05")),
+				PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
 			},
 		},
 	}
 
 	_, sk, _ := Wallet.GenerateRandomKeyPair()
-	header := NewHeader()
 
 	pack := NewConfirmACKPackage(sk, tx...)
-	encoded := pack.Encode(header, nil)
-	pack.ModifyHeader(header)
+	encoded := EncodePacketUDP(nil, nil, pack)
+
+	header := new(Header)
+	if err := header.Decode(encoded); err != nil {
+		t.Error(err)
+	}
 
 	depack := new(ConfirmACKPackage)
-	err := depack.Decode(header, encoded)
+	err := depack.Decode(header, encoded[HeaderSize:])
 	if err != nil {
 		t.Error(err)
 	}

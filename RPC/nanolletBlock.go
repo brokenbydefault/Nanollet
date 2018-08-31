@@ -108,5 +108,5 @@ type ProcessBlock struct {
 //--------------
 
 type RetrieveBlock struct {
-	Block Block.BlockTransaction
+	Block Block.Transaction
 }

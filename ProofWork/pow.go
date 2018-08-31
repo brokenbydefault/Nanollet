@@ -7,7 +7,12 @@ import (
 	"github.com/brokenbydefault/Nanollet/Util"
 )
 
-type Work []byte
+type Work [8]byte
+
+func NewWork(b []byte) (work Work) {
+	copy(work[:], b)
+	return work
+}
 
 var MinimumWork = uint64(0xffffffc000000000)
 
@@ -20,8 +25,6 @@ var MinimumWork = uint64(0xffffffc000000000)
 // LitleEndian(Blake2(...)) > MinimumWork
 // If it's correct then you have in hand one correct nonce/pow, you need to reverse it so use the BigEndian.
 func GenerateProof(blockHash []byte) (nonce Work) {
-	nonce = make([]byte, 8)
-
 	limit := uint64(runtime.NumCPU())
 	shard := uint64(1<<64-1) / limit
 
@@ -48,7 +51,7 @@ func (w Work) IsValid(previous []byte) bool {
 	}
 
 	nonce := make([]byte, 8)
-	binary.LittleEndian.PutUint64(nonce, binary.BigEndian.Uint64(w))
+	binary.LittleEndian.PutUint64(nonce, binary.BigEndian.Uint64(w[:]))
 
 	return binary.LittleEndian.Uint64(Util.CreateHash(8, nonce, previous)) >= MinimumWork
 }

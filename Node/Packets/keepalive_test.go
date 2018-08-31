@@ -25,10 +25,13 @@ func BenchmarkKeepAlivePackage_Encode(b *testing.B) {
 		panic(err)
 	}
 
+	dst := make([]byte, PackageSize)
+
 	packet := NewKeepAlivePackage(nil)
+	packet.Encode(nil, dst)
 
 	for i := 0; i < b.N; i++ {
-		dial.Write(packet.Encode(nil, nil))
+		dial.Write(dst)
 	}
 
 	server.Close()
@@ -39,6 +42,7 @@ func TestKeepAlivePackage_Decode(t *testing.T) {
 		Peer.NewPeer(net.ParseIP("87.65.160.15"), 54000),
 		Peer.NewPeer(net.ParseIP("185.45.113.124"), 54000),
 		Peer.NewPeer(net.ParseIP("178.128.149.150"), 54000),
+		Peer.NewPeer(net.ParseIP("80.25.160.217"), 54000),
 		Peer.NewPeer(net.ParseIP("90.229.199.116"), 54000),
 		Peer.NewPeer(net.ParseIP("81.169.243.90"), 54000),
 		Peer.NewPeer(net.ParseIP("77.20.254.59"), 54000),
@@ -58,13 +62,13 @@ func TestKeepAlivePackage_Decode(t *testing.T) {
 		t.Error(err)
 	}
 
-	for i, peer := range pack {
+	for i, peer := range pack.List {
 		if !expected[i].RawIP().Equal(peer.RawIP()) {
-			t.Error("invalid decode, wrong ip")
+			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.RawIP(), expected[i].RawIP())
 		}
 
-		if bytes.Equal(expected[i].RawPort(), peer.RawPort()) {
-			t.Error("invalid decode, wrong port")
+		if !bytes.Equal(expected[i].RawPort(), peer.RawPort()) {
+			t.Errorf("invalid decode, wrong port. Gets %s expecting %s", peer.RawPort(), expected[i].RawPort())
 		}
 	}
 
@@ -81,14 +85,27 @@ func TestKeepAlivePackage_Encode(t *testing.T) {
 		Peer.NewPeer(net.ParseIP("13.59.162.102"), 54000),
 	}
 
-	header := NewHeader()
-
 	pack := NewKeepAlivePackage(peers)
-	encoded := pack.Encode(header, nil)
+	encoded := EncodePacketUDP(nil, nil, pack)
+
+	header := new(Header)
+	if err := header.Decode(encoded); err != nil {
+		t.Error(err)
+	}
 
 	depack := new(KeepAlivePackage)
-	if err := depack.Decode(header, encoded); err != nil {
+	if err := depack.Decode(header, encoded[HeaderSize:]); err != nil {
 		t.Error(err)
+	}
+
+	for i, peer := range pack.List {
+		if !peers[i].RawIP().Equal(peer.RawIP()) {
+			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.RawIP(), peers[i].RawIP())
+		}
+
+		if !bytes.Equal(peers[i].RawPort(), peer.RawPort()) {
+			t.Errorf("invalid decode, wrong port. Gets %s expecting %s", peer.RawPort(), peers[i].RawPort())
+		}
 	}
 
 }

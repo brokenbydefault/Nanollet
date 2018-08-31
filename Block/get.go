@@ -15,10 +15,10 @@ func (d *DefaultBlock) SetSignature(s Wallet.Signature) {
 }
 
 func (d *DefaultBlock) GetSubType() BlockType {
-	if d.SubType == Invalid {
-		return d.Type
+	if d.subType == Invalid {
+		return d.mainType
 	}
-	return d.SubType
+	return d.subType
 }
 
 func (s *SendBlock) GetType() BlockType {
@@ -58,10 +58,7 @@ func (s *ChangeBlock) SetFrontier(h BlockHash) {
 }
 
 func (u *UniversalBlock) SetFrontier(h BlockHash) {
-	var hash [32]byte
-	copy(hash[:], h)
-
-	u.Previous = hash[:]
+	copy(u.Previous[:], h[:])
 }
 
 func (s *SendBlock) SetBalance(n *Numbers.RawAmount) {
@@ -84,20 +81,20 @@ func (u *UniversalBlock) SetBalance(n *Numbers.RawAmount) {
 	u.Balance = n
 }
 
-func (s *SendBlock) GetTarget() (Wallet.PublicKey, BlockHash) {
-	return s.Destination, nil
+func (s *SendBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
+	return s.Destination, hash
 }
 
-func (s *ReceiveBlock) GetTarget() (Wallet.PublicKey, BlockHash) {
-	return nil, s.Source
+func (s *ReceiveBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
+	return pk, s.Source
 }
 
-func (s *OpenBlock) GetTarget() (Wallet.PublicKey, BlockHash) {
-	return nil, s.Source
+func (s *OpenBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
+	return pk, s.Source
 }
 
-func (s *ChangeBlock) GetTarget() (Wallet.PublicKey, BlockHash) {
-	return nil, nil
+func (s *ChangeBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
+	return pk, hash
 }
 
 func (u *UniversalBlock) GetTarget() (destination Wallet.PublicKey, source BlockHash) {

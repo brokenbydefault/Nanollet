@@ -11,19 +11,20 @@ const (
 )
 
 var (
-	ErrUnsupportedMessage = errors.New("unsupported message type")
-	ErrInvalidMessageSize = errors.New("invalid message")
+	ErrUnsupportedMessage         = errors.New("unsupported message type")
+	ErrInvalidMessageSize         = errors.New("invalid message")
+	ErrDestinationLenghtNotEnough = errors.New("dst are smaller than message")
 )
 
 type PacketUDP interface {
-	Encode(lHeader *Header, rHeader *Header) (data []byte)
-	Decode(rHeader *Header, data []byte) (err error)
+	Encode(rHeader *Header, dst []byte) (n int, err error)
+	Decode(rHeader *Header, src []byte) (err error)
 
 	ModifyHeader(h *Header)
 }
 
 type PacketTCP interface {
-	Encode(lHeader *Header, rHeader *Header, dst io.Writer)
+	Encode(rHeader *Header, dst io.Writer) (err error)
 	Decode(rHeader *Header, src io.Reader) (err error)
 
 	ModifyHeader(h *Header)
@@ -34,22 +35,18 @@ func EncodePacketUDP(lHeader, rHeader *Header, packet PacketUDP) []byte {
 		lHeader = NewHeader()
 	}
 
+	dst := make([]byte, PackageSize)
 	packet.ModifyHeader(lHeader)
 
-	return append(lHeader.Encode(), packet.Encode(lHeader, rHeader)...)
-}
-
-func DecodePacketUDP(data []byte) (header Header, packet PacketUDP, err error) {
-	header.Decode(data)
-
-	switch header.MessageType {
-	case KeepAlive:
-		packet = &KeepAlivePackage{}
-	case NodeHandshake:
-		packet = &HandshakePackage{}
-	default:
-		return header, packet, ErrUnsupportedMessage
+	nH, err := lHeader.Encode(dst)
+	if err != nil {
+		return nil
 	}
 
-	return header, packet, nil
+	nP, err := packet.Encode(rHeader, dst[nH:])
+	if err != nil {
+		return nil
+	}
+
+	return dst[:nH+nP]
 }

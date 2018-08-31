@@ -28,8 +28,8 @@ type Transaction interface {
 //--------------
 
 type DefaultBlock struct {
-	Type      BlockType        `json:"type"`
-	SubType   BlockType        `json:"subtype,omitempty"`
+	mainType BlockType
+	subType   BlockType
 	PoW       ProofWork.Work   `json:"work"`
 	Signature Wallet.Signature `json:"signature"`
 	hash      BlockHash
@@ -38,44 +38,44 @@ type DefaultBlock struct {
 //--------------
 
 type SendBlock struct {
-	DefaultBlock
 	Previous    BlockHash          `json:"previous"`
 	Destination Wallet.PublicKey   `json:"destination"`
 	Balance     *Numbers.RawAmount `json:"balance"`
+	DefaultBlock
 }
 
 //--------------
 
 type ReceiveBlock struct {
-	DefaultBlock
 	Previous BlockHash `json:"previous"`
 	Source   BlockHash `json:"source"`
+	DefaultBlock
 }
 
 //--------------
 
 type OpenBlock struct {
-	DefaultBlock
 	Account        Wallet.PublicKey `json:"account"`
 	Representative Wallet.PublicKey `json:"representative"`
 	Source         BlockHash        `json:"source"`
+	DefaultBlock
 }
 
 //--------------
 
 type ChangeBlock struct {
-	DefaultBlock
 	Previous       BlockHash        `json:"previous"`
 	Representative Wallet.PublicKey `json:"representative"`
+	DefaultBlock
 }
 
 //--------------
 
 type UniversalBlock struct {
-	DefaultBlock
 	Account        Wallet.PublicKey   `json:"account"`
 	Previous       BlockHash          `json:"previous"`
 	Representative Wallet.PublicKey   `json:"representative"`
 	Balance        *Numbers.RawAmount `json:"balance"`
 	Link           BlockHash          `json:"link"`
+	DefaultBlock
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
 type BlockType byte
@@ -39,20 +40,20 @@ const (
 var (
 	ErrInvalidSize      = errors.New("invalid size")
 	ErrInvalidPoW       = errors.New("invalid PoW")
-	ErrInvalidSignature = errors.New("invalid signature")
+	ErrInvalidSignature = errors.New("invalid block signature")
 )
 
 func (u *UniversalBlock) Encode() (data []byte) {
 	data = make([]byte, StateExtendedSize)
 
-	data[0] = uint8(State)
-	copy(data[1:33], u.Account)
-	copy(data[33:65], u.Previous)
-	copy(data[65:97], u.Representative)
+	data[0] = uint8(u.GetType())
+	copy(data[1:33], u.Account[:])
+	copy(data[33:65], u.Previous[:])
+	copy(data[65:97], u.Representative[:])
 	copy(data[97:113], u.Balance.ToBytes())
-	copy(data[113:145], u.Link)
-	copy(data[145:209], u.DefaultBlock.Signature)
-	copy(data[209:217], u.DefaultBlock.PoW)
+	copy(data[113:145], u.Link[:])
+	copy(data[145:209], u.DefaultBlock.Signature[:])
+	copy(data[209:217], u.DefaultBlock.PoW[:])
 
 	return data
 }
@@ -68,24 +69,25 @@ func (u *UniversalBlock) Decode(data []byte) (err error) {
 	}
 
 	*u = UniversalBlock{
-		Account:        blk[0:32],
-		Previous:       blk[32:64],
-		Representative: blk[64:96],
+		Account:        Wallet.NewPublicKey(blk[0:32]),
+		Previous:       NewBlockHash(blk[32:64]),
+		Representative: Wallet.NewPublicKey(blk[64:96]),
 		Balance:        Numbers.NewRawFromBytes(blk[96:112]),
-		Link:           blk[112:144],
+		Link:           NewBlockHash(blk[112:144]),
 		DefaultBlock: DefaultBlock{
-			Type:      State,
-			SubType:   State,
-			Signature: blk[144:208],
-			PoW:       blk[208:216],
+			mainType:  State,
+			subType:   State,
+			Signature: Wallet.NewSignature(blk[144:208]),
+			PoW:       ProofWork.NewWork(blk[208:216]),
 		},
 	}
 
-	if !u.PoW.IsValid(u.Previous) {
+	if !u.PoW.IsValid(u.Previous[:]) {
 		return ErrInvalidPoW
 	}
 
-	if !u.Account.IsValidSignature(u.Hash(), u.Signature) {
+	hash := u.Hash()
+	if !u.Account.IsValidSignature(hash[:], u.Signature) {
 		return ErrInvalidSignature
 	}
 
@@ -97,8 +99,8 @@ func (u *UniversalBlock) SwitchTo(t BlockType) Transaction {
 	case Open:
 		return &OpenBlock{
 			DefaultBlock: DefaultBlock{
-				Type:      Open,
-				SubType:   Open,
+				mainType:  Open,
+				subType:   Open,
 				Signature: u.Signature,
 				PoW:       u.PoW,
 			},
@@ -109,8 +111,8 @@ func (u *UniversalBlock) SwitchTo(t BlockType) Transaction {
 	case Receive:
 		return &ReceiveBlock{
 			DefaultBlock: DefaultBlock{
-				Type:      Receive,
-				SubType:   Receive,
+				mainType:  Receive,
+				subType:   Receive,
 				Signature: u.Signature,
 				PoW:       u.PoW,
 			},
@@ -120,8 +122,8 @@ func (u *UniversalBlock) SwitchTo(t BlockType) Transaction {
 	case Send:
 		return &SendBlock{
 			DefaultBlock: DefaultBlock{
-				Type:      Send,
-				SubType:   Send,
+				mainType:  Send,
+				subType:   Send,
 				Signature: u.Signature,
 				PoW:       u.PoW,
 			},
@@ -132,8 +134,8 @@ func (u *UniversalBlock) SwitchTo(t BlockType) Transaction {
 	case Change:
 		return &ChangeBlock{
 			DefaultBlock: DefaultBlock{
-				Type:      Change,
-				SubType:   Change,
+				mainType:  Change,
+				subType:   Change,
 				Signature: u.Signature,
 				PoW:       u.PoW,
 			},
@@ -152,12 +154,12 @@ func (u *UniversalBlock) SwitchToUniversalBlock(_ *UniversalBlock, _ *Numbers.Ra
 func (s *SendBlock) Encode() (data []byte) {
 	data = make([]byte, 0, SendExtendedSize)
 
-	data[0] = uint8(s.DefaultBlock.Type)
-	copy(data[1:33], s.Previous)
-	copy(data[33:65], s.Destination)
+	data[0] = uint8(s.GetType())
+	copy(data[1:33], s.Previous[:])
+	copy(data[33:65], s.Destination[:])
 	copy(data[65:81], s.Balance.ToBytes())
-	copy(data[81:145], s.DefaultBlock.Signature)
-	copy(data[145:153], s.DefaultBlock.PoW)
+	copy(data[81:145], s.DefaultBlock.Signature[:])
+	copy(data[145:153], s.DefaultBlock.PoW[:])
 
 	return data
 }
@@ -173,18 +175,19 @@ func (s *SendBlock) Decode(data []byte) (err error) {
 	}
 
 	*s = SendBlock{
-		Previous:    blk[0:32],
-		Destination: blk[32:64],
+		Previous:    NewBlockHash(blk[0:32]),
+		Destination: Wallet.NewPublicKey(blk[32:64]),
 		Balance:     Numbers.NewRawFromBytes(blk[64:80]),
 		DefaultBlock: DefaultBlock{
-			Type:      Send,
-			SubType:   Send,
-			Signature: blk[80:144],
-			PoW:       blk[144:152],
+			mainType:  Send,
+			subType:   Send,
+			Signature: Wallet.NewSignature(blk[80:144]),
+			PoW:       ProofWork.NewWork(blk[144:152]),
 		},
 	}
 
-	if !s.PoW.IsValid(s.Hash()) {
+	hash := s.Hash()
+	if !s.PoW.IsValid(hash[:]) {
 		return ErrInvalidPoW
 	}
 
@@ -193,10 +196,7 @@ func (s *SendBlock) Decode(data []byte) (err error) {
 
 func (s *SendBlock) SwitchToUniversalBlock(prevBlock *UniversalBlock, amm *Numbers.RawAmount) *UniversalBlock {
 	if prevBlock == nil {
-		prevBlock = &UniversalBlock{
-			Account:        make([]byte, 32),
-			Representative: make([]byte, 32),
-		}
+		prevBlock = &UniversalBlock{}
 	}
 
 	if amm == nil {
@@ -205,8 +205,8 @@ func (s *SendBlock) SwitchToUniversalBlock(prevBlock *UniversalBlock, amm *Numbe
 
 	return &UniversalBlock{
 		DefaultBlock: DefaultBlock{
-			Type:      State,
-			SubType:   Send,
+			mainType:  State,
+			subType:   Send,
 			Signature: s.DefaultBlock.Signature,
 			PoW:       s.DefaultBlock.PoW,
 		},
@@ -221,11 +221,11 @@ func (s *SendBlock) SwitchToUniversalBlock(prevBlock *UniversalBlock, amm *Numbe
 func (s *ReceiveBlock) Encode() (data []byte) {
 	data = make([]byte, 0, ReceiveExtendedSize)
 
-	data[0] = uint8(s.DefaultBlock.Type)
-	copy(data[1:33], s.Previous)
-	copy(data[33:65], s.Source)
-	copy(data[65:129], s.DefaultBlock.Signature)
-	copy(data[129:137], s.DefaultBlock.PoW)
+	data[0] = uint8(s.GetType())
+	copy(data[1:33], s.Previous[:])
+	copy(data[33:65], s.Source[:])
+	copy(data[65:129], s.DefaultBlock.Signature[:])
+	copy(data[129:137], s.DefaultBlock.PoW[:])
 
 	return data
 }
@@ -241,17 +241,18 @@ func (s *ReceiveBlock) Decode(data []byte) (err error) {
 	}
 
 	*s = ReceiveBlock{
-		Previous: blk[0:32],
-		Source:   blk[32:64],
+		Previous: NewBlockHash(blk[0:32]),
+		Source:   NewBlockHash(blk[32:64]),
 		DefaultBlock: DefaultBlock{
-			Type:      Receive,
-			SubType:   Receive,
-			Signature: blk[64:128],
-			PoW:       blk[128:136],
+			mainType:  Receive,
+			subType:   Receive,
+			Signature: Wallet.NewSignature(blk[64:128]),
+			PoW:       ProofWork.NewWork(blk[128:136]),
 		},
 	}
 
-	if !s.PoW.IsValid(s.Hash()) {
+	hash := s.Hash()
+	if !s.PoW.IsValid(hash[:]) {
 		return ErrInvalidPoW
 	}
 
@@ -260,11 +261,7 @@ func (s *ReceiveBlock) Decode(data []byte) (err error) {
 
 func (s *ReceiveBlock) SwitchToUniversalBlock(prevBlock *UniversalBlock, amm *Numbers.RawAmount) *UniversalBlock {
 	if prevBlock == nil {
-		prevBlock = &UniversalBlock{
-			Account:        make([]byte, 32),
-			Representative: make([]byte, 32),
-			Balance:        Numbers.NewRaw(),
-		}
+		prevBlock = &UniversalBlock{}
 	}
 
 	if amm == nil {
@@ -273,8 +270,8 @@ func (s *ReceiveBlock) SwitchToUniversalBlock(prevBlock *UniversalBlock, amm *Nu
 
 	return &UniversalBlock{
 		DefaultBlock: DefaultBlock{
-			Type:      State,
-			SubType:   Receive,
+			mainType:  State,
+			subType:   Receive,
 			PoW:       s.DefaultBlock.PoW,
 			Signature: s.DefaultBlock.Signature,
 		},
@@ -289,12 +286,12 @@ func (s *ReceiveBlock) SwitchToUniversalBlock(prevBlock *UniversalBlock, amm *Nu
 func (s *OpenBlock) Encode() (data []byte) {
 	data = make([]byte, 0, OpenExtendedSize)
 
-	data[0] = uint8(s.DefaultBlock.Type)
-	copy(data[1:33], s.Source)
-	copy(data[33:65], s.Representative)
-	copy(data[65:97], s.Account)
-	copy(data[97:161], s.DefaultBlock.Signature)
-	copy(data[161:169], s.DefaultBlock.PoW)
+	data[0] = uint8(s.GetType())
+	copy(data[1:33], s.Source[:])
+	copy(data[33:65], s.Representative[:])
+	copy(data[65:97], s.Account[:])
+	copy(data[97:161], s.DefaultBlock.Signature[:])
+	copy(data[161:169], s.DefaultBlock.PoW[:])
 
 	return data
 }
@@ -310,18 +307,19 @@ func (s *OpenBlock) Decode(data []byte) (err error) {
 	}
 
 	*s = OpenBlock{
-		Source:         blk[0:32],
-		Representative: blk[32:64],
-		Account:        blk[64:96],
+		Source:         NewBlockHash(blk[0:32]),
+		Representative: Wallet.NewPublicKey(blk[32:64]),
+		Account:        Wallet.NewPublicKey(blk[64:96]),
 		DefaultBlock: DefaultBlock{
-			Type:      Open,
-			SubType:   Open,
-			Signature: blk[96:160],
-			PoW:       blk[160:168],
+			mainType:  Open,
+			subType:   Open,
+			Signature: Wallet.NewSignature(blk[96:160]),
+			PoW:       ProofWork.NewWork(blk[160:168]),
 		},
 	}
 
-	if !s.PoW.IsValid(s.Hash()) {
+	hash := s.Hash()
+	if !s.PoW.IsValid(hash[:]) {
 		return ErrInvalidPoW
 	}
 
@@ -331,13 +329,12 @@ func (s *OpenBlock) Decode(data []byte) (err error) {
 func (s *OpenBlock) SwitchToUniversalBlock(_ *UniversalBlock, amm *Numbers.RawAmount) *UniversalBlock {
 	return &UniversalBlock{
 		DefaultBlock: DefaultBlock{
-			Type:      State,
-			SubType:   Open,
+			mainType:  State,
+			subType:   Open,
 			PoW:       s.DefaultBlock.PoW,
 			Signature: s.DefaultBlock.Signature,
 		},
 		Account:        s.Account,
-		Previous:       make([]byte, 32),
 		Representative: s.Representative,
 		Balance:        amm,
 		Link:           s.Source,
@@ -347,11 +344,11 @@ func (s *OpenBlock) SwitchToUniversalBlock(_ *UniversalBlock, amm *Numbers.RawAm
 func (s *ChangeBlock) Encode() (data []byte) {
 	data = make([]byte, 0, ChangeExtendedSize)
 
-	data[0] = uint8(s.DefaultBlock.Type)
-	copy(data[1:33], s.Previous)
-	copy(data[33:65], s.Representative)
-	copy(data[65:129], s.DefaultBlock.Signature)
-	copy(data[129:137], s.DefaultBlock.PoW)
+	data[0] = uint8(s.GetType())
+	copy(data[1:33], s.Previous[:])
+	copy(data[33:65], s.Representative[:])
+	copy(data[65:129], s.DefaultBlock.Signature[:])
+	copy(data[129:137], s.DefaultBlock.PoW[:])
 
 	return data
 }
@@ -367,17 +364,18 @@ func (s *ChangeBlock) Decode(data []byte) (err error) {
 	}
 
 	*s = ChangeBlock{
-		Previous:       blk[0:32],
-		Representative: blk[32:64],
+		Previous:       NewBlockHash(blk[0:32]),
+		Representative: Wallet.NewPublicKey(blk[32:64]),
 		DefaultBlock: DefaultBlock{
-			Type:      Change,
-			SubType:   Change,
-			Signature: blk[64:128],
-			PoW:       blk[128:136],
+			mainType:  Change,
+			subType:   Change,
+			Signature: Wallet.NewSignature(blk[64:128]),
+			PoW:       ProofWork.NewWork(blk[128:136]),
 		},
 	}
 
-	if !s.PoW.IsValid(s.Hash()) {
+	hash := s.Hash()
+	if !s.PoW.IsValid(hash[:]) {
 		return ErrInvalidPoW
 	}
 
@@ -386,16 +384,13 @@ func (s *ChangeBlock) Decode(data []byte) (err error) {
 
 func (s *ChangeBlock) SwitchToUniversalBlock(prevBlock *UniversalBlock, _ *Numbers.RawAmount) *UniversalBlock {
 	if prevBlock == nil {
-		prevBlock = &UniversalBlock{
-			Account: make([]byte, 32),
-			Balance: Numbers.NewRaw(),
-		}
+		prevBlock = &UniversalBlock{}
 	}
 
 	return &UniversalBlock{
 		DefaultBlock: DefaultBlock{
-			Type:      State,
-			SubType:   Change,
+			mainType:  State,
+			subType:   Change,
 			PoW:       s.DefaultBlock.PoW,
 			Signature: s.DefaultBlock.Signature,
 		},
@@ -403,7 +398,6 @@ func (s *ChangeBlock) SwitchToUniversalBlock(prevBlock *UniversalBlock, _ *Numbe
 		Previous:       s.Previous,
 		Representative: s.Representative,
 		Balance:        prevBlock.Balance,
-		Link:           make([]byte, 32),
 	}
 }
 
@@ -417,8 +411,5 @@ func checkAndCopy(expectedSize int, data []byte) ([]byte, error) {
 		return nil, ErrInvalidSize
 	}
 
-	c := make([]byte, expectedSize)
-	copy(c, data)
-
-	return c, nil
+	return data, nil
 }

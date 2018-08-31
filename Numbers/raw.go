@@ -4,14 +4,22 @@ import (
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"math/big"
+	"io"
 )
 
 type RawAmount struct {
 	bigint *big.Int
 }
 
-var max = new(big.Int).SetBytes([]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
-var min = new(big.Int).SetInt64(0)
+var (
+	ErrInvalidAmount = errors.New("invalid amount")
+	ErrInvalidInput  = errors.New("impossible to convert the input to RawNumbers")
+)
+
+var (
+	max = new(big.Int).SetBytes([]byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff})
+	min = new(big.Int).SetInt64(0)
+)
 
 func NewRaw() *RawAmount {
 	return &RawAmount{new(big.Int).SetInt64(0)}
@@ -24,7 +32,7 @@ func NewRawFromString(s string) (*RawAmount, error) {
 	r := &RawAmount{i}
 
 	if !ok {
-		return nil, errors.New("invalid string")
+		return nil, ErrInvalidInput
 	}
 
 	return r, nil
@@ -35,7 +43,7 @@ func NewRawFromString(s string) (*RawAmount, error) {
 func NewRawFromHex(h string) (*RawAmount, error) {
 	b, err := Util.UnsafeHexDecode(h)
 	if err != nil {
-		return nil, errors.New("invalid hex")
+		return nil, ErrInvalidInput
 	}
 
 	return NewRawFromBytes(b), nil
@@ -51,7 +59,7 @@ func NewRawFromBytes(b []byte) *RawAmount {
 
 func (a *RawAmount) Copy(src []byte) (i int) {
 	if a == nil {
-		*a = RawAmount{}
+		return
 	}
 
 	*a = *NewRawFromBytes(src)
@@ -86,15 +94,46 @@ func (a *RawAmount) ToBytes() []byte {
 
 	bi := a.bigint.Bytes()
 
-	// If the value is larger than Uint128 we return,
-	// because it already have more than 16 bytes
-	// however it's a invalid value for the Nano.
-	if l := len(bi); l >= 16 {
-		return bi
+	offset := 16 - len(bi)
+	if offset < 0 {
+		offset = 0
 	}
 
 	b := make([]byte, 16)
-	copy(b[16-len(bi):], bi)
+	copy(b[offset:], bi)
 
 	return b
+}
+
+func (a *RawAmount) MarshalBinary() (data []byte, err error) {
+	return a.ToBytes(), nil
+}
+
+func (a *RawAmount) UnmarshalBinary(data []byte) error {
+	*a = *NewRawFromBytes(data)
+
+	if !a.IsValid() {
+		return ErrInvalidAmount
+	}
+
+	return nil
+}
+
+func (a *RawAmount) Read(reader io.Reader) (err error) {
+	b := make([]byte, 16)
+	if n, err := reader.Read(b); n != 16 || err != nil {
+		return ErrInvalidInput
+	}
+
+	a.bigint = new(big.Int).SetBytes(b)
+
+	return
+}
+
+func (a *RawAmount) Write(writer io.Writer) (err error) {
+	if n, err := writer.Write(a.ToBytes()); n != 16 || err != nil {
+		return ErrInvalidInput
+	}
+
+	return
 }

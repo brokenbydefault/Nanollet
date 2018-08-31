@@ -1,5 +1,7 @@
 package Util
 
+import "bytes"
+
 func ReverseBytes(b []byte) []byte {
 	length := len(b)
 	last := length - 1
@@ -27,4 +29,8 @@ func ConcatBytes(slice ...[]byte) []byte {
 
 	return tmp
 
+}
+
+func IsEmpty(slice []byte) bool {
+	return bytes.Equal(slice, make([]byte, len(slice)))
 }

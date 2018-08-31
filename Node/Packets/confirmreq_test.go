@@ -3,10 +3,10 @@ package Packets
 import (
 	"testing"
 	"github.com/brokenbydefault/Nanollet/Util"
-	"bytes"
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
 func TestConfirmReqPackage_Decode(t *testing.T) {
@@ -24,7 +24,7 @@ func TestConfirmReqPackage_Decode(t *testing.T) {
 		t.Error(err)
 	}
 
-	if !bytes.Equal(pack.Transaction.Hash(), expected) {
+	if pack.Transaction.Hash() != Block.NewBlockHash(expected) {
 		t.Error("decode error, invalid block")
 	}
 }
@@ -34,27 +34,29 @@ func TestConfirmReqPackage_Encode(t *testing.T) {
 	tx := &Block.UniversalBlock{
 		Account:        Wallet.Address("nano_1z7okhhjx8dym3oz7ggh4qu7sb6hnwoqbmpkia7ojw8k45ucwkq73irbtndz").MustGetPublicKey(),
 		Representative: Wallet.Address("nano_1z7okhhjx8dym3oz7ggh4qu7sb6hnwoqbmpkia7ojw8k45ucwkq73irbtndz").MustGetPublicKey(),
-		Previous:       Util.SecureHexMustDecode("DFE37B58B3CA19CE168D6A2D878AC539A0EA51E037687D2C6DFED18C22A7AAD8"),
-		Link:           Util.SecureHexMustDecode("843481C75FA40484A4B203B290990C0BF916E5DF918BC9F2952B1DD99A5928C3"),
+		Previous:       Block.NewBlockHash(Util.SecureHexMustDecode("DFE37B58B3CA19CE168D6A2D878AC539A0EA51E037687D2C6DFED18C22A7AAD8")),
+		Link:           Block.NewBlockHash(Util.SecureHexMustDecode("843481C75FA40484A4B203B290990C0BF916E5DF918BC9F2952B1DD99A5928C3")),
 		Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("000000087A84C94598B4E5525F000000")),
 		DefaultBlock: Block.DefaultBlock{
-			Signature: Util.SecureHexMustDecode("ED46BE47A5DDE7E22F1FD9E15EEF5E5793DFC4015B65256A023D6FA2C08E60416FA72111428E17B41591A7413F9FBADFAFCD86FAFAE3E9189FED7709F5FACB0B"),
-			PoW:       Util.SecureHexMustDecode("E541DC0E9B3041C6"),
+			Signature: Wallet.NewSignature(Util.SecureHexMustDecode("ED46BE47A5DDE7E22F1FD9E15EEF5E5793DFC4015B65256A023D6FA2C08E60416FA72111428E17B41591A7413F9FBADFAFCD86FAFAE3E9189FED7709F5FACB0B")),
+			PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("E541DC0E9B3041C6")),
 		},
 	}
 
-	header := NewHeader()
-
 	pack := NewConfirmReqPackage(tx)
-	encoded := pack.Encode(header, nil)
-	pack.ModifyHeader(header)
+	encoded := EncodePacketUDP(nil, nil, pack)
 
-	depack := new(ConfirmReqPackage)
-	if err := depack.Decode(header, encoded); err != nil {
+	header := new(Header)
+	if err := header.Decode(encoded); err != nil {
 		t.Error(err)
 	}
 
-	if !bytes.Equal(depack.Transaction.Hash(), expected) {
+	depack := new(ConfirmReqPackage)
+	if err := depack.Decode(header, encoded[HeaderSize:]); err != nil {
+		t.Error(err)
+	}
+
+	if depack.Transaction.Hash() != Block.NewBlockHash(expected) {
 		t.Error("encode error, invalid block")
 	}
 }
