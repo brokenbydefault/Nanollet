@@ -1,6 +1,6 @@
 package Util
 
-// CheckError will return error if one of the input is non-nil.
+// CheckError will return error if one of the input are non-nil.
 func CheckError(errs []error) error {
 	for _, err := range errs {
 		if err != nil {

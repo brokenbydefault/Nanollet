@@ -1,63 +1,79 @@
 package Block
 
 import (
-	"encoding/json"
 	"github.com/brokenbydefault/Nanollet/Util"
+	"golang.org/x/crypto/blake2b"
 )
 
-type BlockHash []byte
+type BlockHash [blake2b.Size256]byte
 
-var universalblockflag = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06}
+func NewBlockHash(b []byte) (hash BlockHash) {
+	copy(hash[:], b)
+	return hash
+}
+
+var universalBlockFlag = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06}
 
 func (s *SendBlock) Hash() BlockHash {
-	destination, _ := s.Destination.GetPublicKey()
-	return Util.CreateHash(32, s.Previous, destination, s.Balance.ToBytes())
+	if Util.IsEmpty(s.hash[:]) {
+		copy(s.hash[:], Util.CreateHash(32, s.Encode()[1:SendHashableSize]))
+	}
+
+	return s.hash
 }
 
 func (s *ReceiveBlock) Hash() BlockHash {
-	return Util.CreateHash(32, s.Previous, s.Source)
+	if Util.IsEmpty(s.hash[:]) {
+		copy(s.hash[:], Util.CreateHash(32, s.Encode()[1:ReceiveHashableSize]))
+	}
+
+	return s.hash
 }
 
 func (s *OpenBlock) Hash() BlockHash {
-	account, _ := s.Account.GetPublicKey()
-	representative, _ := s.Representative.GetPublicKey()
-	return Util.CreateHash(32, s.Source, representative, account)
+	if Util.IsEmpty(s.hash[:]) {
+		copy(s.hash[:], Util.CreateHash(32, s.Encode()[1:OpenHashableSize]))
+	}
+
+	return s.hash
 }
 
 func (s *ChangeBlock) Hash() BlockHash {
-	representative, _ := s.Representative.GetPublicKey()
-	return Util.CreateHash(32, s.Previous, representative)
+	if Util.IsEmpty(s.hash[:]) {
+		copy(s.hash[:], Util.CreateHash(32, s.Encode()[1:ChangeHashableSize]))
+	}
+
+	return s.hash
 }
 
 func (u *UniversalBlock) Hash() BlockHash {
-	var link [32]byte
-	copy(link[:], u.Link)
-
-	var previous [32]byte
-	copy(previous[:], u.Previous)
-
-	account, _ := u.Account.GetPublicKey()
-	representative, _ := u.Representative.GetPublicKey()
-
-	return Util.CreateHash(32, universalblockflag, account, previous[:], representative, u.Balance.ToBytes(), link[:])
-}
-
-func (d *BlockHash) UnmarshalJSON(data []byte) (err error) {
-	var str string
-	err = json.Unmarshal(data, &str)
-	if err != nil {
-		return
+	if Util.IsEmpty(u.hash[:]) {
+		copy(u.hash[:], Util.CreateHash(32, universalBlockFlag, u.Encode()[1:StateHashableSize]))
 	}
 
-	v, err := Util.UnsafeHexDecode(str)
-	if err != nil {
-		return
-	}
-
-	*d = v
-	return
+	return u.hash
 }
 
-func (d BlockHash) MarshalJSON() ([]byte, error) {
-	return json.Marshal(Util.UnsafeHexEncode(d))
+func (s *SendBlock) GetPrevious() (hash BlockHash) {
+	return s.Previous
+}
+
+func (s *ReceiveBlock) GetPrevious() (hash BlockHash) {
+	return s.Previous
+}
+
+func (s *OpenBlock) GetPrevious() (hash BlockHash) {
+	return NewBlockHash(nil)
+}
+
+func (s *ChangeBlock) GetPrevious() (hash BlockHash) {
+	return s.Previous
+}
+
+func (u *UniversalBlock) GetPrevious() (hash BlockHash) {
+	if Util.IsEmpty(u.Previous[:]) {
+		return NewBlockHash(nil)
+	}
+
+	return u.Previous
 }

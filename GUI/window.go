@@ -1,14 +1,22 @@
 package GUI
 
 import (
-	"github.com/brokenbydefault/Nanollet/Config"
 	"github.com/brokenbydefault/Nanollet/GUI/App"
 	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/brokenbydefault/Nanollet/GUI/Storage"
+	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
 	"path/filepath"
+	"github.com/brokenbydefault/Nanollet/Wallet"
 )
+
+func init() {
+	if err := Storage.ArbitraryStorage.WriteFile("sciter.link", Front.Sciter); err != nil {
+		panic(err)
+	}
+
+	sciter.SetDLL(filepath.Join(Storage.ArbitraryStorage.Path, "sciter.link"))
+}
 
 func Start() {
 
@@ -17,7 +25,7 @@ func Start() {
 		panic(err)
 	}
 
-	if Config.IsDebugEnabled() {
+	if Storage.Configuration.DebugStatus {
 		w.SetOption(sciter.SCITER_SET_DEBUG_MODE, 1)
 	}
 
@@ -30,22 +38,11 @@ func Start() {
 
 	App.ViewApplication(w, &App.AccountApp{})
 
-	if Storage.Permanent.Exists("wallet.dat") {
+	if Storage.PermanentStorage.SeedFY != *new(Wallet.SeedFY) {
 		App.ViewPage(w, &App.PagePassword{})
 	}
 
 	w.Show()
 	w.Run()
 
-}
-
-func Unpack() {
-	if Config.IsDebugEnabled() {
-		return
-	}
-
-	if err := Storage.Permanent.WriteFile("sciter.link", Front.Sciter); err != nil {
-		panic(err)
-	}
-	sciter.SetDLL(filepath.Join(Storage.Permanent.Path, "sciter.link"))
 }

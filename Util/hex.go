@@ -1,7 +1,6 @@
 package Util
 
 import (
-	"crypto/subtle"
 	"encoding/hex"
 	"strings"
 )
@@ -16,6 +15,16 @@ func UnsafeHexEncode(b []byte) string {
 // the byte-array of decoded hex.
 func UnsafeHexDecode(s string) ([]byte, error) {
 	return hex.DecodeString(s)
+}
+
+// UnsafeHexMustDecode is a wrapper from UnsafeHexDecode, which panic if error.
+func UnsafeHexMustDecode(s string) []byte {
+	b, err := UnsafeHexDecode(s)
+	if err != nil {
+		panic(err)
+	}
+
+	return b
 }
 
 // SecureHexEncode decodes an byte without table-lookup. It's results
@@ -37,7 +46,7 @@ func SecureHexEncode(b []byte) string {
 		b1 += ((9 - p1) >> 8) & 7
 		b2 += ((9 - p2) >> 8) & 7
 
-		subtle.ConstantTimeCopy(1, r[i*2:(i*2)+2], []byte{byte(b1), byte(b2)})
+		copy(r[i*2:], []byte{byte(b1), byte(b2)})
 	}
 
 	return string(r)
@@ -53,7 +62,7 @@ func SecureHexDecode(s string) (r []byte, ok bool) {
 	}
 
 	r = make([]byte, length/2)
-	e := 0
+	e, st := 0, -1
 
 	for i := 0; i < length; i++ {
 
@@ -67,11 +76,21 @@ func SecureHexDecode(s string) (r []byte, ok bool) {
 		// if (b < 0 | b > 15) { err = 1 }
 		e |= ((b >> 8) | (15-b)>>8) & 1
 
-		st := ^((i & 1) << 8) & (i / 2)
+		st += (i + 1) & 1
 		r[st] <<= 4
 		r[st] |= byte(b)
 
 	}
 
 	return r, e == 0
+}
+
+// SecureHexMustDecode is a wrapper from SecureHexDecode, which panic if error.
+func SecureHexMustDecode(s string) []byte {
+	b, ok := SecureHexDecode(s)
+	if !ok {
+		panic("decode error")
+	}
+
+	return b
 }

@@ -6,19 +6,15 @@ import (
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/brokenbydefault/Nanollet/GUI/Storage"
+	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
 	"strconv"
-	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
-	"github.com/brokenbydefault/Nanollet/RPC"
-	"github.com/brokenbydefault/MFA"
 	"image/color"
-	"bytes"
-	"encoding/json"
-	"github.com/brokenbydefault/MFA/mfatypes"
+	"github.com/brokenbydefault/Nanollet/TwoFactor"
+	"github.com/brokenbydefault/Nanollet/TwoFactor/Ephemeral"
 	"github.com/brokenbydefault/Nanollet/Util"
 )
 
@@ -38,12 +34,29 @@ func (c *AccountApp) Display() Front.HTMLPAGE {
 
 func (c *AccountApp) Pages() []guitypes.Page {
 	return []guitypes.Page{
+		&PageToS{},
 		&PageIndex{},
 		&PageGenerate{},
 		&PageImport{},
 		&PagePassword{},
 		&PageAddress{},
 		&PageMFA{},
+	}
+}
+
+type PageToS guitypes.Sector
+
+func (c *PageToS) Name() string {
+	return "tos"
+}
+
+func (c *PageToS) OnView(w *window.Window) {
+	// no-op
+}
+
+func (c *PageToS) OnContinue(w *window.Window, action string) {
+	if action == "accept" {
+		ViewPage(w, &PageIndex{})
 	}
 }
 
@@ -75,27 +88,29 @@ func (c *PageGenerate) Name() string {
 func (c *PageGenerate) OnView(w *window.Window) {
 	page := DOM.SetSector(c)
 
-	seed, err := Wallet.NewSeedFY(Wallet.V0, Wallet.Nanollet)
+	seedfy, err := Wallet.NewSeedFY(Wallet.V0, Wallet.Nanollet)
 	if err != nil {
 		return
 	}
 
 	textarea, _ := page.SelectFirstElement(w, ".seed")
-	textarea.SetValue(sciter.NewValue(seed.Encode()))
+	textarea.SetValue(sciter.NewValue(seedfy.String()))
 	DOM.ReadOnlyElement(textarea)
 }
 
 func (c *PageGenerate) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
-	seed, err := page.GetStringValue(w, ".seed")
-	if seed == "" || err != nil {
+	seedHex, err := page.GetStringValue(w, ".seed")
+	if seedHex == "" || err != nil {
 		panic(err)
 	}
 
-	err = Storage.Permanent.WriteFile("wallet.dat", []byte(seed))
+	sf, err := Wallet.ReadSeedFY(seedHex)
 	if err != nil {
 		panic(err)
 	}
+
+	Storage.PermanentStorage.AddSeedFY(sf)
 
 	ViewPage(w, &PagePassword{})
 }
@@ -129,10 +144,7 @@ func (c *PageImport) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	err = Storage.Permanent.WriteFile("wallet.dat", []byte(seed))
-	if err != nil {
-		panic(err)
-	}
+	Storage.PermanentStorage.AddSeedFY(sf)
 
 	ViewPage(w, &PagePassword{})
 	page.ApplyForIt(w, ".seed", DOM.ClearValue)
@@ -151,34 +163,24 @@ func (c *PagePassword) OnView(w *window.Window) {
 func (c *PagePassword) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
-	password, err := page.GetStringValue(w, ".password")
+	password, err := page.GetBytesValue(w, ".password")
 	if err != nil || len(password) < 8 {
 		DOM.UpdateNotification(w, "There was a problem with your password, this is too short")
 		return
 	}
-	DOM.ApplyForIt(w, ".password", DOM.ClearValue)
 
-	seed, err := Storage.Permanent.ReadFile("wallet.dat")
-	if err != nil {
-		DOM.UpdateNotification(w, "There was a problem reading your seed or it doesn't exist anymore")
-		return
-	}
-
-	seedfy, err := Wallet.ReadSeedFY(string(seed))
-	if err != nil {
-		DOM.UpdateNotification(w, "There was a problem interpreting your SEEDFY, this is incorrect or isn't supported")
-		return
-	}
+	seedfy := Storage.PermanentStorage.SeedFY
 
 	need2FA, err := page.GetStringValue(w, ".ask2fa")
 	if err == nil && need2FA != "" {
-		Storage.PASSWORD = password
+		Storage.AccessStorage.Password = password
 		ViewPage(w, &PageMFA{})
 		return
 	}
 
-	Storage.SEED = seedfy.RecoverSeed(password, nil)
+	Storage.AccessStorage.Seed = seedfy.RecoverSeed(password, nil)
 	ViewPage(w, &PageAddress{})
+	DOM.ApplyForIt(w, ".password", DOM.ClearValue)
 }
 
 type PageMFA guitypes.Sector
@@ -190,53 +192,26 @@ func (c *PageMFA) Name() string {
 func (c *PageMFA) OnView(w *window.Window) {
 	page := DOM.SetSector(c)
 
-	keypinning, _ := Storage.Permanent.ReadFile("mfa.dat")
+	sk := Ephemeral.NewEphemeral()
+	requester, response := TwoFactor.NewRequesterServer(&sk, Storage.PermanentStorage.AllowedKeys)
 
-	MFAConn := Connectivity.NewSocket()
-	envs := make(chan []byte, 16)
+	qrSpace, _ := page.SelectFirstElement(w, ".qrcode")
+	DOM.ClearHTML(qrSpace)
 
-	receiver := MFA.NewReceiver()
-	receiverPK := receiver.Ephemeral.PublicKey()
-
-	qrcodespace, _ := page.SelectFirstElement(w, ".qrcode")
-	DOM.ClearHTML(qrcodespace)
-	DOM.CreateQRCodeAppendTo(Util.SecureHexEncode(receiverPK[:]), color.RGBA{220, 220, 223, 1}, 300, qrcodespace)
-
-	// @TODO Improve code
-	err := RPCClient.SubscribeMFA(MFAConn, receiverPK)
+	qr, err := requester.QRCode(300, color.RGBA{220, 220, 223, 1})
 	if err != nil {
-		DOM.UpdateNotification(w, "There was a critical problem connecting to our servers, please try again")
-		return
+		panic(err)
 	}
-
-	// @TODO Remove goroutines here
-	go func() {
-		if err := MFAConn.ReceiveAllMessages(nil, envs); err != nil {
-			return
-		}
-	}()
+	DOM.CreateQRCodeAppendTo(qr, qrSpace)
 
 	go func() {
-		defer MFAConn.CloseWebsocket()
+		for resp := range response {
+			//@TODO Notify the user to allow or not the key
+			Storage.PermanentStorage.AddAllowedKey(resp.Capsule.Device)
+			Storage.AccessStorage.Token = resp.Capsule.Token
 
-		for e := range envs {
-			jsn := mfatypes.CallbackResponse{}
-
-			if err := json.Unmarshal(e, &jsn); err != nil {
-				continue
-			}
-
-			token, sender, err := receiver.OpenEnvelope(jsn.Envelope)
-			if err != nil || keypinning != nil && !bytes.Equal(sender, keypinning) {
-				continue
-			}
-
-			Storage.TOKENMFA = token
-			Storage.Permanent.WriteFile("mfa.dat", sender)
-			receiver.Ephemeral = nil
 			c.OnContinue(w, "")
-
-			return
+			break
 		}
 	}()
 
@@ -244,25 +219,15 @@ func (c *PageMFA) OnView(w *window.Window) {
 }
 
 func (c *PageMFA) OnContinue(w *window.Window, _ string) {
-	if Storage.TOKENMFA == nil {
+	if Util.IsEmpty(Storage.AccessStorage.Token[:]) {
 		return
 	}
 
-	seed, err := Storage.Permanent.ReadFile("wallet.dat")
-	if err != nil {
-		DOM.UpdateNotification(w, "There was a problem reading your seed or it doesn't exist anymore")
-		return
-	}
+	seedfy := Storage.PermanentStorage.SeedFY
 
-	seedfy, err := Wallet.ReadSeedFY(string(seed))
-	if err != nil {
-		DOM.UpdateNotification(w, "There was a problem reading your SEEDFY, this is incorrect or isn't supported")
-		return
-	}
-
-	Storage.SEED = seedfy.RecoverSeed(Storage.PASSWORD, Storage.TOKENMFA)
-	Storage.TOKENMFA = nil
-	Storage.PASSWORD = ""
+	Storage.AccessStorage.Seed = seedfy.RecoverSeed(Storage.AccessStorage.Password, Storage.AccessStorage.Token[:])
+	copy(Storage.AccessStorage.Token[:], make([]byte, len(Storage.AccessStorage.Token)))
+	copy(Storage.AccessStorage.Password[:], make([]byte, len(Storage.AccessStorage.Password)))
 
 	ViewPage(w, &PageAddress{})
 }
@@ -303,7 +268,7 @@ func (c *PageAddress) UpdateList(w *window.Window, min, max uint32) {
 
 	DOM.ClearHTML(selectbox)
 	for i := min; i < max; i++ {
-		pk, _, err := Storage.SEED.CreateKeyPair(Wallet.Nano, i)
+		pk, _, err := Storage.AccessStorage.Seed.CreateKeyPair(Wallet.Nano, i)
 		if err != nil {
 			panic(err)
 		}
@@ -361,13 +326,13 @@ func (c *PageAddress) OnContinue(w *window.Window, action string) {
 			return
 		}
 
-		pk, sk, err := Storage.SEED.CreateKeyPair(Wallet.Nano, uint32(i))
+		pk, sk, err := Storage.AccessStorage.Seed.CreateKeyPair(Wallet.Nano, uint32(i))
 		if err != nil {
 			return
 		}
 
-		Storage.SK = sk
-		Storage.PK = pk
+		Storage.AccountStorage.SecretKey = sk
+		Storage.AccountStorage.PublicKey = pk
 
 		err = Background.StartAddress(w)
 		if err != nil {
@@ -375,10 +340,9 @@ func (c *PageAddress) OnContinue(w *window.Window, action string) {
 			return
 		}
 
-		Storage.SEED = nil
+		Storage.AccessStorage.Seed = nil
 		page.ApplyForIt(w, ".address", DOM.ClearHTML)
 
-		Background.StartTransaction()
 		ViewApplication(w, &NanolletApp{})
 	}
 

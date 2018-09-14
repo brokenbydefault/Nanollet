@@ -7,6 +7,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Util"
 	"golang.org/x/crypto/argon2"
 	"runtime"
+	"bytes"
 )
 
 type Type uint8
@@ -42,7 +43,7 @@ type SeedFY struct {
 	Time    uint8
 	Memory  uint8
 	Thread  uint8
-	Salt    []byte
+	Salt    [32]byte
 }
 
 // NewSeedFY generate the SeedFY, which is the random salt and the default computational cost parameters
@@ -54,10 +55,9 @@ func NewSeedFY(v Version, t Type) (sf SeedFY, err error) {
 		Time:    15,
 		Memory:  21,
 		Thread:  uint8(runtime.NumCPU()),
-		Salt:    make([]byte, 32),
 	}
 
-	_, err = rand.Read(sf.Salt)
+	_, err = rand.Read(sf.Salt[:])
 	return
 }
 
@@ -69,10 +69,9 @@ func NewCustomFY(v Version, t Type, time uint8, memory uint8) (sf SeedFY, err er
 		Memory:  memory,
 
 		Thread: uint8(runtime.NumCPU()),
-		Salt:   make([]byte, 32),
 	}
 
-	_, err = rand.Read(sf.Salt)
+	_, err = rand.Read(sf.Salt[:])
 
 	if !sf.IsValid(v, t) {
 		err = ErrImpossibleDecode
@@ -92,14 +91,11 @@ func ReadSeedFY(s string) (sf SeedFY, err error) {
 		return sf, ErrImpossibleDecode
 	}
 
-	sf = SeedFY{
-		Version: uint8(sb[0]),
-		Type:    uint8(sb[1]),
-		Time:    uint8(sb[2]),
-		Memory:  uint8(sb[3]) & 0x1F,
-		Thread:  uint8(sb[4]),
-		Salt:    []byte(sb[5:]),
+	if err := binary.Read(bytes.NewReader(sb), binary.BigEndian, &sf); err != nil {
+		return sf, err
 	}
+
+	sf.Memory &= 0x1F
 
 	if !sf.IsValid(Version(sf.Version), Type(sf.Type)) {
 		return sf, ErrImpossibleDecode
@@ -108,20 +104,12 @@ func ReadSeedFY(s string) (sf SeedFY, err error) {
 	return
 }
 
-// Encode will return the hexadecimal representation of the given SeedFY.
-func (sf *SeedFY) Encode() string {
-	var seed = make([]byte, 37)
+// String will return the hexadecimal representation of the given SeedFY.
+func (sf *SeedFY) String() string {
+	b := new(bytes.Buffer)
+	binary.Write(b, binary.BigEndian, sf)
 
-	copy(seed, []byte{
-		sf.Version,
-		sf.Type,
-		sf.Time,
-		sf.Memory,
-		sf.Thread,
-	})
-	copy(seed[5:], sf.Salt)
-
-	return Util.SecureHexEncode(seed)
+	return Util.SecureHexEncode(b.Bytes())
 }
 
 // IsValid will return false if the SeedFY is not supported or don't have
@@ -147,7 +135,7 @@ func (sf *SeedFY) IsValid(v Version, t Type) bool {
 		return r
 	}
 
-	if len(sf.Salt) != 32 {
+	if len(sf.Salt) != 32 || Util.IsEmpty(sf.Salt[:]) {
 		return false
 	}
 
@@ -166,11 +154,11 @@ type Seed []byte
 
 // RecoverSeedFromSeedFY returns the Seed based on given password and hex-encoded SeedFY.
 // SEEDFY: [version][type][time][memory][thread][salt]
-func (sf *SeedFY) RecoverSeed(password string, additionaldata []byte) Seed {
+func (sf *SeedFY) RecoverSeed(password []byte, additionalData []byte) Seed {
 	defer Util.FreeMemory()
 
-	salt := Util.CreateKeyedHash(32, sf.Salt, additionaldata)
-	return argon2.IDKey([]byte(password), salt, uint32(sf.Time), uint32(1<<sf.Memory), sf.Thread, 32)
+	salt := Util.CreateKeyedHash(32, sf.Salt[:], additionalData)
+	return argon2.IDKey(password, salt, uint32(sf.Time), uint32(1<<sf.Memory), sf.Thread, 32)
 }
 
 // CreateKeyPair creates the public-key and secret-key using the given currency and index.

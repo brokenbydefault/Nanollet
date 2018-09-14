@@ -3,25 +3,43 @@ package Block
 import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
-func (d *DefaultBlock) SetWork(w []byte) {
+func (d *DefaultBlock) SetWork(w Work) {
 	d.PoW = w
 }
 
-func (d *DefaultBlock) SetSignature(s []byte) {
+func (d *DefaultBlock) GetWork() Work {
+	return d.PoW
+}
+
+func (d *DefaultBlock) SetSignature(s Wallet.Signature) {
 	d.Signature = s
 }
 
-func (d *DefaultBlock) GetType() BlockType {
-	return d.Type
+func (d *DefaultBlock) GetSignature() Wallet.Signature {
+	return d.Signature
 }
 
-func (d *DefaultBlock) GetSubType() BlockType {
-	if d.SubType == "" {
-		return d.Type
-	}
-	return d.SubType
+func (s *SendBlock) GetType() BlockType {
+	return Send
+}
+
+func (s *ReceiveBlock) GetType() BlockType {
+	return Receive
+}
+
+func (s *OpenBlock) GetType() BlockType {
+	return Open
+}
+
+func (s *ChangeBlock) GetType() BlockType {
+	return Change
+}
+
+func (u *UniversalBlock) GetType() BlockType {
+	return State
 }
 
 func (s *SendBlock) SetFrontier(h BlockHash) {
@@ -41,10 +59,30 @@ func (s *ChangeBlock) SetFrontier(h BlockHash) {
 }
 
 func (u *UniversalBlock) SetFrontier(h BlockHash) {
-	var hash [32]byte
-	copy(hash[:], h)
+	copy(u.Previous[:], h[:])
+}
 
-	u.Previous = hash[:]
+func (s *SendBlock) GetBalance() *Numbers.RawAmount {
+	return Numbers.NewRawFromBytes(s.Balance.ToBytes())
+}
+
+func (s *ReceiveBlock) GetBalance() *Numbers.RawAmount {
+	// no-op
+	return nil
+}
+
+func (s *OpenBlock) GetBalance() *Numbers.RawAmount {
+	// no-op
+	return nil
+}
+
+func (s *ChangeBlock) GetBalance() *Numbers.RawAmount {
+	// no-op
+	return nil
+}
+
+func (u *UniversalBlock) GetBalance() *Numbers.RawAmount {
+	return Numbers.NewRawFromBytes(u.Balance.ToBytes())
 }
 
 func (s *SendBlock) SetBalance(n *Numbers.RawAmount) {
@@ -67,32 +105,59 @@ func (u *UniversalBlock) SetBalance(n *Numbers.RawAmount) {
 	u.Balance = n
 }
 
-func (s *SendBlock) GetTarget() (Wallet.Address, BlockHash) {
-	return s.Destination, nil
+func (s *SendBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
+	return s.Destination, hash
 }
 
-func (s *ReceiveBlock) GetTarget() (Wallet.Address, BlockHash) {
-	return "", s.Source
+func (s *ReceiveBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
+	return pk, s.Source
 }
 
-func (s *OpenBlock) GetTarget() (Wallet.Address, BlockHash) {
-	return "", s.Source
+func (s *OpenBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
+	return pk, s.Source
 }
 
-func (s *ChangeBlock) GetTarget() (Wallet.Address, BlockHash) {
-	// no-op
-	return "", nil
+func (s *ChangeBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
+	return pk, hash
 }
 
-func (u *UniversalBlock) GetTarget() (destination Wallet.Address, source BlockHash) {
+func (u *UniversalBlock) GetTarget() (destination Wallet.PublicKey, source BlockHash) {
+	return Wallet.PublicKey(u.Link), u.Link
+}
 
-	if u.Link == nil {
-		source = u.Source
-		destination = u.Destination
-	} else {
-		source = u.Link
-		destination = Wallet.PublicKey(u.Link).CreateAddress()
+func GetSubType(tx, txPrevious Transaction) BlockType {
+	if tx.GetType() != State {
+		return tx.GetType()
 	}
 
-	return
+	if hashPrev := tx.GetPrevious(); Util.IsEmpty(hashPrev[:]) {
+		return Open
+	}
+
+	if dest, source := tx.GetTarget(); Util.IsEmpty(dest[:]) && Util.IsEmpty(source[:]) {
+		return Change
+	}
+
+	if tx.GetBalance().Compare(txPrevious.GetBalance()) == 1 {
+		return Receive
+	}else{
+		return Send
+	}
+
+	return Invalid
+}
+
+func GetAmount(tx, txPrevious Transaction) *Numbers.RawAmount {
+	switch GetSubType(tx, txPrevious) {
+	case Open:
+		return tx.GetBalance()
+	case Change:
+		return Numbers.NewMin()
+	case Send:
+		return tx.GetBalance().Subtract(txPrevious.GetBalance()).Abs()
+	case Receive:
+		return tx.GetBalance().Subtract(txPrevious.GetBalance()).Abs()
+	}
+
+	return Numbers.NewMin()
 }

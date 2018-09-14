@@ -13,7 +13,7 @@ func (p *Page) GetStringValue(w *window.Window, css string) (result string, err 
 		return
 	}
 
-	return getValue(input)
+	return getString(input)
 }
 
 func GetStringValue(w *window.Window, css string) (result string, err error) {
@@ -22,13 +22,41 @@ func GetStringValue(w *window.Window, css string) (result string, err error) {
 		return
 	}
 
-	return getValue(input)
+	return getString(input)
 }
 
-func getValue(el *sciter.Element) (result string, err error) {
-	value, err := el.GetValue()
+func (p *Page) GetBytesValue(w *window.Window, css string) (result []byte, err error) {
+	input, err := p.SelectFirstElement(w, css)
 	if err != nil {
 		return
+	}
+
+	return getBytes(input)
+}
+
+func GetBytesValue(w *window.Window, css string) (result []byte, err error) {
+	input, err := SelectFirstElement(w, css)
+	if err != nil {
+		return
+	}
+
+	return getBytes(input)
+}
+
+func getBytes(el *sciter.Element) (result []byte, err error) {
+	value, err := el.GetValue()
+	if err != nil {
+		return nil, err
+	}
+
+	//return value.Bytes(), nil
+	return []byte(value.String()), nil
+}
+
+func getString(el *sciter.Element) (result string, err error) {
+	value, err := el.GetValue()
+	if err != nil {
+		return "", err
 	}
 
 	return value.String(), nil

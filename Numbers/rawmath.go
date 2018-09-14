@@ -24,6 +24,11 @@ func (a *RawAmount) Add(b *RawAmount) *RawAmount {
 	return &RawAmount{new(big.Int).Add(a.bigint, b.bigint)}
 }
 
+// Abs returns the absolute value
+func (a *RawAmount) Abs() *RawAmount {
+	return &RawAmount{new(big.Int).Abs(a.bigint)}
+}
+
 // Compare compares a with b, return
 // -1 if a <  b
 //  0 if a == b
