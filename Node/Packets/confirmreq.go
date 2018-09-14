@@ -21,7 +21,7 @@ func NewConfirmReqPackage(tx Block.Transaction) (packet *ConfirmReqPackage) {
 	}
 }
 
-func (p *ConfirmReqPackage) Encode(rHeader *Header, dst []byte) (n int, err error) {
+func (p *ConfirmReqPackage) Encode(dst []byte) (n int, err error) {
 	if p == nil {
 		return
 	}

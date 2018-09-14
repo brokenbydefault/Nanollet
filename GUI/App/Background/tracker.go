@@ -1,128 +1,111 @@
 package Background
 
 import (
-	"bytes"
-	"encoding/json"
 	"github.com/brokenbydefault/Nanollet/Block"
-	"github.com/brokenbydefault/Nanollet/Config"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/brokenbydefault/Nanollet/RPC"
-	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
 	"github.com/sciter-sdk/go-sciter/window"
-	"time"
+	"github.com/brokenbydefault/Nanollet/Node"
 )
 
-var min, _ = Numbers.NewRawFromString("1000000000000000000000000") //@TODO Enable user to change the minimum amount
+var Connection Node.Node
+
+func init() {
+	Connection = Node.NewServer(Storage.Configuration.Node.Header)
+	go Connection.Start()
+}
 
 func StartAddress(w *window.Window) error {
-	info, err := RPCClient.GetAccountInformation(Connectivity.Socket, Storage.PK.CreateAddress())
-
-	if err != nil {
-		if err.Error() == RPCClient.ErrNotOpenedAccount.Error() {
-			info.Balance, _ = Numbers.NewRawFromString("0")
-			info.Representative = Config.Configuration().DefaultRepresentative
-		} else {
-			return err
-		}
-	}
-
-	Storage.Representative = info.Representative
-	Storage.Amount = info.Balance
-
-	if info.Frontier != nil {
-		frontierblk, err := RPCClient.GetBlockByHash(Connectivity.Socket, info.Frontier)
-		if err != nil {
-			return err
-		}
-
-		Storage.UpdateFrontier(frontierblk.SwitchToUniversalBlock())
-	}
-
-	go Storage.UpdatePoW()
-	DOM.UpdateAmount(w)
-
-	hist, err := RPCClient.GetAccountHistory(Connectivity.Socket, 1000, Storage.PK.CreateAddress())
+	txs, err := Node.GetHistory(Connection, &Storage.AccountStorage.PublicKey, nil)
 	if err != nil {
 		return err
 	}
 
-	Storage.History.Set(hist)
+	if len(txs) == 0 {
+		Storage.AccountStorage.Frontier = Block.NewBlockHash(nil)
+		Storage.AccountStorage.Representative = Storage.Configuration.Account.Representative
+		Storage.AccountStorage.Balance = Numbers.NewMin()
+	} else {
 
-	go func() {
-		pendings(w)
-		realtimeupdate(w)
-	}()
+		if txs[0].GetType() == Block.State {
+			Storage.AccountStorage.Frontier = txs[0].Hash()
+			Storage.AccountStorage.Representative = txs[0].SwitchToUniversalBlock(nil, nil).Representative
+			Storage.AccountStorage.Balance = txs[0].GetBalance()
+		} else {
+			balance, err := Node.GetBalance(Connection, &Storage.AccountStorage.PublicKey)
+			if err == nil {
+				return err
+			}
+
+			Storage.AccountStorage.Frontier = txs[0].Hash()
+			for _, tx := range txs {
+				if typ := tx.GetType(); typ == Block.Change || typ == Block.Open {
+					Storage.AccountStorage.Representative = tx.SwitchToUniversalBlock(nil, nil).Representative
+				}
+			}
+			Storage.AccountStorage.Balance = balance
+		}
+
+	}
+
+	Storage.TransactionStorage.Add(txs...)
+	DOM.UpdateAmount(w)
+
+	go realtimeUpdate(w)
+	go pending(w)
+
 	return nil
 }
 
-func realtimeupdate(w *window.Window) {
-	conn := Connectivity.NewSocket()
-	pends := make(chan []byte, 64)
-
-	err := RPCClient.Subscribe(conn, Storage.PK)
-	if err != nil {
-		time.Sleep(2 * time.Second)
-		realtimeupdate(w)
-		return
-	}
-
-	go func(){
-		if err := conn.ReceiveAllMessages(nil, pends); err != nil {
-			time.Sleep(2 * time.Second)
-			pendings(w)
-			realtimeupdate(w)
-			return
-		}
-	}()
-
-	for p := range pends {
-		pend := RPCClient.CallbackResponse{}
-
-		err := json.Unmarshal(p, &pend)
-		if err != nil {
+func realtimeUpdate(w *window.Window) {
+	for tx := range Storage.TransactionStorage.Listen() {
+		if dest, _ := tx.GetTarget(); dest != Storage.AccountStorage.PublicKey {
 			continue
 		}
 
-		// If the destination is not the currently public-key or already sent a received: skip
-		if !bytes.Equal(pend.Destination, Storage.PK) || Storage.History.AlreadyReceived(pend.Hash) {
-			continue
+		hash := tx.Hash()
+		if tx, ok := Storage.TransactionStorage.GetByLinkHash(&hash); ok {
+			hash, sig := tx.Hash(), tx.GetSignature()
+			if Storage.AccountStorage.PublicKey.IsValidSignature(hash[:], &sig) {
+				continue
+			}
 		}
 
-		blk, err := Block.CreateSignedUniversalReceiveOrOpenBlock(Storage.SK, Storage.Representative, Storage.Amount, pend.Amount, Storage.Frontier, pend.Hash)
-		if err != nil || Storage.History.ExistHash(blk.Hash()) {
-			continue
+		if !Storage.TransactionStorage.IsConfirmed(&hash, &Storage.Configuration.Account.Quorum) {
+			DOM.UpdateNotification(w, "New payment identified, voting in progress.")
 		}
 
-		err = PublishBlockToQueue(blk, pend.Amount)
-		if err != nil {
-			continue
-		}
-
-		DOM.UpdateAmount(w)
-		DOM.UpdateNotification(w, "You had received a new payment")
+		go acceptPending(w, tx)
 	}
 }
 
-func pendings(w *window.Window) {
-	pends, err := RPCClient.GetAccountPending(Connectivity.Socket, 1000, min, Storage.PK.CreateAddress())
+func acceptPending(w *window.Window, tx Block.Transaction) {
+	hash := tx.Hash()
+
+	if waitVotesConfirmation(tx) {
+		amount, err := Node.GetAmount(Connection, tx)
+		if err != nil {
+			return
+		}
+
+		blk, err := Block.CreateSignedUniversalReceiveOrOpenBlock(&Storage.AccountStorage.SecretKey, Storage.AccountStorage.Representative, Storage.AccountStorage.Balance, amount, Storage.AccountStorage.Frontier, hash)
+		if err != nil {
+			return
+		}
+
+		if err := PublishBlockToQueue(blk, Block.Receive, amount); err == nil {
+			DOM.UpdateNotification(w, "You have received a new payment.")
+			DOM.UpdateAmount(w)
+		}
+	}
+}
+
+func pending(w *window.Window) {
+	txsPend, err := Node.GetPendings(Connection, &Storage.AccountStorage.PublicKey, Storage.Configuration.Account.MinimumAmount)
 	if err != nil {
 		return
 	}
 
-	for _, pend := range pends {
-		blk, err := Block.CreateSignedUniversalReceiveOrOpenBlock(Storage.SK, Storage.Representative, Storage.Amount, pend.Amount, Storage.Frontier, pend.Hash)
-		if err != nil {
-			continue
-		}
-
-		err = PublishBlockToQueue(blk, pend.Amount)
-		if err != nil {
-			continue
-		}
-
-		DOM.UpdateAmount(w)
-		DOM.UpdateNotification(w, "You had received a new payment")
-	}
+	Storage.TransactionStorage.Add(txsPend...)
 }

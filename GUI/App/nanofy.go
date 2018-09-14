@@ -3,19 +3,18 @@
 package App
 
 import (
-	"github.com/brokenbydefault/Nanofy"
-	"github.com/brokenbydefault/Nanollet/Block"
+	"github.com/brokenbydefault/Nanollet/Nanofy"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/GUI/Front"
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
-	"github.com/brokenbydefault/Nanollet/RPC"
-	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
 	"os"
+	"github.com/brokenbydefault/Nanollet/Node"
+	"github.com/brokenbydefault/Nanollet/Block"
 )
 
 type NanofyApp guitypes.App
@@ -52,25 +51,42 @@ func (c *PageSign) OnView(w *window.Window) {
 func (c *PageSign) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
-	filepath, err := page.GetStringValue(w, ".filepath")
-	if filepath == "" || err != nil {
+	filePath, err := page.GetStringValue(w, ".filepath")
+	if filePath == "" || err != nil {
 		return
 	}
 
-	file, err := os.Open(filepath[7:])
+	file, err := os.Open(filePath[7:])
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem opening the file")
 		return
 	}
 
-	nanofier := Nanofy.NewNanofierVersion1()
-	blks, err := nanofier.CreateBlock(file, Storage.SK, Storage.Representative, Storage.Amount, &Storage.LastBlock)
+	stats, err := file.Stat()
+	if err != nil || stats.IsDir() {
+		DOM.UpdateNotification(w, "There was a problem opening the file")
+		return
+	}
+
+	previous, ok := Storage.TransactionStorage.GetByHash(&Storage.AccountStorage.Frontier)
+	if !ok {
+		DOM.UpdateNotification(w, "Previous block not found")
+		return
+	}
+
+	nanofier, err := Nanofy.NewStateSigner(file, &Storage.AccountStorage.SecretKey, previous)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem creating a block")
 		return
 	}
 
-	err = Background.PublishBlocksToQueue(blks, nanofier.Amount())
+	blks, err := nanofier.CreateBlocks()
+	if err != nil {
+		DOM.UpdateNotification(w, "There was a problem creating a block")
+		return
+	}
+
+	err = Background.PublishBlocksToQueue(blks, Block.Send, nanofier.Amount())
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem sending a block")
 		return
@@ -79,8 +95,8 @@ func (c *PageSign) OnContinue(w *window.Window, _ string) {
 	DOM.UpdateAmount(w)
 	DOM.UpdateNotification(w, "Your signature was sent successfully.")
 
-	namebox, _ := page.SelectFirstElement(w, ".name")
-	namebox.SetHtml("Drop the file here", sciter.SIH_REPLACE_CONTENT)
+	nameBox, _ := page.SelectFirstElement(w, ".name")
+	nameBox.SetHtml("Drop the file here", sciter.SIH_REPLACE_CONTENT)
 
 	page.ApplyForIt(w, ".filepath", DOM.ClearValue)
 }
@@ -99,8 +115,8 @@ func (c *PageVerify) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
 	addr, _ := page.GetStringValue(w, ".address")
-	filepath, err := page.GetStringValue(w, ".filepath")
-	if addr == "" || filepath == "" || err != nil {
+	filePath, err := page.GetStringValue(w, ".filepath")
+	if addr == "" || filePath == "" || err != nil {
 		return
 	}
 
@@ -110,61 +126,32 @@ func (c *PageVerify) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	file, err := os.Open(filepath[7:])
+	file, err := os.Open(filePath[7:])
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem opening the file")
 		return
 	}
 
-	statfile, err := file.Stat()
-	if statfile.IsDir() || err != nil {
-		DOM.UpdateNotification(w, "There was a problem opening the file")
+	stats, err := file.Stat()
+	if err != nil || stats.IsDir() {
+		DOM.UpdateNotification(w, "Only files can be signed")
 		return
 	}
 
-	filehash, err := Nanofy.CreateHash(file)
+	txs, err := Node.GetHistory(Background.Connection, &pk, nil)
 	if err != nil {
-		DOM.UpdateNotification(w, "There was a problem hashing the file")
-		return
-	}
-
-	retriveblk, err := RPCClient.GetBlockByFile(Connectivity.Socket, filehash, pk)
-	if err != nil || retriveblk.Error != "" {
 		DOM.UpdateNotification(w, "There was a problem retrieving the information")
 		return
 	}
 
-	if !retriveblk.Exist {
-		DOM.UpdateNotification(w, "Wrong! This address never had signed this file")
-		return
-	}
-
-	var blks = make([]Block.UniversalBlock, 3)
-	var previous = retriveblk.FlagHash
-	for i := range blks {
-		blks[i], err = RPCClient.GetBlockByHash(Connectivity.Socket, previous)
-		if err != nil {
-			DOM.UpdateNotification(w, "There was a problem retrieving the information")
-			return
-		}
-
-		previous = blks[i].Previous
-	}
-
-	nanofier, err := Nanofy.NewNanofierFromFlagBlock(&blks[0])
-	if err != nil {
-		DOM.UpdateNotification(w, "Nanofy version not supported")
-		return
-	}
-
-	if nanofier.VerifySignature(&pk, &blks[0], &blks[1], &blks[2], filehash) {
+	if Nanofy.VerifyFromHistory(file, pk, txs) {
 		DOM.UpdateNotification(w, "Correct! This address signs this given file")
 	} else {
 		DOM.UpdateNotification(w, "Wrong! This address never had signed this file")
 	}
 
-	namebox, _ := page.SelectFirstElement(w, ".name")
-	namebox.SetHtml("Drop the file here", sciter.SIH_REPLACE_CONTENT)
+	nameBox, _ := page.SelectFirstElement(w, ".name")
+	nameBox.SetHtml("Drop the file here", sciter.SIH_REPLACE_CONTENT)
 
 	page.ApplyForIt(w, ".filepath", DOM.ClearValue)
 }

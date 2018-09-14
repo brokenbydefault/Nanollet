@@ -15,7 +15,7 @@ func NewBlockHash(b []byte) (hash BlockHash) {
 var universalBlockFlag = []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x06}
 
 func (s *SendBlock) Hash() BlockHash {
-	if s.hash == NewBlockHash(nil) {
+	if Util.IsEmpty(s.hash[:]) {
 		copy(s.hash[:], Util.CreateHash(32, s.Encode()[1:SendHashableSize]))
 	}
 
@@ -23,7 +23,7 @@ func (s *SendBlock) Hash() BlockHash {
 }
 
 func (s *ReceiveBlock) Hash() BlockHash {
-	if s.hash == NewBlockHash(nil) {
+	if Util.IsEmpty(s.hash[:]) {
 		copy(s.hash[:], Util.CreateHash(32, s.Encode()[1:ReceiveHashableSize]))
 	}
 
@@ -31,7 +31,7 @@ func (s *ReceiveBlock) Hash() BlockHash {
 }
 
 func (s *OpenBlock) Hash() BlockHash {
-	if s.hash == NewBlockHash(nil) {
+	if Util.IsEmpty(s.hash[:]) {
 		copy(s.hash[:], Util.CreateHash(32, s.Encode()[1:OpenHashableSize]))
 	}
 
@@ -39,7 +39,7 @@ func (s *OpenBlock) Hash() BlockHash {
 }
 
 func (s *ChangeBlock) Hash() BlockHash {
-	if s.hash == NewBlockHash(nil) {
+	if Util.IsEmpty(s.hash[:]) {
 		copy(s.hash[:], Util.CreateHash(32, s.Encode()[1:ChangeHashableSize]))
 	}
 
@@ -47,7 +47,7 @@ func (s *ChangeBlock) Hash() BlockHash {
 }
 
 func (u *UniversalBlock) Hash() BlockHash {
-	if u.hash == NewBlockHash(nil) {
+	if Util.IsEmpty(u.hash[:]) {
 		copy(u.hash[:], Util.CreateHash(32, universalBlockFlag, u.Encode()[1:StateHashableSize]))
 	}
 
@@ -63,7 +63,7 @@ func (s *ReceiveBlock) GetPrevious() (hash BlockHash) {
 }
 
 func (s *OpenBlock) GetPrevious() (hash BlockHash) {
-	return hash
+	return NewBlockHash(nil)
 }
 
 func (s *ChangeBlock) GetPrevious() (hash BlockHash) {
@@ -71,5 +71,9 @@ func (s *ChangeBlock) GetPrevious() (hash BlockHash) {
 }
 
 func (u *UniversalBlock) GetPrevious() (hash BlockHash) {
+	if Util.IsEmpty(u.Previous[:]) {
+		return NewBlockHash(nil)
+	}
+
 	return u.Previous
 }

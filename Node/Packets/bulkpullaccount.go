@@ -3,10 +3,11 @@ package Packets
 import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"io"
-	"bufio"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"bufio"
 	"github.com/brokenbydefault/Nanollet/Util"
+	"encoding/binary"
 )
 
 type BulkPullAccountPackageRequest struct {
@@ -18,22 +19,18 @@ type BulkPullAccountPackageRequest struct {
 type BulkPullAccountPackageResponse struct {
 	Frontier Block.BlockHash
 	Balance  *Numbers.RawAmount
-	Pending  []PendingInformation
-}
-
-type PendingInformation struct {
-	Hash   Block.BlockHash
-	Amount *Numbers.RawAmount
+	Pending  []Block.BlockHash
 }
 
 func NewBulkPullAccountPackageRequest(pk Wallet.PublicKey, minAmount *Numbers.RawAmount) (packet *BulkPullAccountPackageRequest) {
 	return &BulkPullAccountPackageRequest{
 		PublicKey:            pk,
 		MinimumPendingAmount: minAmount,
+		Flags:                0,
 	}
 }
 
-func NewBulkPullAccountPackageResponse(frontier Block.BlockHash, balance *Numbers.RawAmount, pending []PendingInformation) (packet *BulkPullAccountPackageResponse) {
+func NewBulkPullAccountPackageResponse(frontier Block.BlockHash, balance *Numbers.RawAmount, pending []Block.BlockHash) (packet *BulkPullAccountPackageResponse) {
 	return &BulkPullAccountPackageResponse{
 		Frontier: frontier,
 		Balance:  balance,
@@ -41,7 +38,7 @@ func NewBulkPullAccountPackageResponse(frontier Block.BlockHash, balance *Number
 	}
 }
 
-func (p *BulkPullAccountPackageRequest) Encode(_ *Header, dst io.Writer) (err error) {
+func (p *BulkPullAccountPackageRequest) Encode(dst io.Writer) (err error) {
 	if p == nil {
 		return
 	}
@@ -70,6 +67,7 @@ func (p *BulkPullAccountPackageRequest) Decode(_ *Header, src io.Reader) (err er
 		return ErrInvalidMessageSize
 	}
 
+	p.MinimumPendingAmount = new(Numbers.RawAmount)
 	if err := p.MinimumPendingAmount.Read(src); err != nil {
 		return ErrInvalidMessageSize
 	}
@@ -84,11 +82,13 @@ func (p *BulkPullAccountPackageRequest) Decode(_ *Header, src io.Reader) (err er
 	return nil
 }
 
-func (p *BulkPullAccountPackageResponse) Encode(_ *Header, dst io.Writer) (err error) {
+//@TODO (inkeliz) implement Encode
+func (p *BulkPullAccountPackageResponse) Encode(dst io.Writer) (err error) {
 	if p == nil {
 		return
 	}
 
+	/**
 	for _, tx := range p.Pending {
 		if _, err = dst.Write(tx.Hash[:]); err != nil {
 			return err
@@ -101,37 +101,43 @@ func (p *BulkPullAccountPackageResponse) Encode(_ *Header, dst io.Writer) (err e
 	if _, err = dst.Write([]byte{byte(Block.NotABlock)}); err != nil {
 		return err
 	}
+	**/
 
 	return nil
 }
 
 func (p *BulkPullAccountPackageResponse) Decode(_ *Header, src io.Reader) (err error) {
-	reader := bufio.NewReader(src)
+	if p == nil {
+		return
+	}
 
-	if _, err := reader.Read(p.Frontier[:]); err != nil {
+	buf := bufio.NewReaderSize(src, 48)
+
+	if _, err := buf.Read(p.Frontier[:]); err != nil {
 		return err
 	}
 
-	if err := p.Balance.Read(reader); err != nil {
+	p.Balance = new(Numbers.RawAmount)
+	if err := p.Balance.Read(buf); err != nil {
 		return err
 	}
 
 	for {
-		pending := PendingInformation{}
-
-		if _, err := reader.Read(pending.Hash[:]); err != nil {
-			return err
-		}
-
-		if err := pending.Amount.Read(reader); err != nil {
-			return err
-		}
-
-		if Util.IsEmpty(pending.Hash[:]) {
+		hash := Block.BlockHash{}
+		if err := binary.Read(buf, binary.BigEndian, &hash); err != nil {
 			return nil
 		}
 
-		p.Pending = append(p.Pending, pending)
+		amount := make([]byte, 16)
+		if err := binary.Read(buf, binary.BigEndian, &amount); err != nil {
+			return nil
+		}
+
+		if Util.IsEmpty(hash[:]) {
+			return nil
+		}
+
+		p.Pending = append(p.Pending, hash)
 	}
 
 	return nil

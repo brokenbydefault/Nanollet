@@ -2,108 +2,36 @@ package Storage
 
 import (
 	"github.com/brokenbydefault/Nanollet/Block"
-	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/brokenbydefault/Nanollet/RPC"
 	"math/rand"
 	"time"
-	"github.com/brokenbydefault/Nanollet/Node/Peer"
-	"github.com/brokenbydefault/Nanollet/Config"
-	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Util"
+	"sync"
+	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/Node/Peer"
 )
 
-var Amount *Numbers.RawAmount
-
-var TransactionStorage TransactionsShelter
-
-type TransactionsShelter struct {
-	Unconfirmed TransactionBox
-	Confirmed   TransactionBox
-	Pending     TransactionBox
-	Votes       Peer.Votes
+var TransactionStorage = TransactionBox{
+	list:      new(sync.Map),
+	listeners: make([]chan *Transaction, 0, 1),
 }
+
+type voteResult int8
+
+const (
+	electionsNotCached voteResult = iota
+	electionsWinner
+	electionsLoser
+)
 
 type Transaction struct {
 	Block.Transaction
-	date time.Time
+	Date  time.Time
+	votes *sync.Map // map[Wallet.PublicKey]uint64 // map[PublicKey Of Voter]Sequence
 }
 
 type TransactionBox struct {
-	list      map[string]*Transaction
+	list      *sync.Map // map[Block.BlockHash]Block.Transaction
 	listeners []chan *Transaction
-}
-
-func NewTransactionsShelter(pk Wallet.PublicKey) (ts *TransactionsShelter) {
-	ts = new(TransactionsShelter)
-	ts.KeepUpdated(pk)
-
-	return ts
-}
-
-func (ts *TransactionsShelter) KeepUpdated(pk Wallet.PublicKey) {
-	for range time.Tick(10 * time.Second) {
-
-		for _, hash := range ts.Votes.Confirmed(Config.Configuration().DefaultAuthorities, nil) {
-
-			tx, ok := ts.Unconfirmed.GetByHash(hash)
-			if !ok || time.Since(tx.date) < time.Second*10 {
-				continue
-			}
-
-			for _, tx := range ts.Unconfirmed.GetByFrontier(hash) {
-				if dest, _ := tx.GetTarget(); dest == pk {
-					if _, ok := ts.Confirmed.GetByLinkHash(tx.Hash()); !ok {
-						ts.Pending.Add(tx)
-						continue
-					}
-				}
-
-				ts.Confirmed.Add(tx)
-				ts.Unconfirmed.Remove(tx)
-			}
-		}
-	}
-}
-
-func (ts *TransactionsShelter) GetByHash(b Block.BlockHash) (tx Block.Transaction, t int, ok bool) {
-	if ts == nil {
-		return
-	}
-	for i, txs := range []TransactionBox{ts.Unconfirmed, ts.Pending, ts.Confirmed} {
-		if tx, ok = txs.GetByHash(b); ok {
-			return tx, i, ok
-		}
-	}
-
-	return nil, 0, false
-}
-
-func (ts *TransactionsShelter) GetByLinkHash(b Block.BlockHash) (tx Block.Transaction, t int, ok bool) {
-	if ts == nil {
-		return
-	}
-
-	for i, txs := range []TransactionBox{ts.Unconfirmed, ts.Pending, ts.Confirmed} {
-		if tx, ok = txs.GetByLinkHash(b); ok {
-			return tx, i, ok
-		}
-	}
-
-	return nil, 0, false
-}
-
-func (ts *TransactionsShelter) GetByPreviousHash(b Block.BlockHash) (tx Block.Transaction, t int, ok bool) {
-	if ts == nil {
-		return
-	}
-
-	for i, txs := range []TransactionBox{ts.Unconfirmed, ts.Pending, ts.Confirmed} {
-		if tx, ok = txs.GetByPreviousHash(b); ok {
-			return tx, i, ok
-		}
-	}
-
-	return nil, 0, false
 }
 
 func (h *TransactionBox) Listen() <-chan *Transaction {
@@ -118,146 +46,222 @@ func (h *TransactionBox) Listen() <-chan *Transaction {
 	return c
 }
 
-func (h *TransactionBox) notifyListeners(new *Transaction) {
-	if h == nil {
-		return
+func (h *TransactionBox) Count() (len int) {
+	if h == nil || h.list == nil {
+		return 0
 	}
 
-	for _, l := range h.listeners {
-		l <- new
-	}
+	h.list.Range(func(_, _ interface{}) bool {
+		len++
+		return true
+	})
+
+	return len
 }
 
-func (h *TransactionBox) GetByHash(hash Block.BlockHash) (item *Transaction, ok bool) {
-	if h == nil || Util.IsEmpty(hash[:]) {
-		return
+func (h *TransactionBox) IsConfirmed(hash *Block.BlockHash, quorum *Peer.Quorum) (valid bool) {
+	if h == nil || h.list == nil {
+		return false
 	}
 
-	item, ok = h.list[string(hash[:])]
-	return
-}
-
-func (h *TransactionBox) GetByLinkHash(hash Block.BlockHash) (item Block.Transaction, ok bool) {
-	if h == nil {
-		return
+	t, ok := h.GetByHash(hash)
+	if !ok || t.votes == nil {
+		return false
 	}
 
-	for _, tx := range h.list {
-		if tx.Transaction.GetType() == Block.Receive {
-			if _, src := tx.GetTarget(); src == hash {
-				return tx, true
+	previous := t.GetPrevious()
+	txs, _ := h.GetByPreviousHash(&previous)
+
+	var possibleWinner, winner = make(map[Block.BlockHash]int), Block.BlockHash{}
+	for _, pk := range quorum.PublicKeys {
+
+		// For each authorities we need to get him vote, if any. Since one representative can change the vote,
+		// we need to compare the sequence of all transactions voted by him.
+		for _, tx := range txs {
+			hash := tx.Hash()
+
+			higherSeq := uint64(0)
+			if seq, ok := t.votes.Load(pk); ok && seq.(uint64) > higherSeq {
+				possibleWinner[hash]++
+
+				if possibleWinner[hash] > possibleWinner[winner] {
+					winner = hash
+				}
 			}
 		}
 	}
 
-	return nil, false
+	votesNeeded := quorum.Calc(len(possibleWinner))
+	if winner == *hash && possibleWinner[*hash] >= votesNeeded {
+		return true
+	}
+
+	return false
 }
 
-func (h *TransactionBox) GetByPreviousHash(hash Block.BlockHash) (item Block.Transaction, ok bool) {
+func (h *TransactionBox) AddVotes(hash *Block.BlockHash, pk *Wallet.PublicKey, seq uint64) {
 	if h == nil {
 		return
 	}
 
-	for _, tx := range h.list {
-		if tx.GetPrevious() == hash {
-			return tx, true
-		}
+	t, ok := h.GetByHash(hash)
+	if !ok {
+		return
 	}
 
-	return nil, false
+	if t.votes == nil {
+		t.votes = new(sync.Map)
+	}
+
+	t.votes.LoadOrStore(*pk, seq)
 }
 
-func (h *TransactionBox) GetByFrontier(b Block.BlockHash) (items []Block.Transaction) {
-	for {
+func (h *TransactionBox) GetByHash(hash *Block.BlockHash) (item *Transaction, ok bool) {
+	if h == nil || Util.IsEmpty(hash[:]) {
+		return
+	}
 
-		tx, ok := h.GetByHash(b)
-		if !ok {
+	value, ok := h.list.Load(*hash)
+	if !ok {
+		return nil, ok
+	}
+
+	item, ok = value.(*Transaction)
+	if !ok {
+		return nil, ok
+	}
+
+	return item, ok
+}
+
+func (h *TransactionBox) GetByLinkHash(hash *Block.BlockHash) (item *Transaction, ok bool) {
+	if h == nil {
+		return
+	}
+
+	h.list.Range(func(key, value interface{}) bool {
+		item, ok = value.(*Transaction)
+		if ok {
+			if _, src := item.GetTarget(); src == *hash {
+				return false
+			}
+		}
+
+		item, ok = nil, false
+		return true
+	})
+
+	return item, ok
+}
+
+func (h *TransactionBox) GetByPreviousHash(hash *Block.BlockHash) (items []*Transaction, ok bool) {
+	if h == nil {
+		return
+	}
+
+	h.list.Range(func(key, value interface{}) bool {
+		if item, ok := value.(*Transaction); ok && item.GetPrevious() == *hash {
+			items = append(items, item)
+		}
+
+		return true
+	})
+
+	if len(items) == 0 {
+		return nil, false
+	}
+
+	return items, true
+}
+
+func (h *TransactionBox) GetByFrontier(hash Block.BlockHash) (items []*Transaction) {
+	if h == nil {
+		return
+	}
+
+	var (
+		tx *Transaction
+		ok bool
+	)
+
+	for {
+		tx, ok = h.GetByHash(&hash)
+		if !ok || Util.IsEmpty(hash[:]) {
 			break
 		}
 
-		b = tx.GetPrevious()
 		items = append(items, tx)
+		hash = tx.GetPrevious()
 	}
 
 	return items
 }
 
 func (h *TransactionBox) GetAll() (items []Block.Transaction) {
-	for _, tx := range h.list {
-		items = append(items, tx)
-	}
-
-	return items
-}
-
-func (h *TransactionBox) GetRange(min, max uint32) (items []Block.Transaction, ok bool) {
-	if min <= 0 || max >= uint32(len(h.list)) {
-		return nil, false
-	}
-
-	var i uint32 = 0
-	for _, tx := range h.list {
-		if i >= min && i < max {
-			items = append(items, tx)
-		}
-		i++
-	}
-
-	return items, true
-}
-
-func (h *TransactionBox) Next(last, perPage uint32) (items []Block.Transaction, ok bool) {
-	return h.GetRange(last, last+perPage)
-}
-
-func (h *TransactionBox) Previous(last, perPage uint32) (items []Block.Transaction, ok bool) {
-	return h.GetRange(last-(perPage*2), last-perPage)
-}
-
-func (h *TransactionBox) GetRandom(n int) (items []*Transaction) {
 	if h == nil {
 		return
 	}
 
-	l := len(h.list)
+	h.list.Range(func(key, value interface{}) bool {
+		item, ok := value.(*Transaction)
+		if ok {
+			items = append(items, item)
+		}
+
+		return true
+	})
+
+	return items
+}
+
+func (h *TransactionBox) GetRandom(n int) (items []Block.Transaction) {
+	if h == nil {
+		return
+	}
+
+	list := h.GetAll()
+
+	l := len(list)
 	if l == 0 {
 		return
 	}
 
-	var random = map[int]int{}
-	for i := 0; i < n; i++ {
-		n := rand.Intn(l - 1)
-		random[n] = n
+	if n <= 0 || n > l {
+		n = l
 	}
 
-	var i = 0
-	for _, item := range h.list {
-		if _, ok := random[i]; ok {
-			items = append(items, item)
+	var random = map[int]int{}
+	for i := 0; i < n; i++ {
+		g := rand.Intn(l)
+		random[g] = g
+	}
+
+	for i := range random {
+		if val, ok := list[i].(Block.Transaction); ok {
+			items = append(items, val)
 		}
-		i++
 	}
 
 	return
 }
 
-func (h *TransactionBox) Add(transactions ...Block.Transaction) {
+func (h *TransactionBox) Add(txs ...Block.Transaction) {
 	if h == nil {
 		return
 	}
 
-	for _, tx := range transactions {
+	for _, tx := range txs {
 		hash := tx.Hash()
-
-		if _, ok := h.GetByHash(hash); !ok {
-			h.list[string(hash[:])] = &Transaction{
-				Transaction: tx,
-				date:        time.Now(),
-			}
-
-			h.notifyListeners(h.list[string(hash[:])])
-
+		t := &Transaction{
+			Transaction: tx,
+			Date:        time.Now(),
+			votes:       new(sync.Map),
 		}
+
+		if _, old := h.list.LoadOrStore(hash, t); !old {
+			h.notifyListeners(t)
+		}
+
 	}
 }
 
@@ -267,52 +271,16 @@ func (h *TransactionBox) Remove(txs ...Block.Transaction) {
 	}
 
 	for _, tx := range txs {
-		hash := tx.Hash()
-
-		if _, ok := h.GetByHash(hash); !ok {
-			delete(h.list, string(hash[:]))
-		}
+		h.list.Delete(tx.Hash())
 	}
 }
 
-type HistoryStore []RPCClient.SingleHistory
-
-var History HistoryStore
-
-func (h *HistoryStore) Set(hist []RPCClient.SingleHistory) {
-	*h = hist
-}
-
-func (h *HistoryStore) ExistHash(hash Block.BlockHash) bool {
-	for _, blk := range *h {
-		if blk.Hash == hash {
-			return true
-		}
+func (h *TransactionBox) notifyListeners(tx *Transaction) {
+	if h == nil {
+		return
 	}
 
-	return false
-}
-
-func (h *HistoryStore) AlreadyReceived(hash Block.BlockHash) bool {
-	for _, blk := range *h {
-		if blk.Source == hash {
-			return true
-		}
+	for _, l := range h.listeners {
+		l <- tx
 	}
-
-	return false
-}
-
-func (h *HistoryStore) Add(blk Block.Transaction, amount *Numbers.RawAmount) {
-	hist := RPCClient.SingleHistory{}
-	hist.Type = blk.GetSubType()
-	hist.Amount = amount
-	//	hist.Destination, hist.Source = blk.GetTarget()
-	hist.Hash = blk.Hash()
-
-	*h = append([]RPCClient.SingleHistory{hist}, *h...)
-}
-
-func (h *HistoryStore) Next(page uint32) {
-	//@TODO pagination
 }

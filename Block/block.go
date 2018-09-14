@@ -3,23 +3,27 @@ package Block
 import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/ProofWork"
+	"encoding"
 )
 
 type Transaction interface {
 	Encode() (data []byte)
+	encoding.BinaryMarshaler
 	Decode(data []byte) (err error)
+	encoding.BinaryUnmarshaler
 	SwitchToUniversalBlock(previousBlock *UniversalBlock, amm *Numbers.RawAmount) *UniversalBlock
 
-	Work() ProofWork.Work
+	Work() Work
 	Hash() BlockHash
 
+	GetBalance() *Numbers.RawAmount
 	GetType() BlockType
-	GetSubType() BlockType
 	GetTarget() (destination Wallet.PublicKey, source BlockHash)
 	GetPrevious() BlockHash
+	GetWork() Work
+	GetSignature() Wallet.Signature
 
-	SetWork(pow ProofWork.Work)
+	SetWork(pow Work)
 	SetSignature(sig Wallet.Signature)
 	SetFrontier(hash BlockHash)
 	SetBalance(balance *Numbers.RawAmount)
@@ -28,9 +32,7 @@ type Transaction interface {
 //--------------
 
 type DefaultBlock struct {
-	mainType BlockType
-	subType   BlockType
-	PoW       ProofWork.Work   `json:"work"`
+	PoW       Work             `json:"work"`
 	Signature Wallet.Signature `json:"signature"`
 	hash      BlockHash
 }

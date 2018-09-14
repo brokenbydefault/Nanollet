@@ -72,7 +72,8 @@ func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	if !address.IsValid() {
+	dest, err := address.GetPublicKey()
+	if err != nil || !address.IsValid() {
 		DOM.UpdateNotification(w, "The given address is invalid")
 		return
 	}
@@ -82,23 +83,23 @@ func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	amm, err := Numbers.NewHumanFromString(whole+"."+decimal, Numbers.MegaXRB).ConvertToRawAmount()
+	amount, err := Numbers.NewHumanFromString(whole+"."+decimal, Numbers.MegaXRB).ConvertToRawAmount()
 	if err != nil {
 		return
 	}
 
-	if !Storage.Amount.Subtract(amm).IsValid() {
+	if !Storage.AccountStorage.Balance.Subtract(amount).IsValid() {
 		DOM.UpdateNotification(w, "The given amount is higher than the maximum")
 		return
 	}
 
-	blk, err := Block.CreateSignedUniversalSendBlock(Storage.SK, Storage.Representative, Storage.Amount, amm, Storage.Frontier, address)
+	tx, err := Block.CreateUniversalSendBlock(&Storage.AccountStorage.SecretKey, Storage.AccountStorage.Representative, Storage.AccountStorage.Balance, amount, Storage.AccountStorage.Frontier, dest)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem creating a block")
 		return
 	}
 
-	err = Background.PublishBlockToQueue(blk, amm)
+	err = Background.PublishBlockToQueue(tx, Block.Send, amount)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem sending a block")
 		return
@@ -119,7 +120,7 @@ func (c *PageReceive) OnView(w *window.Window) {
 	page := DOM.SetSector(c)
 
 	textarea, _ := page.SelectFirstElement(w, ".address")
-	textarea.SetValue(sciter.NewValue(string(Storage.PK.CreateAddress())))
+	textarea.SetValue(sciter.NewValue(string(Storage.AccountStorage.PublicKey.CreateAddress())))
 	DOM.ReadOnlyElement(textarea)
 }
 
@@ -150,18 +151,19 @@ func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
 		return
 	}
 
-	if !address.IsValid() {
+	representative, err := address.GetPublicKey()
+	if err != nil || !address.IsValid() {
 		DOM.UpdateNotification(w, "The given address is invalid")
 		return
 	}
 
-	blk, err := Block.CreateSignedUniversalChangeBlock(Storage.SK, address, Storage.Amount, Storage.Frontier)
+	blk, err := Block.CreateUniversalChangeBlock(&Storage.AccountStorage.SecretKey, representative, Storage.AccountStorage.Balance, Storage.AccountStorage.Frontier)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem creating a block")
 		return
 	}
 
-	err = Background.PublishBlockToQueue(blk)
+	err = Background.PublishBlockToQueue(blk, Block.Change)
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem sending a block")
 		return
@@ -181,34 +183,35 @@ func (c *PageList) Name() string {
 func (c *PageList) OnView(w *window.Window) {
 	page := DOM.SetSector(c)
 
-	balance, _ := Numbers.NewHumanFromRaw(Storage.Amount).ConvertToBase(Numbers.MegaXRB, int(Numbers.MegaXRB))
+	balance, _ := Numbers.NewHumanFromRaw(Storage.AccountStorage.Balance).ConvertToBase(Numbers.MegaXRB, int(Numbers.MegaXRB))
 	display, _ := page.SelectFirstElement(w, ".fullamount")
 	display.SetValue(sciter.NewValue(balance))
 
-	if len(Storage.History) == 0 {
+	if Storage.TransactionStorage.Count() == 0 {
 		return
 	}
 
 	txbox, _ := page.SelectFirstElement(w, ".txbox")
 	DOM.ClearHTML(txbox)
 
-	for i, hist := range Storage.History {
-		tx := hist
+	for i, tx := range Storage.TransactionStorage.GetByFrontier(Storage.AccountStorage.Frontier) {
 
-		amm, err := Numbers.NewHumanFromRaw(tx.Amount).ConvertToBase(Numbers.MegaXRB, 6)
+		hashPrev := tx.GetPrevious()
+		txPrev, _ := Storage.TransactionStorage.GetByHash(&hashPrev)
+
+
+		txType := Block.GetSubType(tx, txPrev)
+		txAmount := Block.GetAmount(tx, txPrev)
+
+		humanAmount, err := Numbers.NewHumanFromRaw(txAmount).ConvertToBase(Numbers.MegaXRB, 6)
 		if err != nil {
 			return
 		}
 
-		blktype := tx.Type
-		if tx.SubType != "" {
-			blktype = tx.SubType
-		}
-
 		txdiv := DOM.CreateElementAppendTo("div", "", "item", "", txbox)
 
-		DOM.CreateElementAppendTo("div", strings.ToUpper(string(blktype)), "type", "", txdiv)
-		DOM.CreateElementAppendTo("div", amm, "amount", "", txdiv)
+		DOM.CreateElementAppendTo("div", strings.ToUpper(txType.String()), "type", "", txdiv)
+		DOM.CreateElementAppendTo("div", humanAmount, "amount", "", txdiv)
 
 		if i == 4 {
 			break

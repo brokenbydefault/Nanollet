@@ -34,13 +34,17 @@ func NewHandshakePackage(lChallenge []byte, rChallenge []byte) (packet *Handshak
 		pk, sk, _ := Wallet.GenerateRandomKeyPair()
 
 		packet.PublicKey = pk
-		packet.Signature, _ = sk.CreateSignature(rChallenge)
+		sig, err := sk.Sign(rChallenge)
+		if err != nil {
+			return packet
+		}
+		packet.Signature = sig
 	}
 
 	return packet
 }
 
-func (p *HandshakePackage) Encode(_ *Header, dst []byte) (n int, err error) {
+func (p *HandshakePackage) Encode(dst []byte) (n int, err error) {
 	if p == nil {
 		return
 	}

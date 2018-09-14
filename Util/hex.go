@@ -1,7 +1,6 @@
 package Util
 
 import (
-	"crypto/subtle"
 	"encoding/hex"
 	"strings"
 )
@@ -47,7 +46,7 @@ func SecureHexEncode(b []byte) string {
 		b1 += ((9 - p1) >> 8) & 7
 		b2 += ((9 - p2) >> 8) & 7
 
-		subtle.ConstantTimeCopy(1, r[i*2:(i*2)+2], []byte{byte(b1), byte(b2)})
+		copy(r[i*2:], []byte{byte(b1), byte(b2)})
 	}
 
 	return string(r)
@@ -77,7 +76,7 @@ func SecureHexDecode(s string) (r []byte, ok bool) {
 		// if (b < 0 | b > 15) { err = 1 }
 		e |= ((b >> 8) | (15-b)>>8) & 1
 
-		st += (i+1) & 1
+		st += (i + 1) & 1
 		r[st] <<= 4
 		r[st] |= byte(b)
 
@@ -95,5 +94,3 @@ func SecureHexMustDecode(s string) []byte {
 
 	return b
 }
-
-

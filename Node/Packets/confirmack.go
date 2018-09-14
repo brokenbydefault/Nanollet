@@ -7,18 +7,16 @@ import (
 	"github.com/brokenbydefault/Nanollet/Util"
 	"errors"
 	"golang.org/x/crypto/blake2b"
+	"encoding/binary"
 )
 
 //@TODO Support votes by blocks
 
 type ConfirmACKPackage struct {
-	PublicKey    Wallet.PublicKey
-	secretKey    Wallet.SecretKey
-	Signature    Wallet.Signature
-	Sequence     [8]byte
-	Transaction  Block.Transaction
-	transactions []Block.Transaction
-	Hashes       []Block.BlockHash
+	PublicKey Wallet.PublicKey
+	Signature Wallet.Signature
+	Sequence  [8]byte
+	Hashes    []Block.BlockHash
 }
 
 const (
@@ -32,39 +30,33 @@ var (
 
 var votePrefix = []byte("vote ")
 
-func NewConfirmACKPackage(sk Wallet.SecretKey, txs ...Block.Transaction) (packet *ConfirmACKPackage) {
+func NewConfirmACKPackage(sk *Wallet.SecretKey, txs ...Block.Transaction) (packet *ConfirmACKPackage) {
 	packet = &ConfirmACKPackage{
-		PublicKey:    sk.PublicKey(),
-		secretKey:    sk,
-		transactions: txs,
+		PublicKey: sk.PublicKey(),
+		Sequence:  newSequence(),
 	}
 
-	copy(packet.Sequence[:], Util.UintToBytes(uint64(time.Now().Unix()), Util.BigEndian))
+	for _, tx := range txs {
+		packet.Hashes = append(packet.Hashes, tx.Hash())
+	}
+
+	sig, err := sk.Sign(Util.CreateHash(32, votePrefix, concatHashes(packet.Hashes), packet.Sequence[:]))
+	if err != nil {
+		return
+	}
+
+	packet.Signature = sig
+
 	return packet
 }
 
-func (p *ConfirmACKPackage) Encode(rHeader *Header, dst []byte) (n int, err error) {
-	if p == nil || p.transactions == nil {
+func (p *ConfirmACKPackage) Encode(dst []byte) (n int, err error) {
+	if p == nil {
 		return 0, nil
 	}
 
 	if len(dst) < ConfirmACKPackageSizeMax {
 		return 0, ErrDestinationLenghtNotEnough
-	}
-
-	var blk []byte
-	if len(p.transactions) > 1 {
-		for _, tx := range p.transactions {
-			hash := tx.Hash()
-			blk = append(blk, hash[:]...)
-		}
-
-		p.Signature, err = p.secretKey.CreateSignature(Util.CreateHash(32, votePrefix, blk, p.Sequence[:]))
-	} else {
-		blk = p.transactions[0].Encode()[1:]
-
-		hash := p.transactions[0].Hash()
-		p.Signature, err = p.secretKey.CreateSignature(Util.CreateHash(32, hash[:], p.Sequence[:]))
 	}
 
 	if err != nil {
@@ -74,7 +66,7 @@ func (p *ConfirmACKPackage) Encode(rHeader *Header, dst []byte) (n int, err erro
 	n += copy(dst[n:], p.PublicKey[:])
 	n += copy(dst[n:], p.Signature[:])
 	n += copy(dst[n:], p.Sequence[:])
-	n += copy(dst[n:], blk)
+	n += copy(dst[n:], concatHashes(p.Hashes))
 
 	return n, nil
 }
@@ -88,7 +80,7 @@ func (p *ConfirmACKPackage) Decode(rHeader *Header, src []byte) (err error) {
 		return ErrInvalidHeaderParameters
 	}
 
-	if l := len(src); l <= ConfirmACKPackageSizeMin || l > ConfirmACKPackageSizeMax {
+	if l := len(src); l < ConfirmACKPackageSizeMin || l > ConfirmACKPackageSizeMax {
 		return ErrInvalidMessageSize
 	}
 
@@ -104,24 +96,24 @@ func (p *ConfirmACKPackage) Decode(rHeader *Header, src []byte) (err error) {
 		}
 
 		for i := bi; i < l; i += blake2b.Size256 {
-			p.Hashes = append(p.Hashes, Block.NewBlockHash(src[bi:]))
+			p.Hashes = append(p.Hashes, Block.NewBlockHash(src[i:]))
 		}
 
-		if ok := p.PublicKey.IsValidSignature(Util.CreateHash(32, votePrefix, src[bi:], p.Sequence[:]), p.Signature); !ok {
+		if ok := p.PublicKey.IsValidSignature(Util.CreateHash(32, votePrefix, src[bi:], p.Sequence[:]), &p.Signature); !ok {
 			return ErrInvalidSignature
 		}
 	} else {
-		p.Transaction, _, err = Block.NewTransaction(rHeader.ExtensionType.GetBlockType())
+		tx, _, err := Block.NewTransaction(rHeader.ExtensionType.GetBlockType())
 		if err != nil {
 			return err
 		}
 
-		if err = p.Transaction.Decode(src[bi:]); err != nil {
+		if err = tx.Decode(src[bi:]); err != nil {
 			return err
 		}
 
-		hash := p.Transaction.Hash()
-		if ok := p.PublicKey.IsValidSignature(Util.CreateHash(32, hash[:], p.Sequence[:]), p.Signature); !ok {
+		p.Hashes = []Block.BlockHash{tx.Hash()}
+		if ok := p.PublicKey.IsValidSignature(Util.CreateHash(32, p.Hashes[0][:], p.Sequence[:]), &p.Signature); !ok {
 			return ErrInvalidSignature
 		}
 	}
@@ -131,16 +123,18 @@ func (p *ConfirmACKPackage) Decode(rHeader *Header, src []byte) (err error) {
 
 func (p *ConfirmACKPackage) ModifyHeader(h *Header) {
 	h.MessageType = ConfirmACK
+	h.ExtensionType.Add(ExtensionType(Block.NotABlock) << 8)
+}
 
-	if p.Transaction != nil || len(p.transactions) == 1 {
-		if p.Transaction != nil {
-			h.ExtensionType.Add(ExtensionType(uint8(p.Transaction.GetType())) << 8)
-		} else {
-			h.ExtensionType.Add(ExtensionType(uint8(p.transactions[0].GetType())) << 8)
-		}
+func concatHashes(hashes []Block.BlockHash) (b []byte) {
+	for _, h := range hashes {
+		b = append(b, h[:]...)
 	}
 
-	if p.Hashes != nil || len(p.transactions) > 1 {
-		h.ExtensionType.Add(ExtensionType(Block.NotABlock) << 8)
-	}
+	return b
+}
+
+func newSequence() (b [8]byte) {
+	binary.PutVarint(b[:], time.Now().Unix())
+	return b
 }

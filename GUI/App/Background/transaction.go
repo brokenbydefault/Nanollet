@@ -4,49 +4,56 @@ import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/brokenbydefault/Nanollet/RPC"
-	"github.com/brokenbydefault/Nanollet/RPC/Connectivity"
+	"github.com/brokenbydefault/Nanollet/Node"
+	"time"
+	"errors"
+)
+
+var (
+	ErrInsufficientVotes = errors.New("insufficient votes")
+	ErrInvalidAmount     = errors.New("invalid amount")
+	ErrInvalidFrontier   = errors.New("invalid frontier")
 )
 
 type WaitConfirmation chan error
 
 type txs struct {
-	blocks    []Block.BlockTransaction
+	blocks    []Block.Transaction
+	blockType Block.BlockType
 	returning WaitConfirmation
 	amount    *Numbers.RawAmount
 }
 
-type queueup chan txs
+var queue = make(chan txs, 64)
 
-var queue = make(queueup, 32)
+func init() {
+	go listen()
+}
 
-func PublishBlocksToQueue(blk []Block.BlockTransaction, amount ...*Numbers.RawAmount) error {
-	var rt = make(WaitConfirmation)
-	defer close(rt)
+func PublishBlocksToQueue(blk []Block.Transaction, blockType Block.BlockType, amounts ...*Numbers.RawAmount) error {
+	var waitchan = make(WaitConfirmation)
+	defer close(waitchan)
 
 	// amount is optional, set default of 0 if missing
-	var amm *Numbers.RawAmount
-	if len(amount) == 0 {
-		amm, _ = Numbers.NewRawFromString("0")
+	var amount *Numbers.RawAmount
+	if len(amounts) == 0 {
+		amount = Numbers.NewMin()
 	} else {
-		amm = amount[0]
+		amount = amounts[0]
 	}
 
 	queue <- txs{
 		blocks:    blk,
-		returning: rt,
-		amount:    amm,
+		returning: waitchan,
+		blockType: blockType,
+		amount:    amount,
 	}
 
-	return <-rt
+	return <-waitchan
 }
 
-func PublishBlockToQueue(blk Block.BlockTransaction, amount ...*Numbers.RawAmount) error {
-	return PublishBlocksToQueue([]Block.BlockTransaction{blk}, amount...)
-}
-
-func StartTransaction() {
-	go listen()
+func PublishBlockToQueue(blk Block.Transaction, blockType Block.BlockType, amount ...*Numbers.RawAmount) error {
+	return PublishBlocksToQueue([]Block.Transaction{blk}, blockType, amount...)
 }
 
 func listen() {
@@ -54,7 +61,7 @@ func listen() {
 	for tx := range queue {
 		var err error
 		for _, blk := range tx.blocks {
-			err = processBlock(blk, tx.amount)
+			err = processBlock(blk, tx.blockType, tx.amount)
 			if err != nil {
 				break
 			}
@@ -65,44 +72,81 @@ func listen() {
 
 }
 
-func processBlock(blk Block.BlockTransaction, amm *Numbers.RawAmount) error {
-	defer func() {
-		go Storage.UpdatePoW()
-	}()
-
+func processBlock(tx Block.Transaction, blockType Block.BlockType, amm *Numbers.RawAmount) error {
 	var err error = nil
 	var balance *Numbers.RawAmount
 
-	switch blk.GetSubType() {
+	switch blockType {
 	case Block.Send:
-		balance = Storage.Amount.Subtract(amm)
+		balance = Storage.AccountStorage.Balance.Subtract(amm)
 	case Block.Open:
-		balance = Storage.Amount.Add(amm)
+		balance = Storage.AccountStorage.Balance.Add(amm)
 	case Block.Receive:
-		balance = Storage.Amount.Add(amm)
+		balance = Storage.AccountStorage.Balance.Add(amm)
 	default:
-		balance = Storage.Amount
+		balance = Storage.AccountStorage.Balance
 	}
 
-	blk.SetFrontier(Storage.Frontier)
-	blk.SetWork(Storage.RetrievePrecomputedPoW())
-	blk.SetBalance(balance)
+	if !balance.IsValid() {
+		return ErrInvalidAmount
+	}
 
-	hash := blk.Hash()
-	sig, err := Storage.SK.CreateSignature(hash)
+	tx.SetFrontier(Storage.AccountStorage.Frontier)
+	//@TODO Support pre-computed PoW, again.
+	//blk.SetWork(Storage.RetrievePrecomputedPoW())
+
+	tx.Work()
+	tx.SetBalance(balance)
+
+	hash := tx.Hash()
+	sig, err := Storage.AccountStorage.SecretKey.Sign(hash[:])
 	if err != nil {
 		return err
 	}
-	blk.SetSignature(sig)
 
-	_, err = RPCClient.BroadcastBlock(Connectivity.Socket, blk)
-	if err != nil {
+	tx.SetSignature(sig)
+
+	if err = Node.PostBlock(Connection, tx); err != nil {
 		return err
 	}
 
-	Storage.Amount = balance
-	Storage.History.Add(blk, amm)
-	Storage.UpdateFrontier(blk)
+	Storage.TransactionStorage.Add(tx)
+
+	//@TODO improve if not reach the quorum
+	if !waitVotesConfirmation(tx) {
+		Storage.TransactionStorage.Remove(tx)
+		return ErrInsufficientVotes
+	}
+
+	Storage.AccountStorage.Balance = tx.GetBalance()
+	Storage.AccountStorage.Frontier = tx.Hash()
 
 	return nil
+}
+
+func waitVotesConfirmation(tx Block.Transaction) bool {
+	start := time.Now()
+	hash := tx.Hash()
+
+	var retry = 0
+	for range time.Tick(2 * time.Second) {
+		if Storage.TransactionStorage.IsConfirmed(&hash, &Storage.Configuration.Account.Quorum) {
+			return true
+		}
+
+		if retry >= 5 {
+			Node.PostBlock(Connection, tx)
+			Node.RequestVotes(Connection, tx)
+
+			retry = 0
+		} else {
+			retry++
+		}
+
+		if time.Since(start) > 1*time.Minute {
+			break
+		}
+	}
+
+	return false
 }

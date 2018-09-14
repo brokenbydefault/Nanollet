@@ -4,93 +4,137 @@ import (
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
 	"net"
 	"math/rand"
-	"github.com/brokenbydefault/Nanollet/Util"
+	"sync"
 )
 
-var (
-	PeerStorage = PeersBox{
-		List:      make(map[string]*Peer.Peer),
-		Challenge: Peer.NewChallenge(),
-	}
-)
+//@TODO (inkeliz) Replace map to sync.Map
+var PeerStorage PeersBox
 
-type PeersBox struct {
-	List      map[string]*Peer.Peer
-	Challenge Peer.Challenge
+func init() {
+	PeerStorage.Add(Configuration.Node.Peers...)
 }
 
-func (h *PeersBox) GetRandom(n int) (items []*Peer.Peer) {
-	if h == nil {
+type PeersBox struct {
+	list *sync.Map
+}
+
+func (h *PeersBox) Count() (len int) {
+	if h == nil || h.list == nil {
+		return 0
+	}
+
+	h.list.Range(func(_, _ interface{}) bool {
+		len++
+		return true
+	})
+
+	return len
+}
+
+func (h *PeersBox) GetAll() (items []*Peer.Peer) {
+	if h == nil || h.list == nil {
 		return
 	}
 
-	l := len(h.List)
+	h.list.Range(func(key, value interface{}) bool {
+		item, ok := value.(*Peer.Peer)
+		if ok {
+			items = append(items, item)
+		}
+
+		return true
+	})
+
+	return items
+}
+
+func (h *PeersBox) GetRandom(n int) (items []*Peer.Peer) {
+	if h == nil || h.list == nil {
+		return
+	}
+
+	list := h.GetAll()
+
+	l := len(list)
 	if l == 0 {
 		return
 	}
 
+	if n <= 0 || n > l {
+		n = l
+	}
+
 	var random = map[int]int{}
 	for i := 0; i < n; i++ {
-		n := rand.Intn(l - 1)
+		n := rand.Intn(l)
 		random[n] = n
 	}
 
-	var i = 0
-	for _, item := range h.List {
-		if _, ok := random[i]; ok {
-			items = append(items, item)
-		}
-		i++
+	for i := range random {
+		items = append(items, list[i])
 	}
 
 	return
 }
 
-func (h *PeersBox) Get(s string) (peer *Peer.Peer, ok bool) {
-	if h == nil {
+func (h *PeersBox) Get(ip net.IP) (peer *Peer.Peer, ok bool) {
+	if h == nil || h.list == nil {
 		return
 	}
 
-	peer, ok = h.List[s]
-	return
+	val, ok := h.list.Load(string(ip))
+	if !ok {
+		return nil, false
+	}
+
+	peer, ok = val.(*Peer.Peer)
+
+	return peer, ok
 }
 
-func (h *PeersBox) IsAllowedIP(dest net.IP) bool {
-	if h == nil {
+func (h *PeersBox) IsAllowedIP(ip net.IP) bool {
+	if h == nil || h.list == nil {
 		return false
 	}
 
-	peer, ok := h.List[dest.String()]
+	peer, ok := h.Get(ip)
 	if !ok {
 		return false
 	}
 
-	pk := peer.PublicKey()
-	if !peer.IsActive() || Util.IsEmpty(pk[:]) {
+	if !peer.IsActive() || !peer.IsKnow() {
 		return false
 	}
 
 	return true
 }
 
-func (h *PeersBox) Add(peers ...*Peer.Peer) {
+func (h *PeersBox) Add(peers ...*Peer.Peer) (n int) {
 	if h == nil {
 		return
 	}
 
+	if h.list == nil {
+		h.list = new(sync.Map)
+	}
+
 	for _, peer := range peers {
-		if len(h.List) < 64 {
-			h.List[peer.RawIP().String()] = peer
+		if h.Count() < 256 {
+			if _, old := h.list.LoadOrStore(string(peer.UDP.IP), peer); !old {
+				n++
+			}
 		}
 	}
+
+	return n
 }
 
 func (h *PeersBox) Remove(peers ...*Peer.Peer) {
-	if h == nil {
+	if h == nil || h.list == nil {
 		return
 	}
 
 	for _, peer := range peers {
-		delete(h.List, peer.RawIP().String())
+		h.list.Delete(string(peer.UDP.IP))
 	}
 }

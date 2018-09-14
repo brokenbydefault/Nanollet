@@ -6,7 +6,6 @@ import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
 func TestConfirmReqPackage_Decode(t *testing.T) {
@@ -39,12 +38,12 @@ func TestConfirmReqPackage_Encode(t *testing.T) {
 		Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("000000087A84C94598B4E5525F000000")),
 		DefaultBlock: Block.DefaultBlock{
 			Signature: Wallet.NewSignature(Util.SecureHexMustDecode("ED46BE47A5DDE7E22F1FD9E15EEF5E5793DFC4015B65256A023D6FA2C08E60416FA72111428E17B41591A7413F9FBADFAFCD86FAFAE3E9189FED7709F5FACB0B")),
-			PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("E541DC0E9B3041C6")),
+			PoW:       Block.NewWork(Util.SecureHexMustDecode("E541DC0E9B3041C6")),
 		},
 	}
 
 	pack := NewConfirmReqPackage(tx)
-	encoded := EncodePacketUDP(nil, nil, pack)
+	encoded := EncodePacketUDP(*NewHeader(), pack)
 
 	header := new(Header)
 	if err := header.Decode(encoded); err != nil {

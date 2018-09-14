@@ -3,10 +3,10 @@ package Packets
 import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"io"
-	"bufio"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/Inkeliz/blakEd25519"
 	"encoding/binary"
+	"bufio"
 )
 
 type FrontierReqPackageRequest struct {
@@ -23,7 +23,7 @@ func NewFrontierReqPackageRequest(pk Wallet.PublicKey, age, end uint32) (packet 
 	}
 }
 
-func (p *FrontierReqPackageRequest) Encode(_ *Header, dst io.Writer) (err error) {
+func (p *FrontierReqPackageRequest) Encode(dst io.Writer) (err error) {
 	if p == nil {
 		return
 	}
@@ -47,6 +47,8 @@ func (p *FrontierReqPackageRequest) Decode(_ *Header, src io.Reader) (err error)
 	if p == nil {
 		return
 	}
+
+	src = bufio.NewReader(src)
 
 	if n, err := src.Read(p.PublicKey[:]); n != blakEd25519.PublicKeySize || err != nil {
 		return ErrInvalidMessageSize
@@ -84,7 +86,7 @@ func NewFrontierReqPackageResponse(txs []Block.Transaction) (packet *FrontierReq
 	}
 }
 
-func (p *FrontierReqPackageResponse) Encode(_ *Header, dst io.Writer) (err error) {
+func (p *FrontierReqPackageResponse) Encode(dst io.Writer) (err error) {
 	if p == nil {
 		return
 	}
@@ -104,31 +106,34 @@ func (p *FrontierReqPackageResponse) Encode(_ *Header, dst io.Writer) (err error
 }
 
 func (p *FrontierReqPackageResponse) Decode(_ *Header, src io.Reader) (err error) {
-	reader := bufio.NewReader(src)
 
+	var fronts []Frontier
 	for {
-
 		frontier := Frontier{}
 
-		blockType, err := reader.ReadByte()
-		if err != nil {
+		blockType := make([]byte, 1)
+		if _, err := src.Read(blockType); err != nil {
 			return err
 		}
 
-		if blockType == byte(Block.Invalid) {
-			return nil
+		if blockType[0] == byte(Block.Invalid) {
+			break
 		}
 
-		if _, err = reader.Read(frontier.Account[:]); err != nil {
+		if _, err = src.Read(frontier.Account[:]); err != nil {
 			return err
 		}
 
-		if _, err = reader.Read(frontier.Hash[:]); err != nil {
+		if _, err = src.Read(frontier.Hash[:]); err != nil {
 			return err
 		}
 
-		p.Frontiers = append(p.Frontiers, )
+		fronts = append(fronts, frontier)
 	}
+
+	p.Frontiers = fronts
+
+	return nil
 }
 
 func (p *FrontierReqPackageResponse) ModifyHeader(h *Header) {

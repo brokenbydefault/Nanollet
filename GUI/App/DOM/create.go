@@ -4,8 +4,6 @@ package DOM
 
 import (
 	"github.com/sciter-sdk/go-sciter"
-	"github.com/skip2/go-qrcode"
-	"image/color"
 	"encoding/base64"
 )
 
@@ -22,12 +20,7 @@ func CreateElementAppendTo(tag, value, class string, id string, target *sciter.E
 	return el
 }
 
-func CreateQRCodeAppendTo(text string, color color.RGBA, size int, target *sciter.Element) *sciter.Element {
-	qr, _ := qrcode.New(text, qrcode.Highest)
-	qr.BackgroundColor = color
-
-	png, _ := qr.PNG(size)
-
+func CreateQRCodeAppendTo(png []byte, target *sciter.Element) *sciter.Element {
 	el := CreateElementAppendTo("img", "", "", "", target)
 	el.SetAttr("src", "data:image/png;base64, "+base64.StdEncoding.EncodeToString(png))
 

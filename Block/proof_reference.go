@@ -1,6 +1,6 @@
 // +build ignore
 
-package ProofWork
+package Block
 
 import (
 	"encoding/binary"

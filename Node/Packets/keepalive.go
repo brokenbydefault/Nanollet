@@ -22,7 +22,7 @@ func NewKeepAlivePackage(peer []*Peer.Peer) (packet *KeepAlivePackage) {
 	}
 }
 
-func (p *KeepAlivePackage) Encode(_ *Header, dst []byte) (n int, err error) {
+func (p *KeepAlivePackage) Encode(dst []byte) (n int, err error) {
 	if p == nil {
 		return
 	}
@@ -38,11 +38,11 @@ func (p *KeepAlivePackage) Encode(_ *Header, dst []byte) (n int, err error) {
 
 	bi := 0
 	for _, peer := range p.List[:max] {
-		bi += copy(dst[bi:], peer.RawIP())
-		bi += copy(dst[bi:], peer.RawPort())
+		bi += copy(dst[bi:], peer.UDP.IP)
+		bi += copy(dst[bi:], []byte{byte(peer.UDP.Port), byte(peer.UDP.Port << 8)})
 	}
 
-	return bi, nil
+	return KeepAlivePackageSize, nil
 }
 
 func (p *KeepAlivePackage) Decode(_ *Header, src []byte) (err error) {

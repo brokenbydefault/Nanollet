@@ -3,6 +3,7 @@ package Packets
 import (
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Block"
+	"io"
 )
 
 // NetworkType is a one-byte which defines the network which is connected to, such as Live or Test.
@@ -75,7 +76,7 @@ type Header struct {
 func NewHeader() *Header {
 	return &Header{
 		MagicNumber:   82,
-		NetworkType:   Beta, // Important
+		NetworkType:   Live,
 		VersionMax:    13,
 		VersionUsing:  13,
 		VersionMin:    13,
@@ -150,4 +151,37 @@ func (h *Header) Decode(src []byte) (err error) {
 	}
 
 	return nil
+}
+
+func (h *Header) Read(src io.Reader) (n int, err error) {
+	b := make([]byte, HeaderSize)
+
+	n, err = src.Read(b)
+	if err != nil {
+		return n, err
+	}
+
+	err = h.Decode(b)
+	if err != nil {
+		return n, err
+	}
+
+	return n, nil
+}
+
+func (h *Header) Write(dst io.Writer) (n int, err error) {
+	if h.removeHeader {
+		return 0, nil
+	}
+
+	b := make([]byte, HeaderSize)
+	if n, err = h.Encode(b); err != nil {
+		return n, err
+	}
+
+	if n, err = dst.Write(b); err != nil {
+		return n, err
+	}
+
+	return HeaderSize, nil
 }

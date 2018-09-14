@@ -19,7 +19,7 @@ func (pk PublicKey) CreateAddress() (addr Address) {
 	addr = ADDRESS_PREFIX
 	addr += "_"
 	addr += Address(Util.UnsafeBase32Encode(append([]byte{0, 0, 0}, pk[:]...))[4:])
-	addr += Address(Util.UnsafeBase32Encode(pk.CreateChecksum()))
+	addr += Address(Util.UnsafeBase32Encode(pk.Checksum()))
 
 	return addr
 }

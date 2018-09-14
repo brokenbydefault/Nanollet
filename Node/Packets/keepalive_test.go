@@ -5,7 +5,6 @@ import (
 	"net"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
-	"bytes"
 )
 
 func BenchmarkKeepAlivePackage_Encode(b *testing.B) {
@@ -28,7 +27,7 @@ func BenchmarkKeepAlivePackage_Encode(b *testing.B) {
 	dst := make([]byte, PackageSize)
 
 	packet := NewKeepAlivePackage(nil)
-	packet.Encode(nil, dst)
+	packet.Encode(dst)
 
 	for i := 0; i < b.N; i++ {
 		dial.Write(dst)
@@ -63,12 +62,12 @@ func TestKeepAlivePackage_Decode(t *testing.T) {
 	}
 
 	for i, peer := range pack.List {
-		if !expected[i].RawIP().Equal(peer.RawIP()) {
-			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.RawIP(), expected[i].RawIP())
+		if !expected[i].UDP.IP.Equal(peer.UDP.IP) {
+			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.UDP.IP, expected[i].UDP.IP)
 		}
 
-		if !bytes.Equal(expected[i].RawPort(), peer.RawPort()) {
-			t.Errorf("invalid decode, wrong port. Gets %s expecting %s", peer.RawPort(), expected[i].RawPort())
+		if expected[i].UDP.Port != peer.UDP.Port {
+			t.Errorf("invalid decode, wrong port. Gets %d expecting %d", peer.UDP.Port, expected[i].UDP.Port)
 		}
 	}
 
@@ -86,7 +85,7 @@ func TestKeepAlivePackage_Encode(t *testing.T) {
 	}
 
 	pack := NewKeepAlivePackage(peers)
-	encoded := EncodePacketUDP(nil, nil, pack)
+	encoded := EncodePacketUDP(*NewHeader(), pack)
 
 	header := new(Header)
 	if err := header.Decode(encoded); err != nil {
@@ -99,12 +98,12 @@ func TestKeepAlivePackage_Encode(t *testing.T) {
 	}
 
 	for i, peer := range pack.List {
-		if !peers[i].RawIP().Equal(peer.RawIP()) {
-			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.RawIP(), peers[i].RawIP())
+		if !peers[i].UDP.IP.Equal(peer.UDP.IP) {
+			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.UDP.IP, peers[i].UDP.IP)
 		}
 
-		if !bytes.Equal(peers[i].RawPort(), peer.RawPort()) {
-			t.Errorf("invalid decode, wrong port. Gets %s expecting %s", peer.RawPort(), peers[i].RawPort())
+		if peers[i].UDP.Port != peer.UDP.Port {
+			t.Errorf("invalid decode, wrong port. Gets %d expecting %d", peer.UDP.Port, peers[i].UDP.Port)
 		}
 	}
 

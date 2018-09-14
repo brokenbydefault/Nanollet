@@ -97,7 +97,7 @@ func TestHandshakePackage_Encode(t *testing.T) {
 	rand.Read(challenge)
 
 	pack := NewHandshakePackage(challenge, nil)
-	encoded := EncodePacketUDP(nil, nil, pack)
+	encoded := EncodePacketUDP(*NewHeader(), pack)
 
 	header := new(Header)
 	if err := header.Decode(encoded); err != nil {
@@ -121,7 +121,7 @@ func TestHandshakePackage_Encode_3(t *testing.T) {
 	rand.Read(challenge)
 
 	pack := NewHandshakePackage(challenge, rchallenge)
-	encoded := EncodePacketUDP(nil, nil, pack)
+	encoded := EncodePacketUDP(*NewHeader(), pack)
 
 	header := new(Header)
 	if err := header.Decode(encoded); err != nil {
@@ -137,7 +137,7 @@ func TestHandshakePackage_Encode_3(t *testing.T) {
 		t.Errorf("error decode, invalid challenge: got %X expecting %X", depack.Challenge[:], pack.Challenge[:])
 	}
 
-	if !pack.PublicKey.IsValidSignature(rchallenge, pack.Signature) {
+	if !pack.PublicKey.IsValidSignature(rchallenge, &pack.Signature) {
 		t.Error("error encode, invalid signature")
 	}
 }

@@ -1,95 +1,35 @@
 package Peer
 
 import (
-	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 type Quorum struct {
-	Common int
-	Fork   int
+	PublicKeys []Wallet.PublicKey
+	Common     int
+	Fork       int
 }
 
-func (q *Quorum) CalcCommon(pks []Wallet.PublicKey) int {
+func (q *Quorum) CalcCommon() int {
 	if q == nil {
-		return  (len(pks) * 50) / 100
+		return (len(q.PublicKeys) * 50) / 100
 	}
 
-	return (len(pks) * q.Common) / 100
+	return (len(q.PublicKeys) * q.Common) / 100
 }
 
-func (q *Quorum) CalcFork(pks []Wallet.PublicKey) int {
+func (q *Quorum) CalcFork() int {
 	if q == nil {
-		return (len(pks) * 50) / 100
+		return (len(q.PublicKeys) * 50) / 100
 	}
 
-	return (len(pks) * q.Fork) / 100
+	return (len(q.PublicKeys) * q.Fork) / 100
 }
 
-type Votes struct {
-	list map[string]map[string]vote
-}
-
-type vote struct {
-	Sequence uint64
-	Hash     Block.BlockHash
-}
-
-func (v *Votes) Add(pk Wallet.PublicKey, seq uint64, tx Block.Transaction) {
-	previous := string(tx.SwitchToUniversalBlock(nil, nil).Previous[:])
-
-	if val, ok := v.list[previous][string(pk[:])]; !ok || val.Sequence <= seq {
-		v.list[previous][string(pk[:])] = vote {
-			Sequence: seq,
-			Hash:     val.Hash,
-		}
+func (q *Quorum) Calc(possibleWinners int) int {
+	if possibleWinners > 1 {
+		return q.CalcFork()
 	}
 
-}
-
-func (v *Votes) Remove(previous Block.BlockHash) {
-	if v == nil {
-		return
-	}
-
-	delete(v.list, string(previous[:]))
-}
-
-// @TODO Speedup and simply
-func (v *Votes) Confirmed(pks []Wallet.PublicKey, quorum *Quorum) (txs []Block.BlockHash) {
-	if v == nil {
-		return
-	}
-
-	for _, vote := range v.list {
-		result := map[string]int{}
-
-		for _, pk := range pks {
-			vote := vote[string(pk[:])]
-
-			if _, ok := result[string(vote.Hash[:])]; ok {
-				result[string(vote.Hash[:])]++
-			} else {
-				result[string(vote.Hash[:])] = 1
-			}
-		}
-
-		qWinner, hWinner, vWinner := quorum.CalcCommon(pks), Block.BlockHash{}, 0
-		if len(result) != 1 {
-			qWinner = quorum.CalcFork(pks)
-		}
-
-		for hash, votes := range result {
-			if votes > qWinner && votes > vWinner {
-				hWinner, vWinner = Block.NewBlockHash([]byte(hash)), votes
-			}
-		}
-
-		if !Util.IsEmpty(hWinner[:]) {
-			txs = append(txs, hWinner)
-		}
-	}
-
-	return txs
+	return q.CalcCommon()
 }

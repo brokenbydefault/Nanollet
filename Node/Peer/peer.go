@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"encoding"
 	"github.com/brokenbydefault/Nanollet/Util"
+	"crypto/rand"
 )
 
 const (
@@ -27,112 +27,27 @@ var (
 )
 
 type Peer struct {
-	encoding.BinaryMarshaler
-	connection Connection
-	lastSeen   time.Time
-	publicKey  Wallet.PublicKey
+	UDP *net.UDPAddr
+	TCP *net.TCPAddr
+
+	LastSeen  time.Time
+	PublicKey Wallet.PublicKey
+	Header    [8]byte
+	Challenge [32]byte
 }
 
-type Connection struct {
-	ip   net.IP
-	port int
-	zone string
-}
-
-func NewPeer(ip net.IP, port int) (p *Peer) {
-	return &Peer{
-		connection: Connection{
-			ip:   ip,
-			port: port,
+func NewPeer(ip net.IP, port int) (peer *Peer) {
+	peer = &Peer{
+		UDP: &net.UDPAddr{
+			IP:   ip,
+			Port: port,
 		},
-		lastSeen: time.Now(),
-	}
-}
-
-func (p *Peer) SetLastSeen(t time.Time) {
-	if p == nil {
-		return
+		LastSeen: time.Now(),
 	}
 
-	p.lastSeen = t
-}
+	rand.Read(peer.Challenge[:])
 
-func (p *Peer) SetPublicKey(key Wallet.PublicKey) {
-	if p == nil {
-		return
-	}
-
-	p.publicKey = key
-}
-
-func (p *Peer) IsActive() bool {
-	if p == nil {
-		return false
-	}
-
-	if time.Since(p.lastSeen) > Timeout {
-		return false
-	}
-
-	return true
-}
-
-func (p *Peer) IsKnow() bool {
-	if p == nil {
-		return false
-	}
-
-	if pk := p.PublicKey(); Util.IsEmpty(pk[:]) {
-		return false
-	}
-
-	return true
-}
-
-func (p *Peer) LastSeen() time.Time {
-	if p == nil {
-		return time.Time{}
-	}
-
-	return p.lastSeen
-}
-
-func (p *Peer) PublicKey() (pk Wallet.PublicKey) {
-	if p == nil {
-		return pk
-	}
-
-	return p.publicKey
-}
-
-func (p *Peer) RawIP() net.IP {
-	if p == nil {
-		return nil
-	}
-
-	return p.connection.ip.To16()
-}
-
-func (p *Peer) RawPort() []byte {
-	if p == nil {
-		return nil
-	}
-
-	return []byte{byte(p.connection.port), byte(p.connection.port >> 8)}
-}
-
-func (p *Peer) TCPAddr() *net.TCPAddr {
-	return &net.TCPAddr{
-		IP:   p.connection.ip,
-		Port: p.connection.port,
-	}
-}
-
-func (p *Peer) UDPAddr() *net.UDPAddr {
-	return &net.UDPAddr{
-		IP:   p.connection.ip,
-		Port: p.connection.port,
-	}
+	return peer
 }
 
 func NewPeersFromString(hosts ...string) (peers []*Peer) {
@@ -150,6 +65,42 @@ func NewPeersFromString(hosts ...string) (peers []*Peer) {
 	}
 
 	return peers
+}
+
+func (p *Peer) IsActive() bool {
+	if p == nil {
+		return false
+	}
+
+	if time.Since(p.LastSeen) > Timeout {
+		return false
+	}
+
+	return true
+}
+
+func (p *Peer) IsKnow() bool {
+	if p == nil {
+		return false
+	}
+
+	if Util.IsEmpty(p.PublicKey[:]) {
+		return false
+	}
+
+	return true
+}
+
+func (p *Peer) String() string {
+	if p.UDP != nil {
+		return p.UDP.String()
+	}
+
+	if p.TCP != nil {
+		return p.TCP.String()
+	}
+
+	return ""
 }
 
 func parseHost(s string) (ips []net.IP, port int, err error) {

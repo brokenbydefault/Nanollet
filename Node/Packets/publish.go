@@ -14,12 +14,14 @@ func NewPushPackage(transaction Block.Transaction) (packet *PushPackage) {
 	}
 }
 
-func (p *PushPackage) Encode(lHeader *Header, rHeader *Header) (data []byte) {
+func (p *PushPackage) Encode(dst []byte) (n int, err error)  {
 	if p == nil {
-		return nil
+		return
 	}
 
-	return p.Transaction.Encode()[1:]
+	n += copy(dst, p.Transaction.Encode()[1:])
+
+	return n, err
 }
 
 func (p *PushPackage) Decode(rHeader *Header, data []byte) (err error) {

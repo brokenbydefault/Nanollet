@@ -6,6 +6,34 @@ package Front
 
 var HTMLAccount = HTMLPAGE(`<main application="account">
 
+    <section page="tos">
+        <div class="middle">
+
+            <label>LICENSE</label>
+            <tos class="tos" spellcheck="false" readonly>MIT License
+
+                Copyright (c) 2018 Inkeliz
+
+                Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+                associated documentation files (the "Software"), to deal in the Software without restriction, including
+                without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+                copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the
+                following conditions:
+
+                The above copyright notice and this permission notice shall be included in all copies or substantial
+                portions of the Software.
+
+                THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT
+                LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+                NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+                WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+                SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+            </tos>
+            <input class="accept" type="submit" value="ACCEPT AND CONTINUE">
+
+        </div>
+    </section>
+
     <section page="index">
         <div class="middle">
 
@@ -20,28 +48,41 @@ var HTMLAccount = HTMLPAGE(`<main application="account">
 
     <section page="generate">
         <div class="middle">
+            <alert class="invisible"></alert>
 
             <label>COPY YOUR SEEDFY</label>
             <textarea class="seed" rows="3" spellcheck="false"></textarea>
 
             <input class="continue" type="submit" value="CONTINUE">
 
+            <alert>
+                <icon class="icon-alert"/>
+                <text>Losing your SEEDFY, or even the password, prevents access the wallet.</text>
+            </alert>
+
         </div>
     </section>
 
     <section page="import">
         <div class="middle">
+            <alert class="invisible"></alert>
 
             <label>ENTER YOUR SEEDFY</label>
             <textarea class="seed" rows="3" spellcheck="false"></textarea>
 
             <input class="continue" type="submit" value="CONTINUE">
 
+            <alert>
+                <icon class="icon-alert"/>
+                <text>Keep the SEEDFY in a safe place, don't throw it away after access your wallet.</text>
+            </alert>
+
         </div>
     </section>
 
     <section page="password">
         <div class="middle">
+            <alert class="invisible"></alert>
 
             <label>PASSWORD</label>
             <input class="password" type="password">
@@ -51,6 +92,10 @@ var HTMLAccount = HTMLPAGE(`<main application="account">
 
             <input class="continue" type="submit" value="CONTINUE">
 
+            <alert>
+                <icon class="icon-alert"/>
+                <text>You must remember your password in order to access the same wallet.</text>
+            </alert>
         </div>
     </section>
 
@@ -70,8 +115,12 @@ var HTMLAccount = HTMLPAGE(`<main application="account">
 
             <label>CHOOSE YOUR ADDRESS</label>
             <div>
-                <button class="next"><icon class="icon-next" /></button>
-                <button class="previous"><icon class="icon-previous" /></button>
+                <button class="next">
+                    <icon class="icon-next"/>
+                </button>
+                <button class="previous">
+                    <icon class="icon-previous"/>
+                </button>
                 <select type="list" class="address box">
                 </select>
             </div>
@@ -86,7 +135,7 @@ var HTMLAccount = HTMLPAGE(`<main application="account">
 `)
 var HTMLBase = HTMLPAGE(`<html window-frame="solid" window-blurbehind="light" resizeable>
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Nanollet</title>
 
     <link rel="stylesheet" type="text/css" href="../css/style.css">

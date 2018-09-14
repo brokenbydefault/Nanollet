@@ -21,8 +21,23 @@ var (
 	min = new(big.Int).SetInt64(0)
 )
 
+// NewRaw creates an RawAmount with lowest valid value.
 func NewRaw() *RawAmount {
-	return &RawAmount{new(big.Int).SetInt64(0)}
+	return NewMin()
+}
+
+// NewMax is a wrapper to create a new amount with maximum possible amount.
+func NewMax() *RawAmount {
+	return &RawAmount{
+		bigint: max,
+	}
+}
+
+// NewMax is a wrapper to create a new amount with minimum possible amount.
+func NewMin() *RawAmount {
+	return &RawAmount{
+		bigint: min,
+	}
 }
 
 // NewRawFromString creates an RawAmount from numeric string. It returns an error if
@@ -31,7 +46,7 @@ func NewRawFromString(s string) (*RawAmount, error) {
 	i, ok := new(big.Int).SetString(s, 10)
 	r := &RawAmount{i}
 
-	if !ok {
+	if !ok || !r.IsValid() {
 		return nil, ErrInvalidInput
 	}
 
@@ -57,15 +72,6 @@ func NewRawFromBytes(b []byte) *RawAmount {
 	}
 }
 
-func (a *RawAmount) Copy(src []byte) (i int) {
-	if a == nil {
-		return
-	}
-
-	*a = *NewRawFromBytes(src)
-	return len(src)
-}
-
 // ToString transforms the RawAmount to string, which can be printable.
 func (a *RawAmount) ToString() string {
 	if a == nil {
@@ -88,8 +94,10 @@ func (a *RawAmount) ToHex() string {
 // ToBytes transforms the RawAmount to 16 byte, left zero-padded. It can be used in
 // block signature and in RPC.
 func (a *RawAmount) ToBytes() []byte {
+	b := make([]byte, 16)
+
 	if a == nil {
-		return nil
+		return b
 	}
 
 	bi := a.bigint.Bytes()
@@ -99,7 +107,6 @@ func (a *RawAmount) ToBytes() []byte {
 		offset = 0
 	}
 
-	b := make([]byte, 16)
 	copy(b[offset:], bi)
 
 	return b

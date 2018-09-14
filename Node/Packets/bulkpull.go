@@ -3,10 +3,11 @@ package Packets
 import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"io"
-	"bufio"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/Inkeliz/blakEd25519"
 	"golang.org/x/crypto/blake2b"
+	"bufio"
+	"encoding/binary"
 )
 
 type BulkPullPackageResponse struct {
@@ -31,7 +32,7 @@ func NewBulkPullPackageRequest(pk Wallet.PublicKey, end Block.BlockHash) (packet
 	}
 }
 
-func (p *BulkPullPackageRequest) Encode(_ *Header, dst io.Writer) (err error) {
+func (p *BulkPullPackageRequest) Encode(dst io.Writer) (err error) {
 	if p == nil {
 		return
 	}
@@ -63,7 +64,7 @@ func (p *BulkPullPackageRequest) Decode(_ *Header, src io.Reader) (err error) {
 	return nil
 }
 
-func (p *BulkPullPackageResponse) Encode(_ *Header, dst io.Writer) (err error) {
+func (p *BulkPullPackageResponse) Encode(dst io.Writer) (err error) {
 	if p == nil {
 		return
 	}
@@ -82,26 +83,29 @@ func (p *BulkPullPackageResponse) Encode(_ *Header, dst io.Writer) (err error) {
 }
 
 func (p *BulkPullPackageResponse) Decode(_ *Header, src io.Reader) (err error) {
-	reader := bufio.NewReader(src)
+	if p == nil {
+		return
+	}
 
+	buf := bufio.NewReader(src)
 	for {
-		blockType, err := reader.ReadByte()
-		if err != nil {
-			return err
+
+		blockType := make([]byte, 1)
+		if err := binary.Read(buf, binary.BigEndian, blockType[:]); err != nil {
+			return nil
 		}
 
-		tx, size, err := Block.NewTransaction(Block.BlockType(blockType))
+		tx, size, err := Block.NewTransaction(Block.BlockType(blockType[0]))
 		if err != nil {
-			if err == Block.ErrEndBlock {
+			if err == Block.ErrInvalidBlock || err == Block.ErrEndBlock {
 				return nil
 			}
 			return err
 		}
 
 		btx := make([]byte, size)
-
-		if _, err = reader.Read(btx); err != nil {
-			return err
+		if err := binary.Read(buf, binary.BigEndian, &btx); err != nil {
+			return nil
 		}
 
 		if err = tx.Decode(btx); err != nil {
@@ -110,6 +114,8 @@ func (p *BulkPullPackageResponse) Decode(_ *Header, src io.Reader) (err error) {
 
 		p.Transactions = append(p.Transactions, tx)
 	}
+
+	return nil
 }
 
 func (p *BulkPullPackageResponse) ModifyHeader(h *Header) {

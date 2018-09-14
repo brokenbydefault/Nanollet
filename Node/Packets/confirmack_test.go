@@ -6,7 +6,6 @@ import (
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/brokenbydefault/Nanollet/ProofWork"
 )
 
 func TestConfirmACKPackage_Decode(t *testing.T) {
@@ -18,7 +17,7 @@ func TestConfirmACKPackage_Decode(t *testing.T) {
 		Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("00007B426FAB61F00DE36398FF693D50")),
 		DefaultBlock: Block.DefaultBlock{
 			Signature: Wallet.NewSignature(Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05")),
-			PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
+			PoW:       Block.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
 		},
 	}
 
@@ -35,8 +34,27 @@ func TestConfirmACKPackage_Decode(t *testing.T) {
 		t.Error(err)
 	}
 
-	if expected.Hash() != pack.Transaction.Hash() {
+	if expected.Hash() != pack.Hashes[0] {
 		t.Error("invalid decode")
+	}
+}
+
+func TestConfirmACKPackage_Decode_ByHash(t *testing.T) {
+	udpMessage, _ := Util.SecureHexDecode("52430e0e07050001e09655b3019ea595c3d30cb951ba7f21d1d538983f1a6c739e664e5581b3b2b9320f05908eaefd5fbbe6f82dd38635e95e509f10ea38ce816befe8b8d2c052110d7407ed7fc360c0becef253fd999004604a3259241e423cfaa1163267ad3e05f4b3e14400000000275bbf469018adfa97e187f166e4f0f48096ad644a13676a2ae9b5308d200830c27017e56d8cc16389d14b6a9117d7944ceba968a7b9dfee884e5c6c893342fb1a572abf9f9a8029d876631743b6703f50b0c170bc862dadf2ac63bf3b712e4124f9fe5bb8d5fd1894145d92d2b6fb4c51388ae46b32162bd9d699b22ebd8beb74b0289f7514d004b2e02f454cc92be9550e8a99c333e052dd1109a9428e38d43d0c08ec599112b9b74ea83d5e3d6ff1284ae948a7c8537a11de686003566e5dccf651def3703fe6e96b89eb10032c5f994f96309b28f66d2628ba46c8810585d974c0494acc911e0ca870ad9d57cdff2df91ec55646f54ea3cef910d5864f87b8dd262a7ff07b358a3dd43d6a409097e608b68ae46870916bb59b86a41a0b485f678b757285ca90c1c7da9e979ce18d7d58bbb261e0613bf311808030e074b56987692c206d7667a0312ccc29fa4bcbaee13b1f570efbdbd39ce37c49891922779ef7bf69f83e699de3ac678e23efbda66a5530b28eb8e3b4b2690ae83ca5c0")
+
+	header := new(Header)
+	err := header.Decode(udpMessage)
+	if err != nil {
+		t.Error(err)
+	}
+
+	pack := new(ConfirmACKPackage)
+	if err = pack.Decode(header, udpMessage[HeaderSize:]); err != nil {
+		t.Error(err)
+	}
+
+	if len(pack.Hashes) != 12 {
+		t.Error("wrong hashes")
 	}
 }
 
@@ -49,14 +67,14 @@ func TestConfirmACKPackage_Encode(t *testing.T) {
 		Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("00007B426FAB61F00DE36398FF693D50")),
 		DefaultBlock: Block.DefaultBlock{
 			Signature: Wallet.NewSignature(Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05")),
-			PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
+			PoW:       Block.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
 		},
 	}
 
 	_, sk, _ := Wallet.GenerateRandomKeyPair()
 
-	pack := NewConfirmACKPackage(sk, tx)
-	encoded := EncodePacketUDP(nil, nil, pack)
+	pack := NewConfirmACKPackage(&sk, tx)
+	encoded := EncodePacketUDP(*NewHeader(), pack)
 
 	header := new(Header)
 	if err := header.Decode(encoded); err != nil {
@@ -65,6 +83,7 @@ func TestConfirmACKPackage_Encode(t *testing.T) {
 
 	depack := new(ConfirmACKPackage)
 	err := depack.Decode(header, encoded[HeaderSize:])
+
 	if err != nil {
 		t.Error(err)
 	}
@@ -82,7 +101,7 @@ func TestConfirmACKPackage_Encode_ByHash(t *testing.T) {
 			Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("00007B426FAB61F00DE36398FF693D50")),
 			DefaultBlock: Block.DefaultBlock{
 				Signature: Wallet.NewSignature(Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05")),
-				PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
+				PoW:       Block.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
 			},
 		},
 		&Block.UniversalBlock{
@@ -93,15 +112,15 @@ func TestConfirmACKPackage_Encode_ByHash(t *testing.T) {
 			Balance:        Numbers.NewRawFromBytes(Util.SecureHexMustDecode("00007B426FAB61F00DE36398FF693D50")),
 			DefaultBlock: Block.DefaultBlock{
 				Signature: Wallet.NewSignature(Util.SecureHexMustDecode("3E59F0496431B3A740279EF0D294133C5EF788BFF0647CBC97CECD21F2746D553BEA1109FF3749E4D128503DD7E50EBAFAEA465DCD0EAD6C7F2871FFE988DC05")),
-				PoW:       ProofWork.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
+				PoW:       Block.NewWork(Util.SecureHexMustDecode("B34A5DE4C3F98B14")),
 			},
 		},
 	}
 
 	_, sk, _ := Wallet.GenerateRandomKeyPair()
 
-	pack := NewConfirmACKPackage(sk, tx...)
-	encoded := EncodePacketUDP(nil, nil, pack)
+	pack := NewConfirmACKPackage(&sk, tx...)
+	encoded := EncodePacketUDP(*NewHeader(), pack)
 
 	header := new(Header)
 	if err := header.Decode(encoded); err != nil {

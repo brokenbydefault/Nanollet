@@ -3,22 +3,23 @@ package Block
 import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/ProofWork"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
 
-func (d *DefaultBlock) SetWork(w ProofWork.Work) {
+func (d *DefaultBlock) SetWork(w Work) {
 	d.PoW = w
+}
+
+func (d *DefaultBlock) GetWork() Work {
+	return d.PoW
 }
 
 func (d *DefaultBlock) SetSignature(s Wallet.Signature) {
 	d.Signature = s
 }
 
-func (d *DefaultBlock) GetSubType() BlockType {
-	if d.subType == Invalid {
-		return d.mainType
-	}
-	return d.subType
+func (d *DefaultBlock) GetSignature() Wallet.Signature {
+	return d.Signature
 }
 
 func (s *SendBlock) GetType() BlockType {
@@ -61,6 +62,29 @@ func (u *UniversalBlock) SetFrontier(h BlockHash) {
 	copy(u.Previous[:], h[:])
 }
 
+func (s *SendBlock) GetBalance() *Numbers.RawAmount {
+	return Numbers.NewRawFromBytes(s.Balance.ToBytes())
+}
+
+func (s *ReceiveBlock) GetBalance() *Numbers.RawAmount {
+	// no-op
+	return nil
+}
+
+func (s *OpenBlock) GetBalance() *Numbers.RawAmount {
+	// no-op
+	return nil
+}
+
+func (s *ChangeBlock) GetBalance() *Numbers.RawAmount {
+	// no-op
+	return nil
+}
+
+func (u *UniversalBlock) GetBalance() *Numbers.RawAmount {
+	return Numbers.NewRawFromBytes(u.Balance.ToBytes())
+}
+
 func (s *SendBlock) SetBalance(n *Numbers.RawAmount) {
 	s.Balance = n
 }
@@ -99,4 +123,41 @@ func (s *ChangeBlock) GetTarget() (pk Wallet.PublicKey, hash BlockHash) {
 
 func (u *UniversalBlock) GetTarget() (destination Wallet.PublicKey, source BlockHash) {
 	return Wallet.PublicKey(u.Link), u.Link
+}
+
+func GetSubType(tx, txPrevious Transaction) BlockType {
+	if tx.GetType() != State {
+		return tx.GetType()
+	}
+
+	if hashPrev := tx.GetPrevious(); Util.IsEmpty(hashPrev[:]) {
+		return Open
+	}
+
+	if dest, source := tx.GetTarget(); Util.IsEmpty(dest[:]) && Util.IsEmpty(source[:]) {
+		return Change
+	}
+
+	if tx.GetBalance().Compare(txPrevious.GetBalance()) == 1 {
+		return Receive
+	}else{
+		return Send
+	}
+
+	return Invalid
+}
+
+func GetAmount(tx, txPrevious Transaction) *Numbers.RawAmount {
+	switch GetSubType(tx, txPrevious) {
+	case Open:
+		return tx.GetBalance()
+	case Change:
+		return Numbers.NewMin()
+	case Send:
+		return tx.GetBalance().Subtract(txPrevious.GetBalance()).Abs()
+	case Receive:
+		return tx.GetBalance().Subtract(txPrevious.GetBalance()).Abs()
+	}
+
+	return Numbers.NewMin()
 }
