@@ -31,6 +31,25 @@ func (h *PeersBox) Count() (len int) {
 	return len
 }
 
+func (h *PeersBox) CountActive() (lenActive, lenAll int) {
+	if h == nil || h.list == nil {
+		return 0, 0
+	}
+
+	h.list.Range(func(_, value interface{}) bool {
+		lenAll++
+
+		item, ok := value.(*Peer.Peer)
+		if ok && item.IsActive() && item.IsKnow() {
+			lenActive++
+		}
+
+		return true
+	})
+
+	return lenActive, lenAll
+}
+
 func (h *PeersBox) GetAll() (items []*Peer.Peer) {
 	if h == nil || h.list == nil {
 		return
@@ -119,7 +138,7 @@ func (h *PeersBox) Add(peers ...*Peer.Peer) (n int) {
 	}
 
 	for _, peer := range peers {
-		if h.Count() < 256 {
+		if h.Count() < 1024 {
 			if _, old := h.list.LoadOrStore(string(peer.UDP.IP), peer); !old {
 				n++
 			}
@@ -135,6 +154,10 @@ func (h *PeersBox) Remove(peers ...*Peer.Peer) {
 	}
 
 	for _, peer := range peers {
+		if h.Count() <= 32 {
+			break
+		}
+
 		h.list.Delete(string(peer.UDP.IP))
 	}
 }
