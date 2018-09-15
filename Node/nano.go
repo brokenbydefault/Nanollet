@@ -177,7 +177,8 @@ func (srv *Server) keepAlive() {
 	msg := func() {
 		keepAlivePacket := Packets.NewKeepAlivePackage(srv.Peers.GetRandom(Packets.KeepAlivePackageNPeers))
 
-		for _, peer := range srv.Peers.GetAll() {
+		all := srv.Peers.GetAll()
+		for _, peer := range all  {
 			if !peer.IsActive() {
 				srv.Peers.Remove(peer)
 			}

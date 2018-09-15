@@ -64,7 +64,7 @@ var Live = Config{
 				Wallet.Address("xrb_1ninja7rh37ehfp9utkor5ixmxyg8kme8fnzc4zty145ibch8kf5jwpnzr3r").MustGetPublicKey(),
 			},
 			Common: 30,
-			Fork:   55,
+			Fork:   50,
 		},
 		MinimumAmount: Numbers.NewRawFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD3, 0xC2, 0x1B, 0xCE, 0xCC, 0xED, 0xA1, 0x00, 0x00, 0x00}),
 	},
@@ -75,7 +75,6 @@ var Live = Config{
 	}{
 		Peers: Peer.NewPeersFromString(
 			"rai.raiblocks.net:7075",
-			"nanoskynode.com:7075",
 			"185.243.9.164:7075",
 			"206.189.190.7:7075",
 			"198.245.55.107:7075",

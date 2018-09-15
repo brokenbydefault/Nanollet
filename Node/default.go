@@ -7,7 +7,6 @@ import (
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Storage"
-	"github.com/brokenbydefault/Nanollet/Block"
 )
 
 func NewServer(header Packets.Header) *Server {
@@ -80,12 +79,7 @@ func defaultPublishHandler(srv *Server, dest *net.UDPAddr, rHeader *Packets.Head
 		return
 	}
 
-	work, prev := packet.Transaction.GetWork(), packet.Transaction.GetPrevious()
-	if Util.IsEmpty(prev[:]) {
-		prev = Block.BlockHash(packet.Transaction.SwitchToUniversalBlock(nil, nil).Account)
-	}
-
-	if !work.IsValid(&prev) {
+	if !packet.Transaction.IsValidPOW() {
 		return
 	}
 
