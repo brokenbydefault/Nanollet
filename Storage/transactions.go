@@ -15,14 +15,6 @@ var TransactionStorage = TransactionBox{
 	listeners: make([]chan *Transaction, 0, 1),
 }
 
-type voteResult int8
-
-const (
-	electionsNotCached voteResult = iota
-	electionsWinner
-	electionsLoser
-)
-
 type Transaction struct {
 	Block.Transaction
 	Date  time.Time
@@ -67,6 +59,16 @@ func (h *TransactionBox) IsConfirmed(hash *Block.BlockHash, quorum *Peer.Quorum)
 	t, ok := h.GetByHash(hash)
 	if !ok || t.votes == nil {
 		return false
+	}
+
+	if txs, ok := h.GetByPreviousHash(hash); ok {
+		for _, tx := range txs {
+			hash := tx.Hash()
+
+			if h.IsConfirmed(&hash, quorum) {
+				return true
+			}
+		}
 	}
 
 	previous := t.GetPrevious()

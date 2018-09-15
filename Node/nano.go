@@ -193,7 +193,7 @@ func (srv *Server) keepAlive() {
 	}
 
 	go func() {
-		for range time.Tick(15 * time.Second) {
+		for range time.Tick(5 * time.Second) {
 			msg()
 		}
 	}()
