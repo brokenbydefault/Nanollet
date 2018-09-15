@@ -8,7 +8,6 @@ import (
 	"github.com/sciter-sdk/go-sciter/window"
 	"github.com/brokenbydefault/Nanollet/Node"
 	"net"
-	"time"
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
 	"github.com/brokenbydefault/Nanollet/Util"
 )
@@ -16,10 +15,10 @@ import (
 var Connection Node.Node
 
 func init() {
-	Connection := &Node.Server{
-		Peers: &Storage.PeerStorage,
-		Transactions: &Storage.TransactionStorage,
-		Header: Storage.Configuration.Node.Header,
+	Connection = &Node.Server{
+		Peers:          &Storage.PeerStorage,
+		Transactions:   &Storage.TransactionStorage,
+		Header:         Storage.Configuration.Node.Header,
 		PublishHandler: PublishHandler,
 	}
 	go Connection.Start()
