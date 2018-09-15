@@ -34,6 +34,23 @@ func UpdateAmount(w *window.Window) error {
 	return nil
 }
 
+func UpdateNodesCount(w *window.Window) error {
+	for _, el := range []string{".nodes"} {
+		display, err := SelectFirstElement(w, el)
+		if err != nil {
+			return err
+		}
+
+		err = display.SetValue(sciter.NewValue(Storage.PeerStorage.Count()))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+
 func UpdateNotification(w *window.Window, msg string) {
 	box, _ := SelectFirstElement(w, "section.notification")
 
