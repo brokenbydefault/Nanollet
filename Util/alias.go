@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	opencap "github.com/lane-c-wagner/go-opencap"
+	opencap "github.com/opencap/go-opencap"
 )
 
 // LookupResponse represents the return value of an OpenCAP GET addresses
