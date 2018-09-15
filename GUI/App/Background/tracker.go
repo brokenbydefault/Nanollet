@@ -7,13 +7,40 @@ import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/sciter-sdk/go-sciter/window"
 	"github.com/brokenbydefault/Nanollet/Node"
+	"net"
+	"github.com/brokenbydefault/Nanollet/Node/Packets"
 )
 
 var Connection Node.Node
 
 func init() {
-	Connection = Node.NewServer(Storage.Configuration.Node.Header)
+	Connection = &Node.Server{
+		Peers:          &Storage.PeerStorage,
+		Transactions:   &Storage.TransactionStorage,
+		Header:         Storage.Configuration.Node.Header,
+		PublishHandler: PublishHandler,
+	}
 	go Connection.Start()
+}
+
+func PublishHandler(srv *Node.Server, _ *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
+	packet := new(Packets.PushPackage)
+
+	if err := packet.Decode(rHeader, msg); err != nil {
+		return
+	}
+
+	dest, _ := packet.Transaction.GetTarget()
+	acc := packet.Transaction.GetAccount()
+	if acc != Storage.AccountStorage.PublicKey && dest != Storage.AccountStorage.PublicKey {
+		return
+	}
+
+	if !packet.Transaction.IsValidPOW() {
+		return
+	}
+
+	srv.Transactions.Add(packet.Transaction)
 }
 
 func StartAddress(w *window.Window) error {
