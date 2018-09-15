@@ -3,18 +3,19 @@
 package App
 
 import (
+	"strings"
+
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
-	"strings"
 )
 
 type NanolletApp guitypes.App
@@ -60,8 +61,16 @@ func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 	decimal, err := page.GetStringValue(w, ".decimal")
 	errors = append(errors, err)
 
-	addr, err := page.GetStringValue(w, ".address")
+	addrOrAlias, err := page.GetStringValue(w, ".address")
 	errors = append(errors, err)
+
+	addr, err := Util.LookupAlias(addrOrAlias)
+	if err != nil && err.Error() != "Invalid alias provided" {
+		DOM.UpdateNotification(w, err.Error())
+		return
+	} else if err != nil {
+		addr = addrOrAlias
+	}
 
 	if Util.CheckError(errors) != nil {
 		return
@@ -198,7 +207,6 @@ func (c *PageList) OnView(w *window.Window) {
 
 		hashPrev := tx.GetPrevious()
 		txPrev, _ := Storage.TransactionStorage.GetByHash(&hashPrev)
-
 
 		txType := Block.GetSubType(tx, txPrev)
 		txAmount := Block.GetAmount(tx, txPrev)
