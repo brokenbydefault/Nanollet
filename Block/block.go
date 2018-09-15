@@ -16,12 +16,16 @@ type Transaction interface {
 	Work() Work
 	Hash() BlockHash
 
+	GetAccount() Wallet.PublicKey
 	GetBalance() *Numbers.RawAmount
 	GetType() BlockType
 	GetTarget() (destination Wallet.PublicKey, source BlockHash)
 	GetPrevious() BlockHash
 	GetWork() Work
 	GetSignature() Wallet.Signature
+
+	IsValidPOW() bool
+	//IsValidSignature() bool
 
 	SetWork(pow Work)
 	SetSignature(sig Wallet.Signature)

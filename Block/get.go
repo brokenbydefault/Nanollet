@@ -42,6 +42,26 @@ func (u *UniversalBlock) GetType() BlockType {
 	return State
 }
 
+func (s *SendBlock) GetAccount() (pk Wallet.PublicKey) {
+	return pk
+}
+
+func (s *ReceiveBlock) GetAccount() (pk Wallet.PublicKey) {
+	return pk
+}
+
+func (s *OpenBlock) GetAccount() (pk Wallet.PublicKey) {
+	return s.Account
+}
+
+func (s *ChangeBlock) GetAccount() (pk Wallet.PublicKey) {
+	return pk
+}
+
+func (u *UniversalBlock) GetAccount() (pk Wallet.PublicKey) {
+	return u.Account
+}
+
 func (s *SendBlock) SetFrontier(h BlockHash) {
 	s.Previous = h
 }
@@ -140,7 +160,7 @@ func GetSubType(tx, txPrevious Transaction) BlockType {
 
 	if tx.GetBalance().Compare(txPrevious.GetBalance()) == 1 {
 		return Receive
-	}else{
+	} else {
 		return Send
 	}
 

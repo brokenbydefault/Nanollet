@@ -127,7 +127,7 @@ func GetHistory(c Node, pk *Wallet.PublicKey, start *Block.BlockHash) (txs []Blo
 			continue
 		}
 
-		pktx := p.Transactions[l-1].SwitchToUniversalBlock(nil, nil).Account
+		pktx := p.Transactions[l-1].GetAccount()
 		if pktx != *pk {
 			continue
 		}

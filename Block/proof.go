@@ -66,6 +66,36 @@ func (u *UniversalBlock) Work() Work {
 	return u.PoW
 }
 
+func (s *SendBlock) IsValidPOW() bool {
+	return s.PoW.IsValid(&s.Previous)
+}
+
+func (s *ReceiveBlock) IsValidPOW() bool {
+	return s.PoW.IsValid(&s.Previous)
+}
+
+func (s *OpenBlock) IsValidPOW() bool {
+	hash := BlockHash(s.Account)
+	return s.PoW.IsValid(&hash)
+}
+
+func (s *ChangeBlock) IsValidPOW() bool {
+	return s.PoW.IsValid(&s.Previous)
+}
+
+func (u *UniversalBlock) IsValidPOW() bool  {
+	var previous BlockHash
+
+	// Open operation uses the account instead of previous
+	if Util.IsEmpty(u.Previous[:]) {
+		previous = BlockHash(u.Account)
+	} else {
+		previous = u.Previous
+	}
+
+	return u.PoW.IsValid(&previous)
+}
+
 var MinimumWork = uint64(0xffffffc000000000)
 
 // GenerateProof will generate the proof of work for given hash, which must be the "previous" or "account" in case
