@@ -87,6 +87,8 @@ func StartAddress(w *window.Window) error {
 
 func realtimeUpdate(w *window.Window) {
 	for tx := range Storage.TransactionStorage.Listen() {
+		tx := tx
+
 		if dest, _ := tx.GetTarget(); dest != Storage.AccountStorage.PublicKey {
 			continue
 		}
