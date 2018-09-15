@@ -38,7 +38,6 @@ type Transaction interface {
 type DefaultBlock struct {
 	PoW       Work             `json:"work"`
 	Signature Wallet.Signature `json:"signature"`
-	hash      BlockHash
 }
 
 //--------------
