@@ -9,7 +9,6 @@ import (
 	"github.com/brokenbydefault/Nanollet/Node"
 	"net"
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
-	"github.com/brokenbydefault/Nanollet/Util"
 )
 
 var Connection Node.Node
@@ -24,23 +23,20 @@ func init() {
 	go Connection.Start()
 }
 
-func PublishHandler(srv *Node.Server, dest *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
+func PublishHandler(srv *Node.Server, _ *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
 	packet := new(Packets.PushPackage)
 
 	if err := packet.Decode(rHeader, msg); err != nil {
 		return
 	}
 
-	if dest, _ := packet.Transaction.GetTarget(); dest != Storage.AccountStorage.PublicKey {
+	dest, _ := packet.Transaction.GetTarget()
+	acc := packet.Transaction.GetAccount()
+	if acc != Storage.AccountStorage.PublicKey && dest != Storage.AccountStorage.PublicKey {
 		return
 	}
 
-	work, prev := packet.Transaction.GetWork(), packet.Transaction.GetPrevious()
-	if Util.IsEmpty(prev[:]) {
-		prev = Block.BlockHash(packet.Transaction.SwitchToUniversalBlock(nil, nil).Account)
-	}
-
-	if !work.IsValid(&prev) {
+	if !packet.Transaction.IsValidPOW() {
 		return
 	}
 
