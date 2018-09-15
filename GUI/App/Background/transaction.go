@@ -128,20 +128,12 @@ func waitVotesConfirmation(tx Block.Transaction) bool {
 	start := time.Now()
 	hash := tx.Hash()
 
-	var retry = 0
 	for range time.Tick(2 * time.Second) {
 		if Storage.TransactionStorage.IsConfirmed(&hash, &Storage.Configuration.Account.Quorum) {
 			return true
 		}
 
-		if retry >= 5 {
-			Node.PostBlock(Connection, tx)
-			Node.RequestVotes(Connection, tx)
-
-			retry = 0
-		} else {
-			retry++
-		}
+		Node.RequestVotes(Connection, tx)
 
 		if time.Since(start) > 1*time.Minute {
 			break
