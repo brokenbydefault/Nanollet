@@ -7,6 +7,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
+	"fmt"
 )
 
 func UpdateAmount(w *window.Window) error {
@@ -41,8 +42,9 @@ func UpdateNodesCount(w *window.Window) error {
 			return err
 		}
 
-		err = display.SetValue(sciter.NewValue(Storage.PeerStorage.Count()))
-		if err != nil {
+		active, all := Storage.PeerStorage.CountActive()
+
+		if err = display.SetValue(sciter.NewValue(fmt.Sprintf("%d (%d)", active, all))); err != nil {
 			return err
 		}
 	}

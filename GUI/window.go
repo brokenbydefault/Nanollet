@@ -8,6 +8,7 @@ import (
 	"github.com/sciter-sdk/go-sciter/window"
 	"path/filepath"
 	"github.com/brokenbydefault/Nanollet/Wallet"
+	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 )
 
 func init() {
@@ -41,6 +42,8 @@ func Start() {
 	if Storage.PermanentStorage.SeedFY != *new(Wallet.SeedFY) {
 		App.ViewPage(w, &App.PagePassword{})
 	}
+
+	go Background.UpdateNodeCount(w)
 
 	w.Show()
 	w.Run()

@@ -303,7 +303,6 @@ func (c *PageAddress) Previous(w *window.Window) {
 }
 
 func (c *PageAddress) OnView(w *window.Window) {
-	go Background.UpdateNodeCount(w)
 	c.UpdateList(w, 0, 5)
 }
 
