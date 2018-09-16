@@ -16,6 +16,8 @@ import (
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
+	"github.com/brokenbydefault/Nanollet/OpenCAP"
+	"fmt"
 )
 
 type NanolletApp guitypes.App
@@ -54,36 +56,41 @@ func (c *PageWallet) OnView(w *window.Window) {
 func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
-	var errors []error
+	var errs []error
 	whole, err := page.GetStringValue(w, ".whole")
-	errors = append(errors, err)
+	errs = append(errs, err)
 
 	decimal, err := page.GetStringValue(w, ".decimal")
-	errors = append(errors, err)
+	errs = append(errs, err)
 
 	addrOrAlias, err := page.GetStringValue(w, ".address")
-	errors = append(errors, err)
+	errs = append(errs, err)
 
-	addr, err := Util.LookupAlias(addrOrAlias)
-	if err != nil && err.Error() != "Invalid alias provided" {
-		DOM.UpdateNotification(w, err.Error())
-		return
-	} else if err != nil {
-		addr = addrOrAlias
-	}
-
-	if Util.CheckError(errors) != nil {
+	if Util.CheckError(errs) != nil {
 		return
 	}
 
-	address := Wallet.Address(addr)
-	if address == "" || (whole == "" && decimal == "") {
+	if addrOrAlias == "" || (whole == "" && decimal == "") {
+		// Empty values not return errors
 		return
 	}
 
-	dest, err := address.GetPublicKey()
-	if err != nil || !address.IsValid() {
-		DOM.UpdateNotification(w, "The given address is invalid")
+	fmt.Println(Wallet.Address(addrOrAlias).IsValid(), OpenCAP.Address(addrOrAlias).IsValid())
+
+	var dest Wallet.PublicKey
+	switch {
+	case Wallet.Address(addrOrAlias).IsValid():
+		if dest, err = Wallet.Address(addrOrAlias).GetPublicKey(); err != nil {
+			DOM.UpdateNotification(w, "The address is wrong")
+			return
+		}
+	case OpenCAP.Address(addrOrAlias).IsValid():
+		if dest, err = OpenCAP.Address(addrOrAlias).GetPublicKey(); err != nil {
+			DOM.UpdateNotification(w, "The address was not found")
+			return
+		}
+	default:
+		DOM.UpdateNotification(w, "The address invalid or it's not supported")
 		return
 	}
 
