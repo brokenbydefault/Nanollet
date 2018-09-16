@@ -17,7 +17,6 @@ import (
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
 	"github.com/brokenbydefault/Nanollet/OpenCAP"
-	"fmt"
 )
 
 type NanolletApp guitypes.App
@@ -74,8 +73,6 @@ func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 		// Empty values not return errors
 		return
 	}
-
-	fmt.Println(Wallet.Address(addrOrAlias).IsValid(), OpenCAP.Address(addrOrAlias).IsValid())
 
 	var dest Wallet.PublicKey
 	switch {
