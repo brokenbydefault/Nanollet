@@ -4,6 +4,8 @@ import (
 	"errors"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"strings"
+	"github.com/skip2/go-qrcode"
+	"image/color"
 )
 
 const ADDRESS_PREFIX = "nano"
@@ -22,6 +24,17 @@ func (pk PublicKey) CreateAddress() (addr Address) {
 	addr += Address(Util.UnsafeBase32Encode(pk.Checksum()))
 
 	return addr
+}
+
+// QRCode creates a QRCode from the address, following https://developers.nano.org/docs/uri-qr-code-standard/.
+func (addr Address) QRCode(size int, color color.Color) (png []byte, err error) {
+	qr, err := qrcode.New("xrb:" + string(addr), qrcode.Highest)
+	if err != nil {
+		panic(err)
+	}
+	qr.BackgroundColor = color
+
+	return qr.PNG(size)
 }
 
 // GetPublicKey gets the Ed25519 public-key from the encoded address,
