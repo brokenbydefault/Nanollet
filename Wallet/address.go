@@ -114,6 +114,12 @@ func (addr Address) IsCorrectlyFormatted() bool {
 		return false
 	}
 
+	for _, chr := range addr {
+		if !strings.Contains("_13456789abcdefghijkmnopqrstuwxyz", string(chr)) {
+			return false
+		}
+	}
+
 	prefix := addr.GetPrefix()
 	for _, allowed := range ALLOWED_PREFIX {
 		if prefix == allowed {

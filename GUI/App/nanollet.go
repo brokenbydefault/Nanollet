@@ -3,18 +3,20 @@
 package App
 
 import (
+	"strings"
+
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
-	"strings"
+	"github.com/brokenbydefault/Nanollet/OpenCAP"
 )
 
 type NanolletApp guitypes.App
@@ -35,8 +37,8 @@ func (c *NanolletApp) Pages() []guitypes.Page {
 	return []guitypes.Page{
 		&PageWallet{},
 		&PageReceive{},
-		&PageRepresentative{},
 		&PageList{},
+		&PageRepresentative{},
 	}
 }
 
@@ -53,28 +55,39 @@ func (c *PageWallet) OnView(w *window.Window) {
 func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 	page := DOM.SetSector(c)
 
-	var errors []error
+	var errs []error
 	whole, err := page.GetStringValue(w, ".whole")
-	errors = append(errors, err)
+	errs = append(errs, err)
 
 	decimal, err := page.GetStringValue(w, ".decimal")
-	errors = append(errors, err)
+	errs = append(errs, err)
 
-	addr, err := page.GetStringValue(w, ".address")
-	errors = append(errors, err)
+	addrOrAlias, err := page.GetStringValue(w, ".address")
+	errs = append(errs, err)
 
-	if Util.CheckError(errors) != nil {
+	if Util.CheckError(errs) != nil {
 		return
 	}
 
-	address := Wallet.Address(addr)
-	if address == "" || (whole == "" && decimal == "") {
+	if addrOrAlias == "" || (whole == "" && decimal == "") {
+		// Empty values not return errors
 		return
 	}
 
-	dest, err := address.GetPublicKey()
-	if err != nil || !address.IsValid() {
-		DOM.UpdateNotification(w, "The given address is invalid")
+	var dest Wallet.PublicKey
+	switch {
+	case Wallet.Address(addrOrAlias).IsValid():
+		if dest, err = Wallet.Address(addrOrAlias).GetPublicKey(); err != nil {
+			DOM.UpdateNotification(w, "The address is wrong")
+			return
+		}
+	case OpenCAP.Address(addrOrAlias).IsValid():
+		if dest, err = OpenCAP.Address(addrOrAlias).GetPublicKey(); err != nil {
+			DOM.UpdateNotification(w, "The address was not found")
+			return
+		}
+	default:
+		DOM.UpdateNotification(w, "The address invalid or it's not supported")
 		return
 	}
 
@@ -135,7 +148,14 @@ func (c *PageRepresentative) Name() string {
 }
 
 func (c *PageRepresentative) OnView(w *window.Window) {
-	// no-op
+	page := DOM.SetSector(c)
+
+	current, err := page.SelectFirstElement(w, ".currentRepresentative")
+	if err != nil {
+		return
+	}
+
+	current.SetValue(sciter.NewValue(string(Storage.AccountStorage.Representative.CreateAddress())))
 }
 
 func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
@@ -171,6 +191,14 @@ func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
 
 	DOM.UpdateAmount(w)
 	DOM.UpdateNotification(w, "Your representative was changed successfully.")
+
+	current, err := DOM.SelectFirstElement(w, "currentRepresentative")
+	if err != nil {
+		return
+	}
+
+	current.SetText(string(Storage.AccountStorage.Representative.CreateAddress()))
+
 	page.ApplyForIt(w, ".address", DOM.ClearValue)
 }
 
@@ -198,7 +226,6 @@ func (c *PageList) OnView(w *window.Window) {
 
 		hashPrev := tx.GetPrevious()
 		txPrev, _ := Storage.TransactionStorage.GetByHash(&hashPrev)
-
 
 		txType := Block.GetSubType(tx, txPrev)
 		txAmount := Block.GetAmount(tx, txPrev)
