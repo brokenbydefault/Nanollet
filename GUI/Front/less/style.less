@@ -407,7 +407,7 @@ section.dynamic {
 
     }
 
-    alert, tos, input, textarea, dropzone, select, img {
+    qr, alert, tos, input, textarea, dropzone, select {
       background: @color-gray-light;
       color: @color-font-secondary;
       margin: 5px auto 20px auto;
@@ -420,8 +420,15 @@ section.dynamic {
       text-decoration: none;
     }
 
-    alert, tos {
+    qr, alert, tos {
       width: 300px;
+    }
+
+    qr {
+      padding: 5px;
+      img {
+        padding: 0;
+      }
     }
 
     alert {
@@ -449,10 +456,6 @@ section.dynamic {
       height: 300px;
       text-align: left;
       font-size: 11px;
-    }
-
-    img {
-      width: 300px;
     }
 
     input, textarea, button, dropzone {
