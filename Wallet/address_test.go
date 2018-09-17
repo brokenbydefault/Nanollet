@@ -10,3 +10,22 @@ func TestAddress_IsValid(t *testing.T) {
 		t.Error("valid address is invalid")
 	}
 }
+
+func TestAddress_IsValid_Invalid(t *testing.T) {
+	addrs := []Address{
+		Address("_3tz9pdfskx934ce36cf6h17uspp4hzsamr5hk7u1wd6em1gfsnb618hfsafc"),
+		Address("3tz9pdfskx934ce36cf6h17uspp4hzsamr5hk7u1wd6em1gfsnb618hfsafc"),
+		Address("nano_3tz9pdfskx934ce36cf6h17uspp4hzsamr5hk7u1wd6em1gfsnb618hfsqfc"),
+		Address(""),
+		Address("nano$ogdolo.com"),
+		Address("nano_$ogdolo.com"),
+	}
+
+	for _, addr := range addrs {
+		if addr.IsValid() {
+			t.Errorf("return valid a invalid address: %s", addr)
+			return
+		}
+	}
+
+}

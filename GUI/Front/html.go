@@ -236,7 +236,7 @@ var HTMLNanollet = HTMLPAGE(`<main application="nanollet">
     <section page="send">
         <div class="middle">
 
-            <label for="address">ADDRESS</label>
+            <label for="address">ADDRESS OR OPENCAP ALIAS</label>
             <textarea spellcheck="false" class="address" rows="2"></textarea>
 
             <label for="address">AMOUNT</label>
@@ -290,5 +290,4 @@ var HTMLNanollet = HTMLPAGE(`<main application="nanollet">
     </section>
 
 
-</main>
-`)
+</main>`)
