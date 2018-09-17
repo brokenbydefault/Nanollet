@@ -37,8 +37,8 @@ func (c *NanolletApp) Pages() []guitypes.Page {
 	return []guitypes.Page{
 		&PageWallet{},
 		&PageReceive{},
-		&PageRepresentative{},
 		&PageList{},
+		&PageRepresentative{},
 	}
 }
 
@@ -148,7 +148,14 @@ func (c *PageRepresentative) Name() string {
 }
 
 func (c *PageRepresentative) OnView(w *window.Window) {
-	// no-op
+	page := DOM.SetSector(c)
+
+	current, err := page.SelectFirstElement(w, ".currentRepresentative")
+	if err != nil {
+		return
+	}
+
+	current.SetValue(sciter.NewValue(string(Storage.AccountStorage.Representative.CreateAddress())))
 }
 
 func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
@@ -184,6 +191,14 @@ func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
 
 	DOM.UpdateAmount(w)
 	DOM.UpdateNotification(w, "Your representative was changed successfully.")
+
+	current, err := DOM.SelectFirstElement(w, "currentRepresentative")
+	if err != nil {
+		return
+	}
+
+	current.SetText(string(Storage.AccountStorage.Representative.CreateAddress()))
+
 	page.ApplyForIt(w, ".address", DOM.ClearValue)
 }
 
