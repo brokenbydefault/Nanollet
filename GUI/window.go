@@ -33,14 +33,15 @@ func Start() {
 	w.LoadHtml(string(Front.HTMLBase), "/")
 	w.SetCSS(Front.CSSStyle, "style.css", "text/css")
 
-	App.InitApplication(w, &App.NanolletApp{})
-	App.InitApplication(w, &App.NanofyApp{})
-	App.InitApplication(w, &App.AccountApp{})
+	App.InitApplication(w, new(App.NanolletApp))
+	App.InitApplication(w, new(App.NanofyApp))
+	App.InitApplication(w, new(App.AccountApp))
+	App.InitApplication(w, new(App.SettingsApp))
 
-	App.ViewApplication(w, &App.AccountApp{})
+	App.ViewApplication(w, new(App.AccountApp))
 
 	if Storage.PermanentStorage.SeedFY != *new(Wallet.SeedFY) {
-		App.ViewPage(w, &App.PagePassword{})
+		App.ViewPage(w, new(App.PagePassword))
 	}
 
 	go Background.UpdateNodeCount(w)
