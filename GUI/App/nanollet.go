@@ -17,6 +17,7 @@ import (
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
 	"github.com/brokenbydefault/Nanollet/OpenCAP"
+	"image/color"
 )
 
 type NanolletApp guitypes.App
@@ -131,10 +132,24 @@ func (c *PageReceive) Name() string {
 
 func (c *PageReceive) OnView(w *window.Window) {
 	page := DOM.SetSector(c)
+	addr := Storage.AccountStorage.PublicKey.CreateAddress()
 
 	textarea, _ := page.SelectFirstElement(w, ".address")
-	textarea.SetValue(sciter.NewValue(string(Storage.AccountStorage.PublicKey.CreateAddress())))
+	textarea.SetValue(sciter.NewValue(string(addr)))
 	DOM.ReadOnlyElement(textarea)
+
+
+	qrSpace, err := page.SelectFirstElement(w, ".qrcode")
+	if err != nil {
+		return
+	}
+	DOM.ClearHTML(qrSpace)
+
+	qr, err := addr.QRCode(175, color.RGBA{220, 220, 223, 1})
+	if err != nil {
+		return
+	}
+	DOM.CreateQRCodeAppendTo(qr, qrSpace)
 }
 
 func (c *PageReceive) OnContinue(w *window.Window, _ string) {
