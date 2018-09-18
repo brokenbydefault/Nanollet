@@ -15,6 +15,7 @@ import (
 	"strings"
 	"text/template"
 	"github.com/brokenbydefault/Nanollet/Storage"
+	"bytes"
 )
 
 func main() {
@@ -116,39 +117,45 @@ package Front
 import "github.com/brokenbydefault/Nanollet/Util"
 {{end}}
 
-{{- range .HTML}}
-var HTML{{.Name}} = HTMLPAGE({{.Data}})
-{{- end}}
+var HTML = {{.HTML}}
 `))
 
-type pageStruct struct {
-	Data string
-	Name string
-}
 type htmlStruct struct {
 	IsDebug bool
-	HTML    []pageStruct
+	HTML    string
 }
 
 func generateHTML() {
 	strc := htmlStruct{}
 	strc.IsDebug = Storage.Configuration.DebugStatus
 
+	base, err := ioutil.ReadFile("GUI/Front/html/base.html")
+	if err != nil {
+		panic(err)
+	}
+
+	baseSplit := bytes.Split(base, []byte("<section class=\"dynamic\">"))
+	if len(baseSplit) != 2 {
+		panic("invalid base.html")
+	}
+
+	baseSplit[0] = append(baseSplit[0], []byte("<section class=\"dynamic\">")...)
+
 	pages, _ := filepath.Glob("GUI/Front/html/*")
 	for _, path := range pages {
-		page := pageStruct{}
-		page.Name = strings.Title(strings.Replace(filepath.Base(path), ".html", "", 1))
-
-		// If debug is enable the Nanollet will read the file directly, making possible to change the HTML/CSS without
-		// need to `go generate` again.
-		if strc.IsDebug {
-			page.Data = `Util.FileToString("` + filepath.ToSlash(path) + `")`
-		} else {
-			page.Data = "`" + Util.FileToString(path) + "`"
+		if strings.Replace(filepath.Base(path), ".html", "", 1) == "base" {
+			continue
 		}
 
-		strc.HTML = append(strc.HTML, page)
+		file, err := ioutil.ReadFile(path)
+		if err != nil {
+			panic(err)
+		}
+
+		baseSplit[0] = append(baseSplit[0], file...)
 	}
+
+	strc.HTML = "`" + string(append(baseSplit[0], baseSplit[1]...)) + "`"
 
 	store, _ := os.Create("GUI/Front/html.go")
 	htmlTemplate.Execute(store, strc)
