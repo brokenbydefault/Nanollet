@@ -55,7 +55,6 @@ func UpdateNotification(w *Window, msg string) {
 
 	nt := box.CreateElementWithAttr("button", msg, Attrs{"class": "notification"})
 	nt.On(Click, func(_ string) {
-		//	nt.SetHtml(" ", sciter.SOH_REPLACE)
-		//	nt.Clear()
+		nt.Apply(DestroyHTML)
 	})
 }
