@@ -8,6 +8,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Node"
 	"net"
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
+	"time"
 )
 
 var Connection Node.Node
@@ -111,7 +112,7 @@ func realtimeUpdate(w *DOM.Window) {
 func acceptPending(w *DOM.Window, tx Block.Transaction) {
 	hash := tx.Hash()
 
-	if waitVotesConfirmation(tx) {
+	if waitVotesConfirmation(tx, 30 * time.Second) {
 		amount, err := Node.GetAmount(Connection, tx)
 		if err != nil {
 			return
