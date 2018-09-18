@@ -113,7 +113,7 @@ func processBlock(tx Block.Transaction, blockType Block.BlockType, amm *Numbers.
 	Storage.TransactionStorage.Add(tx)
 
 	//@TODO improve if not reach the quorum
-	if !waitVotesConfirmation(tx) {
+	if !waitVotesConfirmation(tx, 2*time.Second) {
 		Storage.TransactionStorage.Remove(tx)
 		return ErrInsufficientVotes
 	}
@@ -124,21 +124,23 @@ func processBlock(tx Block.Transaction, blockType Block.BlockType, amm *Numbers.
 	return nil
 }
 
-func waitVotesConfirmation(tx Block.Transaction) bool {
+func waitVotesConfirmation(tx Block.Transaction, duration time.Duration) bool {
 	start := time.Now()
 	hash := tx.Hash()
 
-	for range time.Tick(2 * time.Second) {
+	ticker := time.NewTicker(2 * time.Second)
+	for range ticker.C {
 		if Storage.TransactionStorage.IsConfirmed(&hash, &Storage.Configuration.Account.Quorum) {
 			return true
 		}
 
 		Node.RequestVotes(Connection, tx)
 
-		if time.Since(start) > 1*time.Minute {
+		if time.Since(start) > duration {
 			break
 		}
 	}
 
+	ticker.Stop()
 	return false
 }
