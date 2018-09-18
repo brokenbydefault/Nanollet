@@ -113,7 +113,7 @@ func processBlock(tx Block.Transaction, blockType Block.BlockType, amm *Numbers.
 	Storage.TransactionStorage.Add(tx)
 
 	//@TODO improve if not reach the quorum
-	if !waitVotesConfirmation(tx, 3*time.Second) {
+	if !waitVotesConfirmation(tx, 2*time.Minute) {
 		Storage.TransactionStorage.Remove(tx)
 		return ErrInsufficientVotes
 	}

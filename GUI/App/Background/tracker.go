@@ -112,7 +112,7 @@ func realtimeUpdate(w *DOM.Window) {
 func acceptPending(w *DOM.Window, tx Block.Transaction) {
 	hash := tx.Hash()
 
-	if waitVotesConfirmation(tx, 30 * time.Second) {
+	if waitVotesConfirmation(tx, 6 * time.Minute) {
 		amount, err := Node.GetAmount(Connection, tx)
 		if err != nil {
 			return
