@@ -11,6 +11,7 @@
 .glide/
 .idea
 /GUI/Front/.idea
+/GUI/Front/*.go
 *.css
 
 test/
