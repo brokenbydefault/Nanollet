@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
+	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 )
 
 func init() {
@@ -25,26 +26,27 @@ func Start() {
 	if err != nil {
 		panic(err)
 	}
+	w.SetTitle("Nanollet")
 
 	if Storage.Configuration.DebugStatus {
 		w.SetOption(sciter.SCITER_SET_DEBUG_MODE, 1)
 	}
 
-	w.LoadHtml(string(Front.HTMLBase), "/")
+	w.LoadHtml(string(Front.HTML), "/")
 	w.SetCSS(Front.CSSStyle, "style.css", "text/css")
 
-	App.InitApplication(w, new(App.NanolletApp))
-	App.InitApplication(w, new(App.NanofyApp))
-	App.InitApplication(w, new(App.AccountApp))
-	App.InitApplication(w, new(App.SettingsApp))
-
-	App.ViewApplication(w, new(App.AccountApp))
+	win := DOM.NewWindow(w)
+	win.InitApplication(new(App.NanolletApp))
+	win.InitApplication(new(App.NanofyApp))
+	win.InitApplication(new(App.AccountApp))
+	win.InitApplication(new(App.SettingsApp))
+	win.ViewApplication(new(App.AccountApp))
 
 	if Storage.PermanentStorage.SeedFY != *new(Wallet.SeedFY) {
-		App.ViewPage(w, new(App.PagePassword))
+		win.ViewPage(new(App.PagePassword))
 	}
 
-	go Background.UpdateNodeCount(w)
+	go Background.UpdateNodeCount(win)
 
 	w.Show()
 	w.Run()

@@ -2,62 +2,56 @@
 
 package DOM
 
-import (
-	"github.com/sciter-sdk/go-sciter"
-	"github.com/sciter-sdk/go-sciter/window"
-)
+func (el *Element) GetAttr(name string) (result string, err error) {
+	return el.el.Attr(name)
+}
 
-func (p *Page) GetStringValue(w *window.Window, css string) (result string, err error) {
-	input, err := p.SelectFirstElement(w, css)
+func (dom *DOM) GetAttrOf(name string, css string) (result string, err error) {
+	input, err := dom.SelectFirstElement(css)
 	if err != nil {
 		return
 	}
 
-	return getString(input)
+	return input.GetAttr(name)
 }
 
-func GetStringValue(w *window.Window, css string) (result string, err error) {
-	input, err := SelectFirstElement(w, css)
-	if err != nil {
-		return
-	}
-
-	return getString(input)
+func (el *Element) GetText() (result string, err error) {
+	return el.el.Text()
 }
 
-func (p *Page) GetBytesValue(w *window.Window, css string) (result []byte, err error) {
-	input, err := p.SelectFirstElement(w, css)
-	if err != nil {
-		return
-	}
-
-	return getBytes(input)
-}
-
-func GetBytesValue(w *window.Window, css string) (result []byte, err error) {
-	input, err := SelectFirstElement(w, css)
-	if err != nil {
-		return
-	}
-
-	return getBytes(input)
-}
-
-func getBytes(el *sciter.Element) (result []byte, err error) {
-	value, err := el.GetValue()
-	if err != nil {
-		return nil, err
-	}
-
-	//return value.Bytes(), nil
-	return []byte(value.String()), nil
-}
-
-func getString(el *sciter.Element) (result string, err error) {
-	value, err := el.GetValue()
+func (el *Element) GetStringValue() (result string, err error) {
+	value, err := el.el.GetValue()
 	if err != nil {
 		return "", err
 	}
 
 	return value.String(), nil
 }
+
+func (dom *DOM) GetStringValueOf(css string) (result string, err error) {
+	input, err := dom.SelectFirstElement(css)
+	if err != nil {
+		return
+	}
+
+	return input.GetStringValue()
+}
+
+func (el *Element) GetBytesValue() (result []byte, err error) {
+	value, err := el.el.GetValue()
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(value.String()), nil
+}
+
+func (dom *DOM) GetBytesValueOf(css string) (result []byte, err error) {
+	input, err := dom.SelectFirstElement(css)
+	if err != nil {
+		return
+	}
+
+	return input.GetBytesValue()
+}
+

@@ -5,7 +5,6 @@ import (
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/sciter-sdk/go-sciter/window"
 	"github.com/brokenbydefault/Nanollet/Node"
 	"net"
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
@@ -43,7 +42,7 @@ func PublishHandler(srv *Node.Server, _ *net.UDPAddr, rHeader *Packets.Header, m
 	srv.Transactions.Add(packet.Transaction)
 }
 
-func StartAddress(w *window.Window) error {
+func StartAddress(w *DOM.Window) error {
 	txs, err := Node.GetHistory(Connection, &Storage.AccountStorage.PublicKey, nil)
 	if err != nil {
 		return err
@@ -85,7 +84,7 @@ func StartAddress(w *window.Window) error {
 	return nil
 }
 
-func realtimeUpdate(w *window.Window) {
+func realtimeUpdate(w *DOM.Window) {
 	for tx := range Storage.TransactionStorage.Listen() {
 		tx := tx
 
@@ -109,7 +108,7 @@ func realtimeUpdate(w *window.Window) {
 	}
 }
 
-func acceptPending(w *window.Window, tx Block.Transaction) {
+func acceptPending(w *DOM.Window, tx Block.Transaction) {
 	hash := tx.Hash()
 
 	if waitVotesConfirmation(tx) {
@@ -130,7 +129,7 @@ func acceptPending(w *window.Window, tx Block.Transaction) {
 	}
 }
 
-func pending(w *window.Window) {
+func pending(w *DOM.Window) {
 	txsPend, err := Node.GetPendings(Connection, &Storage.AccountStorage.PublicKey, Storage.Configuration.Account.MinimumAmount)
 	if err != nil {
 		return

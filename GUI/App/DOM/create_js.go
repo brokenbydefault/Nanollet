@@ -4,20 +4,32 @@ package DOM
 
 import (
 	"honnef.co/go/js/dom"
+	"encoding/base64"
 )
 
-func CreateElement(tag, value, class string, id string) dom.Element {
+func (el *Element) CreateElement(tag, text string) *Element {
 	root := dom.GetWindow().Document().(dom.HTMLDocument)
 
-	el := root.CreateElement(tag)
-	el.SetAttribute("class", class)
-	el.SetAttribute("id", id)
+	e := root.CreateElement(tag)
+	if text != "" {
+		e.SetTextContent(text)
+	}
 
-	return el
+	el.el.AppendChild(e)
+	return NewElement(e)
 }
 
-func CreateElementAppendTo(tag, value, class string, id string, target dom.Element) dom.Element {
-	el := CreateElement(tag, value, class, id)
-	target.AppendChild(el)
-	return el
+type Attrs map[string]string
+
+func (el *Element) CreateElementWithAttr(tag, text string, attrs Attrs) *Element {
+	e  := el.CreateElement(tag, text)
+	for name, value := range attrs {
+		e.SetAttr(name, value)
+	}
+
+	return e
+}
+
+func (el *Element) CreateQRCode(png []byte) *Element {
+	return el.CreateElementWithAttr("img", "", Attrs{"src": "data:image/png;base64, " + base64.StdEncoding.EncodeToString(png)})
 }
