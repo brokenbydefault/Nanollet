@@ -4,53 +4,65 @@ package DOM
 
 import (
 	"github.com/sciter-sdk/go-sciter"
-	"github.com/sciter-sdk/go-sciter/window"
 )
 
-func ApplyForAll(w *window.Window, css string, mod Modifier) error {
-	els, err := SelectAllElement(w, css)
+func (el *Element) Apply(mod Modifier) error {
+	return mod(el.el)
+}
+
+func (el *Element) SetAttr(name, value string) error {
+	return el.el.SetAttr(name, value)
+}
+
+func (el *Element) SetText(text string) error {
+	return el.el.SetText(text)
+}
+
+func (el *Element) SetValue(value string) error {
+	return el.el.SetValue(sciter.NewValue(value))
+}
+
+func (el *Element) SetHTML(html string, method ReplaceMethod) error {
+	return el.el.SetHtml(html, sciter.SET_ELEMENT_HTML(method))
+}
+
+func (el *Element) On(method ActionMethod, f func(class string)) (err error) {
+	class, _ := el.GetAttr("class")
+
+	switch method {
+	case Click:
+		el.el.OnClick(func() {
+			go f(class)
+		})
+	default:
+		err = ErrInvalidActionMethod
+	}
+
+	return err
+}
+
+func (dom *DOM) ApplyForAll(css string, mod Modifier) error {
+	els, err := dom.SelectAllElement(css)
 	if err != nil {
 		return err
 	}
 
-	return applyForAll(els, mod)
-}
-
-func (p *Page) ApplyForAll(w *window.Window, css string, mod Modifier) error {
-	els, err := p.SelectAllElement(w, css)
-	if err != nil {
-		return err
-	}
-
-	return applyForAll(els, mod)
-}
-
-func ApplyForIt(w *window.Window, css string, mod Modifier) error {
-	it, err := SelectFirstElement(w, css)
-	if err != nil {
-		return err
-	}
-
-	return mod(it)
-}
-
-func (p *Page) ApplyForIt(w *window.Window, css string, mod Modifier) error {
-	it, err := p.SelectFirstElement(w, css)
-	if err != nil {
-		return err
-	}
-
-	return mod(it)
-}
-
-func applyForAll(els []*sciter.Element, mod Modifier) error {
-	for _, e := range els {
-		if err := mod(e); err != nil {
+	for _, el := range els {
+		if err := el.Apply(mod); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (dom *DOM) ApplyFor(css string, mod Modifier) error {
+	el, err := dom.SelectFirstElement(css)
+	if err != nil {
+		return err
+	}
+
+	return el.Apply(mod)
 }
 
 type Modifier func(el *sciter.Element) error

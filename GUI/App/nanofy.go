@@ -6,18 +6,14 @@ import (
 	"github.com/brokenbydefault/Nanollet/Nanofy"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
-	"github.com/brokenbydefault/Nanollet/GUI/Front"
 	"github.com/brokenbydefault/Nanollet/Storage"
-	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/sciter-sdk/go-sciter"
-	"github.com/sciter-sdk/go-sciter/window"
 	"os"
 	"github.com/brokenbydefault/Nanollet/Node"
 	"github.com/brokenbydefault/Nanollet/Block"
 )
 
-type NanofyApp guitypes.App
+type NanofyApp struct{}
 
 func (c *NanofyApp) Name() string {
 	return "nanofy"
@@ -27,31 +23,25 @@ func (c *NanofyApp) HaveSidebar() bool {
 	return true
 }
 
-func (c *NanofyApp) Display() Front.HTMLPAGE {
-	return Front.HTMLNanofy
-}
-
-func (c *NanofyApp) Pages() []guitypes.Page {
-	return []guitypes.Page{
+func (c *NanofyApp) Pages() []DOM.Page {
+	return []DOM.Page{
 		&PageSign{},
 		&PageVerify{},
 	}
 }
 
-type PageSign guitypes.Sector
+type PageSign struct{}
 
 func (c *PageSign) Name() string {
 	return "sign"
 }
 
-func (c *PageSign) OnView(w *window.Window) {
+func (c *PageSign) OnView(w *DOM.Window, dom *DOM.DOM) {
 	// no-op
 }
 
-func (c *PageSign) OnContinue(w *window.Window, _ string) {
-	page := DOM.SetSector(c)
-
-	filePath, err := page.GetStringValue(w, ".filepath")
+func (c *PageSign) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
+	filePath, err := dom.GetStringValueOf(".filepath")
 	if filePath == "" || err != nil {
 		return
 	}
@@ -95,27 +85,26 @@ func (c *PageSign) OnContinue(w *window.Window, _ string) {
 	DOM.UpdateAmount(w)
 	DOM.UpdateNotification(w, "Your signature was sent successfully.")
 
-	nameBox, _ := page.SelectFirstElement(w, ".name")
-	nameBox.SetHtml("Drop the file here", sciter.SIH_REPLACE_CONTENT)
+	nameBox, _ := dom.SelectFirstElement(".name")
+	nameBox.SetHTML("Drop the file here", DOM.InnerReplaceContent)
 
-	page.ApplyForIt(w, ".filepath", DOM.ClearValue)
+	dom.ApplyFor(".filepath", DOM.ClearValue)
 }
 
-type PageVerify guitypes.Sector
+type PageVerify struct{}
 
 func (c *PageVerify) Name() string {
 	return "verify"
 }
 
-func (c *PageVerify) OnView(w *window.Window) {
+func (c *PageVerify) OnView(w *DOM.Window, dom *DOM.DOM) {
 	// no-op
 }
 
-func (c *PageVerify) OnContinue(w *window.Window, _ string) {
-	page := DOM.SetSector(c)
+func (c *PageVerify) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 
-	addr, _ := page.GetStringValue(w, ".address")
-	filePath, err := page.GetStringValue(w, ".filepath")
+	addr, _ := dom.GetStringValueOf(".address")
+	filePath, err := dom.GetStringValueOf(".filepath")
 	if addr == "" || filePath == "" || err != nil {
 		return
 	}
@@ -150,8 +139,8 @@ func (c *PageVerify) OnContinue(w *window.Window, _ string) {
 		DOM.UpdateNotification(w, "Wrong! This address never had signed this file")
 	}
 
-	nameBox, _ := page.SelectFirstElement(w, ".name")
-	nameBox.SetHtml("Drop the file here", sciter.SIH_REPLACE_CONTENT)
+	nameBox, _ := dom.SelectFirstElement(".name")
+	nameBox.SetHTML("Drop the file here", DOM.InnerReplaceContent)
 
-	page.ApplyForIt(w, ".filepath", DOM.ClearValue)
+	dom.ApplyFor(".filepath", DOM.ClearValue)
 }

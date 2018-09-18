@@ -7,28 +7,50 @@ import (
 	"strings"
 )
 
-func (p *Page) GetStringValue(w dom.Document, css string) (result string, err error) {
-	input, err := p.SelectFirstElement(w, css)
+func (el *Element) GetAttr(name string) (result string, err error) {
+	return el.el.GetAttribute(name), nil
+}
+
+func (dom *DOM) GetAttrOf(name string, css string) (result string, err error) {
+	input, err := dom.SelectFirstElement(css)
 	if err != nil {
 		return
 	}
 
-	return getValue(input)
+	return input.GetAttr(name)
 }
 
-func GetStringValue(w dom.Document, css string) (result string, err error) {
-	input, err := SelectFirstElement(w, css)
+func (el *Element) GetText() (result string, err error) {
+	return el.el.TextContent(), nil
+}
+
+func (el *Element) GetStringValue() (result string, err error) {
+	if strings.ToUpper(el.el.TagName()) == "TEXTAREA" {
+		return el.el.(*dom.HTMLTextAreaElement).Value, nil
+	}
+
+	return el.el.(*dom.HTMLInputElement).Value, nil
+}
+
+func (dom *DOM) GetStringValueOf(css string) (result string, err error) {
+	input, err := dom.SelectFirstElement(css)
 	if err != nil {
 		return
 	}
 
-	return getValue(input)
+	return input.GetStringValue()
 }
 
-func getValue(el dom.Element) (result string, err error) {
-	if strings.ToUpper(el.TagName()) == "TEXTAREA" {
-		return el.(*dom.HTMLTextAreaElement).Value, nil
+func (el *Element) GetBytesValue() (result []byte, err error) {
+	r, err := el.GetStringValue()
+	return []byte(r), err
+}
+
+func (dom *DOM) GetBytesValueOf(css string) (result []byte, err error) {
+	input, err := dom.SelectFirstElement(css)
+	if err != nil {
+		return
 	}
 
-	return el.(*dom.HTMLInputElement).Value, nil
+	return input.GetBytesValue()
 }

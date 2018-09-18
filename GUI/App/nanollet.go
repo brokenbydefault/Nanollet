@@ -8,19 +8,15 @@ import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
-	"github.com/brokenbydefault/Nanollet/GUI/Front"
-	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/sciter-sdk/go-sciter"
-	"github.com/sciter-sdk/go-sciter/window"
 	"github.com/brokenbydefault/Nanollet/OpenCAP"
 	"image/color"
 )
 
-type NanolletApp guitypes.App
+type NanolletApp struct{}
 
 func (c *NanolletApp) Name() string {
 	return "nanollet"
@@ -30,12 +26,8 @@ func (c *NanolletApp) HaveSidebar() bool {
 	return true
 }
 
-func (c *NanolletApp) Display() Front.HTMLPAGE {
-	return Front.HTMLNanollet
-}
-
-func (c *NanolletApp) Pages() []guitypes.Page {
-	return []guitypes.Page{
+func (c *NanolletApp) Pages() []DOM.Page {
+	return []DOM.Page{
 		&PageWallet{},
 		&PageReceive{},
 		&PageList{},
@@ -43,27 +35,25 @@ func (c *NanolletApp) Pages() []guitypes.Page {
 	}
 }
 
-type PageWallet guitypes.Sector
+type PageWallet struct{}
 
 func (c *PageWallet) Name() string {
 	return "send"
 }
 
-func (c *PageWallet) OnView(w *window.Window) {
+func (c *PageWallet) OnView(w *DOM.Window, dom *DOM.DOM) {
 	// no-op
 }
 
-func (c *PageWallet) OnContinue(w *window.Window, _ string) {
-	page := DOM.SetSector(c)
-
+func (c *PageWallet) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 	var errs []error
-	whole, err := page.GetStringValue(w, ".whole")
+	whole, err := dom.GetStringValueOf(".whole")
 	errs = append(errs, err)
 
-	decimal, err := page.GetStringValue(w, ".decimal")
+	decimal, err := dom.GetStringValueOf(".decimal")
 	errs = append(errs, err)
 
-	addrOrAlias, err := page.GetStringValue(w, ".address")
+	addrOrAlias, err := dom.GetStringValueOf(".address")
 	errs = append(errs, err)
 
 	if Util.CheckError(errs) != nil {
@@ -121,62 +111,57 @@ func (c *PageWallet) OnContinue(w *window.Window, _ string) {
 
 	DOM.UpdateAmount(w)
 	DOM.UpdateNotification(w, "Your payment was sent successfully.")
-	page.ApplyForIt(w, ".whole, .decimal, .address", DOM.ClearValue)
+	dom.ApplyFor(".whole, .decimal, .address", DOM.ClearValue)
 }
 
-type PageReceive guitypes.Sector
+type PageReceive struct{}
 
 func (c *PageReceive) Name() string {
 	return "receive"
 }
 
-func (c *PageReceive) OnView(w *window.Window) {
-	page := DOM.SetSector(c)
+func (c *PageReceive) OnView(w *DOM.Window, dom *DOM.DOM) {
 	addr := Storage.AccountStorage.PublicKey.CreateAddress()
 
-	textarea, _ := page.SelectFirstElement(w, ".address")
-	textarea.SetValue(sciter.NewValue(string(addr)))
-	DOM.ReadOnlyElement(textarea)
+	textarea, _ := dom.SelectFirstElement(".address")
+	textarea.SetValue(string(addr))
 
-
-	qrSpace, err := page.SelectFirstElement(w, ".qrcode")
-	if err != nil {
-		return
-	}
-	DOM.ClearHTML(qrSpace)
+	textarea.Apply(DOM.ReadOnlyElement)
 
 	qr, err := addr.QRCode(175, color.RGBA{220, 220, 223, 1})
 	if err != nil {
 		return
 	}
-	DOM.CreateQRCodeAppendTo(qr, qrSpace)
+
+	qrSpace, err := dom.SelectFirstElement(".qrcode")
+	if err != nil {
+		return
+	}
+	qrSpace.Apply(DOM.ClearHTML)
+	qrSpace.CreateQRCode(qr)
 }
 
-func (c *PageReceive) OnContinue(w *window.Window, _ string) {
+func (c *PageReceive) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 	// no-op
 }
 
-type PageRepresentative guitypes.Sector
+type PageRepresentative struct{}
 
 func (c *PageRepresentative) Name() string {
 	return "representative"
 }
 
-func (c *PageRepresentative) OnView(w *window.Window) {
-	page := DOM.SetSector(c)
-
-	current, err := page.SelectFirstElement(w, ".currentRepresentative")
+func (c *PageRepresentative) OnView(w *DOM.Window, dom *DOM.DOM) {
+	current, err := dom.SelectFirstElement(".currentRepresentative")
 	if err != nil {
 		return
 	}
 
-	current.SetValue(sciter.NewValue(string(Storage.AccountStorage.Representative.CreateAddress())))
+	current.SetValue(string(Storage.AccountStorage.Representative.CreateAddress()))
 }
 
-func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
-	page := DOM.SetSector(c)
-
-	addr, err := page.GetStringValue(w, ".address")
+func (c *PageRepresentative) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
+	addr, err := dom.GetStringValueOf(".address")
 	if err != nil {
 		return
 	}
@@ -207,35 +192,33 @@ func (c *PageRepresentative) OnContinue(w *window.Window, _ string) {
 	DOM.UpdateAmount(w)
 	DOM.UpdateNotification(w, "Your representative was changed successfully.")
 
-	current, err := DOM.SelectFirstElement(w, "currentRepresentative")
+	current, err := dom.SelectFirstElement("currentRepresentative")
 	if err != nil {
 		return
 	}
 
 	current.SetText(string(Storage.AccountStorage.Representative.CreateAddress()))
 
-	page.ApplyForIt(w, ".address", DOM.ClearValue)
+	dom.ApplyFor(".address", DOM.ClearValue)
 }
 
-type PageList guitypes.Sector
+type PageList struct{}
 
 func (c *PageList) Name() string {
 	return "history"
 }
 
-func (c *PageList) OnView(w *window.Window) {
-	page := DOM.SetSector(c)
-
+func (c *PageList) OnView(w *DOM.Window, dom *DOM.DOM) {
 	balance, _ := Numbers.NewHumanFromRaw(Storage.AccountStorage.Balance).ConvertToBase(Numbers.MegaXRB, int(Numbers.MegaXRB))
-	display, _ := page.SelectFirstElement(w, ".fullamount")
-	display.SetValue(sciter.NewValue(balance))
+	display, _ := dom.SelectFirstElement(".fullamount")
+	display.SetValue(balance)
 
 	if Storage.TransactionStorage.Count() == 0 {
 		return
 	}
 
-	txbox, _ := page.SelectFirstElement(w, ".txbox")
-	DOM.ClearHTML(txbox)
+	txbox, _ := dom.SelectFirstElement(".txbox")
+	txbox.Apply(DOM.ClearHTML)
 
 	for i, tx := range Storage.TransactionStorage.GetByFrontier(Storage.AccountStorage.Frontier) {
 
@@ -250,10 +233,10 @@ func (c *PageList) OnView(w *window.Window) {
 			return
 		}
 
-		txdiv := DOM.CreateElementAppendTo("div", "", "item", "", txbox)
+		txdiv := txbox.CreateElementWithAttr("div", "", DOM.Attrs{"class": "item"})
 
-		DOM.CreateElementAppendTo("div", strings.ToUpper(txType.String()), "type", "", txdiv)
-		DOM.CreateElementAppendTo("div", humanAmount, "amount", "", txdiv)
+		txdiv.CreateElementWithAttr("div", strings.ToUpper(txType.String()), DOM.Attrs{"class": "type"})
+		txdiv.CreateElementWithAttr("div", humanAmount, DOM.Attrs{"class": "amount"})
 
 		if i == 4 {
 			break
@@ -262,6 +245,6 @@ func (c *PageList) OnView(w *window.Window) {
 
 }
 
-func (c *PageList) OnContinue(w *window.Window, _ string) {
+func (c *PageList) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 	//no-op
 }

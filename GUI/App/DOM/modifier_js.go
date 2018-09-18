@@ -2,54 +2,85 @@
 
 package DOM
 
-import (
-	"honnef.co/go/js/dom"
-)
+import "honnef.co/go/js/dom"
 
-func ApplyForAll(w dom.Document, css string, mod Modifier) error {
-	els, err := SelectAllElement(w, css)
+func (el *Element) Apply(mod Modifier) error {
+	return mod(el.el)
+}
+
+func (el *Element) SetAttr(name, value string) error {
+	el.el.SetAttribute(name, value)
+	return nil
+}
+
+func (el *Element) SetText(text string) error {
+	el.el.SetTextContent(text)
+	return nil
+}
+
+func (el *Element) SetValue(value string) error {
+	el.el.SetNodeValue(value)
+	return nil
+}
+
+func (el *Element) SetHTML(html string, method ReplaceMethod) (err error) {
+	switch method {
+	case InnerReplaceContent:
+		el.el.SetInnerHTML(html)
+	case InnerPrepend:
+		el.el.SetInnerHTML(el.el.InnerHTML() + html)
+	case InnerAppend:
+		el.el.SetInnerHTML(html + el.el.InnerHTML())
+	case OuterReplace:
+		el.el.SetOuterHTML(html)
+	case OuterPrepend:
+		el.el.SetOuterHTML(html + el.el.OuterHTML())
+	case OuterAppend:
+		el.el.SetOuterHTML(el.el.OuterHTML() + html)
+	default:
+		err = ErrInvalidReplaceMethod
+	}
+
+	return err
+}
+
+func (el *Element) On(method ActionMethod, f func(class string)) (err error) {
+	class, _ := el.GetAttr("class")
+
+	switch method {
+	case Click:
+		el.el.AddEventListener("click", false, func(_ dom.Event) {
+			go f(class)
+		})
+	default:
+		err = ErrInvalidActionMethod
+	}
+
+	return err
+}
+
+func (dom *DOM) ApplyForAll(css string, mod Modifier) error {
+	els, err := dom.SelectAllElement(css)
 	if err != nil {
 		return err
 	}
 
-	return applyForAll(els, mod)
-}
-
-func (p *Page) ApplyForAll(w dom.Document, css string, mod Modifier) error {
-	els, err := p.SelectAllElement(w, css)
-	if err != nil {
-		return err
-	}
-
-	return applyForAll(els, mod)
-}
-
-func ApplyForIt(w dom.Document, css string, mod Modifier) error {
-	it, err := SelectFirstElement(w, css)
-	if err != nil {
-		return err
-	}
-
-	return mod(it)
-}
-
-func (p *Page) ApplyForIt(w dom.Document, css string, mod Modifier) error {
-	it, err := p.SelectFirstElement(w, css)
-	if err != nil {
-		return err
-	}
-
-	return mod(it)
-}
-
-func applyForAll(els []dom.Element, mod Modifier) error {
-	for _, e := range els {
-		if err := mod(e); err != nil {
+	for _, el := range els {
+		if err := el.Apply(mod); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (dom *DOM) ApplyFor(css string, mod Modifier) error {
+	el, err := dom.SelectFirstElement(css)
+	if err != nil {
+		return err
+	}
+
+	return el.Apply(mod)
 }
 
 type Modifier func(el dom.Element) error

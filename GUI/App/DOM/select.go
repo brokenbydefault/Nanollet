@@ -2,64 +2,20 @@
 
 package DOM
 
-import (
-	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
-	"github.com/sciter-sdk/go-sciter"
-	"github.com/sciter-sdk/go-sciter/window"
-)
-
-type Page string
-
-func SetPage(name string) Page {
-	return Page(name)
+func (el *Element) SelectAllElement(css string) ([]*Element, error) {
+	e, err := el.el.Select(css)
+	return NewElements(e), err
 }
 
-func SetSector(pg guitypes.Page) Page {
-	return Page(pg.Name())
+func (el *Element) SelectFirstElement(css string) (*Element, error) {
+	e, err := el.el.SelectFirst(css)
+	return NewElement(e), err
 }
 
-func (p Page) SelectAllElement(w *window.Window, css string) ([]*sciter.Element, error) {
-	el, err := w.GetRootElement()
-	if err != nil {
-		return nil, err
-	}
-
-	el, err = el.SelectFirst("[page=\"" + string(p) + "\"]")
-	if err != nil {
-		return nil, err
-	}
-
-	return el.Select(css)
+func (dom *DOM) SelectAllElement(css string) ([]*Element, error) {
+	return dom.el.SelectAllElement(css)
 }
 
-func (p Page) SelectFirstElement(w *window.Window, css string) (*sciter.Element, error) {
-	el, err := w.GetRootElement()
-	if err != nil {
-		return nil, err
-	}
-
-	el, err = el.SelectFirst("[page=\"" + string(p) + "\"]")
-	if err != nil {
-		return nil, err
-	}
-
-	return el.SelectFirst(css)
-}
-
-func SelectAllElement(w *window.Window, css string) ([]*sciter.Element, error) {
-	el, err := w.GetRootElement()
-	if err != nil {
-		return nil, err
-	}
-
-	return el.Select(css)
-}
-
-func SelectFirstElement(w *window.Window, css string) (*sciter.Element, error) {
-	el, err := w.GetRootElement()
-	if err != nil {
-		return nil, err
-	}
-
-	return el.SelectFirst(css)
+func (dom *DOM) SelectFirstElement(css string) (*Element, error) {
+	return dom.el.SelectFirstElement(css)
 }

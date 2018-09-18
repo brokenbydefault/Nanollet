@@ -5,12 +5,8 @@ package App
 import (
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
-	"github.com/brokenbydefault/Nanollet/GUI/Front"
 	"github.com/brokenbydefault/Nanollet/Storage"
-	"github.com/brokenbydefault/Nanollet/GUI/guitypes"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/sciter-sdk/go-sciter"
-	"github.com/sciter-sdk/go-sciter/window"
 	"strconv"
 	"image/color"
 	"github.com/brokenbydefault/Nanollet/TwoFactor"
@@ -18,7 +14,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Util"
 )
 
-type AccountApp guitypes.App
+type AccountApp struct{}
 
 func (c *AccountApp) Name() string {
 	return "account"
@@ -28,12 +24,8 @@ func (c *AccountApp) HaveSidebar() bool {
 	return false
 }
 
-func (c *AccountApp) Display() Front.HTMLPAGE {
-	return Front.HTMLAccount
-}
-
-func (c *AccountApp) Pages() []guitypes.Page {
-	return []guitypes.Page{
+func (c *AccountApp) Pages() []DOM.Page {
+	return []DOM.Page{
 		&PageToS{},
 		&PageIndex{},
 		&PageGenerate{},
@@ -44,63 +36,60 @@ func (c *AccountApp) Pages() []guitypes.Page {
 	}
 }
 
-type PageToS guitypes.Sector
+type PageToS struct{}
 
 func (c *PageToS) Name() string {
 	return "tos"
 }
 
-func (c *PageToS) OnView(w *window.Window) {
+func (c *PageToS) OnView(w *DOM.Window, dom *DOM.DOM) {
 	// no-op
 }
 
-func (c *PageToS) OnContinue(w *window.Window, action string) {
+func (c *PageToS) OnContinue(w *DOM.Window, dom *DOM.DOM, action string) {
 	if action == "accept" {
-		ViewPage(w, &PageIndex{})
+		w.ViewPage(new(PageIndex))
 	}
 }
 
-type PageIndex guitypes.Sector
+type PageIndex struct{}
 
 func (c *PageIndex) Name() string {
 	return "index"
 }
 
-func (c *PageIndex) OnView(w *window.Window) {
+func (c *PageIndex) OnView(w *DOM.Window, dom *DOM.DOM) {
 	// no-op
 }
 
-func (c *PageIndex) OnContinue(w *window.Window, action string) {
+func (c *PageIndex) OnContinue(w *DOM.Window, dom *DOM.DOM, action string) {
 	switch action {
 	case "genSeed":
-		ViewPage(w, &PageGenerate{})
+		w.ViewPage(new(PageGenerate))
 	case "importSeed":
-		ViewPage(w, &PageImport{})
+		w.ViewPage(new(PageImport))
 	}
 }
 
-type PageGenerate guitypes.Sector
+type PageGenerate struct{}
 
 func (c *PageGenerate) Name() string {
 	return "generate"
 }
 
-func (c *PageGenerate) OnView(w *window.Window) {
-	page := DOM.SetSector(c)
-
+func (c *PageGenerate) OnView(w *DOM.Window, dom *DOM.DOM) {
 	seedfy, err := Wallet.NewSeedFY(Wallet.V0, Wallet.Nanollet)
 	if err != nil {
 		return
 	}
 
-	textarea, _ := page.SelectFirstElement(w, ".seed")
-	textarea.SetValue(sciter.NewValue(seedfy.String()))
-	DOM.ReadOnlyElement(textarea)
+	textarea, _ := dom.SelectFirstElement(".seed")
+	textarea.SetValue(seedfy.String())
+	textarea.Apply(DOM.ReadOnlyElement)
 }
 
-func (c *PageGenerate) OnContinue(w *window.Window, _ string) {
-	page := DOM.SetSector(c)
-	seedHex, err := page.GetStringValue(w, ".seed")
+func (c *PageGenerate) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
+	seedHex, err := dom.GetStringValueOf(".seed")
 	if seedHex == "" || err != nil {
 		panic(err)
 	}
@@ -112,23 +101,21 @@ func (c *PageGenerate) OnContinue(w *window.Window, _ string) {
 
 	Storage.PermanentStorage.AddSeedFY(sf)
 
-	ViewPage(w, &PagePassword{})
+	w.ViewPage(new(PagePassword))
 }
 
-type PageImport guitypes.Sector
+type PageImport struct{}
 
 func (c *PageImport) Name() string {
 	return "import"
 }
 
-func (c *PageImport) OnView(w *window.Window) {
+func (c *PageImport) OnView(w *DOM.Window, dom *DOM.DOM) {
 	// no-op
 }
 
-func (c *PageImport) OnContinue(w *window.Window, _ string) {
-	page := DOM.SetSector(c)
-
-	seed, err := page.GetStringValue(w, ".seed")
+func (c *PageImport) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
+	seed, err := dom.GetStringValueOf(".seed")
 	if seed == "" || err != nil {
 		return
 	}
@@ -146,24 +133,22 @@ func (c *PageImport) OnContinue(w *window.Window, _ string) {
 
 	Storage.PermanentStorage.AddSeedFY(sf)
 
-	ViewPage(w, &PagePassword{})
-	page.ApplyForIt(w, ".seed", DOM.ClearValue)
+	w.ViewPage(new(PagePassword))
+	dom.ApplyFor(".seed", DOM.ClearValue)
 }
 
-type PagePassword guitypes.Sector
+type PagePassword struct{}
 
 func (c *PagePassword) Name() string {
 	return "password"
 }
 
-func (c *PagePassword) OnView(w *window.Window) {
+func (c *PagePassword) OnView(w *DOM.Window, dom *DOM.DOM) {
 	// no-op
 }
 
-func (c *PagePassword) OnContinue(w *window.Window, _ string) {
-	page := DOM.SetSector(c)
-
-	password, err := page.GetBytesValue(w, ".password")
+func (c *PagePassword) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
+	password, err := dom.GetBytesValueOf(".password")
 	if err != nil || len(password) < 8 {
 		DOM.UpdateNotification(w, "There was a problem with your password, this is too short")
 		return
@@ -171,38 +156,37 @@ func (c *PagePassword) OnContinue(w *window.Window, _ string) {
 
 	seedfy := Storage.PermanentStorage.SeedFY
 
-	need2FA, err := page.GetStringValue(w, ".ask2fa")
+	need2FA, err := dom.GetStringValueOf(".ask2fa")
 	if err == nil && need2FA != "" {
 		Storage.AccessStorage.Password = password
-		ViewPage(w, &PageMFA{})
+		w.ViewPage(new(PageMFA))
 		return
 	}
 
 	Storage.AccessStorage.Seed = seedfy.RecoverSeed(password, nil)
-	ViewPage(w, &PageAddress{})
-	DOM.ApplyForIt(w, ".password", DOM.ClearValue)
+	w.ViewPage(new(PageAddress))
+
+	dom.ApplyFor(".password", DOM.ClearValue)
 }
 
-type PageMFA guitypes.Sector
+type PageMFA struct{}
 
 func (c *PageMFA) Name() string {
 	return "mfa"
 }
 
-func (c *PageMFA) OnView(w *window.Window) {
-	page := DOM.SetSector(c)
-
+func (c *PageMFA) OnView(w *DOM.Window, dom *DOM.DOM) {
 	sk := Ephemeral.NewEphemeral()
 	requester, response := TwoFactor.NewRequesterServer(&sk, Storage.PermanentStorage.AllowedKeys)
-
-	qrSpace, _ := page.SelectFirstElement(w, ".qrcode")
-	DOM.ClearHTML(qrSpace)
 
 	qr, err := requester.QRCode(300, color.RGBA{220, 220, 223, 1})
 	if err != nil {
 		panic(err)
 	}
-	DOM.CreateQRCodeAppendTo(qr, qrSpace)
+
+	qrSpace, _ := dom.SelectFirstElement(".qrcode")
+	qrSpace.Apply(DOM.ClearHTML)
+	qrSpace.CreateQRCode(qr)
 
 	go func() {
 		for resp := range response {
@@ -210,7 +194,7 @@ func (c *PageMFA) OnView(w *window.Window) {
 			Storage.PermanentStorage.AddAllowedKey(resp.Capsule.Device)
 			Storage.AccessStorage.Token = resp.Capsule.Token
 
-			c.OnContinue(w, "")
+			c.OnContinue(w, dom, "")
 			break
 		}
 	}()
@@ -218,7 +202,7 @@ func (c *PageMFA) OnView(w *window.Window) {
 	return
 }
 
-func (c *PageMFA) OnContinue(w *window.Window, _ string) {
+func (c *PageMFA) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 	if Util.IsEmpty(Storage.AccessStorage.Token[:]) {
 		return
 	}
@@ -229,10 +213,10 @@ func (c *PageMFA) OnContinue(w *window.Window, _ string) {
 	copy(Storage.AccessStorage.Token[:], make([]byte, len(Storage.AccessStorage.Token)))
 	copy(Storage.AccessStorage.Password[:], make([]byte, len(Storage.AccessStorage.Password)))
 
-	ViewPage(w, &PageAddress{})
+	w.ViewPage(new(PageAddress))
 }
 
-type PageAddress guitypes.Sector
+type PageAddress struct{}
 
 const ADDRESS_PER_PAGE uint32 = 5
 
@@ -240,10 +224,8 @@ func (c *PageAddress) Name() string {
 	return "address"
 }
 
-func (c *PageAddress) Position(w *window.Window) uint32 {
-	page := DOM.SetSector(c)
-
-	index, err := page.GetStringValue(w, ".address option")
+func (c *PageAddress) Position(dom *DOM.DOM) uint32 {
+	index, err := dom.GetStringValueOf(".address option")
 	if index == "" || err != nil {
 		return 0
 	}
@@ -256,17 +238,15 @@ func (c *PageAddress) Position(w *window.Window) uint32 {
 	return uint32(i)
 }
 
-func (c *PageAddress) UpdateList(w *window.Window, min, max uint32) {
-	page := DOM.SetSector(c)
-
-	selectbox, err := page.SelectFirstElement(w, ".address")
+func (c *PageAddress) UpdateList(dom *DOM.DOM, min, max uint32) {
+	selectbox, err := dom.SelectFirstElement(".address")
 	if err != nil {
 		panic(err)
 	}
 
-	value, _ := selectbox.GetValue()
+	value, _ := selectbox.GetStringValue()
+	selectbox.Apply(DOM.ClearHTML)
 
-	DOM.ClearHTML(selectbox)
 	for i := min; i < max; i++ {
 		pk, _, err := Storage.AccessStorage.Seed.CreateKeyPair(Wallet.Nano, i)
 		if err != nil {
@@ -275,48 +255,48 @@ func (c *PageAddress) UpdateList(w *window.Window, min, max uint32) {
 
 		addr := string(pk.CreateAddress())
 
-		opt := DOM.CreateElementAppendTo("option", addr[0:16]+" ... "+addr[48:64], "item", "", selectbox)
-		opt.SetAttr("value", strconv.FormatUint(uint64(i), 10))
+		opt := selectbox.CreateElementWithAttr("option", addr[0:16]+" ... "+addr[48:64], DOM.Attrs{
+			"class": "item",
+			"value": strconv.FormatUint(uint64(i), 10),
+		})
 
-		if value.String() != "" && uint32(value.Int64()) == i {
-			DOM.Checked(opt)
+		if intVal, err := strconv.ParseUint(value, 10, 32); err != nil && value != "" && uint32(intVal) == i {
+			opt.Apply(DOM.Checked)
 		}
 	}
 }
 
-func (c *PageAddress) Next(w *window.Window) {
-	pos := c.Position(w)
+func (c *PageAddress) Next(dom *DOM.DOM) {
+	pos := c.Position(dom)
 	if pos == 1<<32-1 {
 		return
 	}
 
-	c.UpdateList(w, pos+ADDRESS_PER_PAGE, pos+(ADDRESS_PER_PAGE*2))
+	c.UpdateList(dom, pos+ADDRESS_PER_PAGE, pos+(ADDRESS_PER_PAGE*2))
 }
 
-func (c *PageAddress) Previous(w *window.Window) {
-	pos := c.Position(w)
+func (c *PageAddress) Previous(dom *DOM.DOM) {
+	pos := c.Position(dom)
 	if pos == 0 {
 		return
 	}
 
-	c.UpdateList(w, pos-ADDRESS_PER_PAGE, pos)
+	c.UpdateList(dom, pos-ADDRESS_PER_PAGE, pos)
 }
 
-func (c *PageAddress) OnView(w *window.Window) {
-	c.UpdateList(w, 0, 5)
+func (c *PageAddress) OnView(w *DOM.Window, dom *DOM.DOM) {
+	c.UpdateList(dom, 0, 5)
 }
 
-func (c *PageAddress) OnContinue(w *window.Window, action string) {
+func (c *PageAddress) OnContinue(w *DOM.Window, dom *DOM.DOM, action string) {
 
 	switch action {
 	case "next":
-		c.Next(w)
+		c.Next(dom)
 	case "previous":
-		c.Previous(w)
+		c.Previous(dom)
 	case "continue":
-		page := DOM.SetSector(c)
-
-		index, err := page.GetStringValue(w, ".address")
+		index, err := dom.GetStringValueOf(".address")
 		if index == "" || err != nil {
 			return
 		}
@@ -341,9 +321,9 @@ func (c *PageAddress) OnContinue(w *window.Window, action string) {
 		}
 
 		Storage.AccessStorage.Seed = nil
-		page.ApplyForIt(w, ".address", DOM.ClearHTML)
+		dom.ApplyFor(".address", DOM.ClearHTML)
 
-		ViewApplication(w, &NanolletApp{})
+		w.ViewApplication(new(NanolletApp))
 	}
 
 }
