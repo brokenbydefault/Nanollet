@@ -1,8 +1,5 @@
 # Binaries for programs and plugins
 *.exe
-*.dll
-*.so
-*.dylib
 
 # Test binary, build with `go test -c`
 *.test
@@ -14,6 +11,7 @@
 .glide/
 .idea
 /GUI/Front/.idea
+/GUI/Front/*.go
 *.css
 
 test/
