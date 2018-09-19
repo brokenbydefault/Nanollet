@@ -214,11 +214,14 @@ func (c *PageList) Name() string {
 
 func (c *PageList) UpdateList(dom *DOM.DOM, min, max int) {
 	txbox, _ := dom.SelectFirstElement(".txbox")
-	txbox.Apply(DOM.ClearHTML)
 
 	txs := Storage.TransactionStorage.GetByFrontier(Storage.AccountStorage.Frontier)
 	if l := len(txs); max > l {
 		max = l
+	}
+
+	if max > 0 {
+		txbox.Apply(DOM.ClearHTML)
 	}
 
 	for i := min; i < max; i++ {
