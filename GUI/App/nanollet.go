@@ -16,6 +16,8 @@ import (
 	"image/color"
 )
 
+const TransactionsPerPage = 5
+
 type NanolletApp struct{}
 
 func (c *NanolletApp) Name() string {
@@ -202,25 +204,25 @@ func (c *PageRepresentative) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 	dom.ApplyFor(".address", DOM.ClearValue)
 }
 
-type PageList struct{}
+type PageList struct {
+	Position int
+}
 
 func (c *PageList) Name() string {
 	return "history"
 }
 
-func (c *PageList) OnView(w *DOM.Window, dom *DOM.DOM) {
-	balance, _ := Numbers.NewHumanFromRaw(Storage.AccountStorage.Balance).ConvertToBase(Numbers.MegaXRB, int(Numbers.MegaXRB))
-	display, _ := dom.SelectFirstElement(".fullamount")
-	display.SetValue(balance)
-
-	if Storage.TransactionStorage.Count() == 0 {
-		return
-	}
-
+func (c *PageList) UpdateList(dom *DOM.DOM, min, max int) {
 	txbox, _ := dom.SelectFirstElement(".txbox")
 	txbox.Apply(DOM.ClearHTML)
 
-	for i, tx := range Storage.TransactionStorage.GetByFrontier(Storage.AccountStorage.Frontier) {
+	txs := Storage.TransactionStorage.GetByFrontier(Storage.AccountStorage.Frontier)
+	if l := len(txs); max > l {
+		max = l
+	}
+
+	for i := min; i < max; i++ {
+		tx := txs[i]
 
 		hashPrev := tx.GetPrevious()
 		txPrev, _ := Storage.TransactionStorage.GetByHash(&hashPrev)
@@ -237,14 +239,46 @@ func (c *PageList) OnView(w *DOM.Window, dom *DOM.DOM) {
 
 		txdiv.CreateElementWithAttr("div", strings.ToUpper(txType.String()), DOM.Attrs{"class": "type"})
 		txdiv.CreateElementWithAttr("div", humanAmount, DOM.Attrs{"class": "amount"})
-
-		if i == 4 {
-			break
-		}
 	}
-
 }
 
-func (c *PageList) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
-	//no-op
+func (c *PageList) Next(dom *DOM.DOM) {
+	pos := c.Position
+	if pos+TransactionsPerPage >= len(Storage.TransactionStorage.GetByFrontier(Storage.AccountStorage.Frontier)) {
+		return
+	}
+
+	c.Position = pos + TransactionsPerPage
+	c.UpdateList(dom, c.Position, pos+(TransactionsPerPage*2))
+}
+
+func (c *PageList) Previous(dom *DOM.DOM) {
+	pos := c.Position
+	if pos == 0 {
+		return
+	}
+
+	c.Position = pos - TransactionsPerPage
+	c.UpdateList(dom, c.Position, pos)
+}
+
+func (c *PageList) OnView(w *DOM.Window, dom *DOM.DOM) {
+	balance, _ := Numbers.NewHumanFromRaw(Storage.AccountStorage.Balance).ConvertToBase(Numbers.MegaXRB, int(Numbers.MegaXRB))
+	display, _ := dom.SelectFirstElement(".fullamount")
+	display.SetValue(balance)
+
+	if Storage.TransactionStorage.Count() == 0 {
+		return
+	}
+
+	c.UpdateList(dom, 0, TransactionsPerPage)
+}
+
+func (c *PageList) OnContinue(w *DOM.Window, dom *DOM.DOM, action string) {
+	switch action {
+	case "next":
+		c.Next(dom)
+	case "previous":
+		c.Previous(dom)
+	}
 }
