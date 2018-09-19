@@ -218,7 +218,7 @@ func (c *PageMFA) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 
 type PageAddress struct{}
 
-const ADDRESS_PER_PAGE uint32 = 5
+const AddressesPerPage uint32 = 5
 
 func (c *PageAddress) Name() string {
 	return "address"
@@ -272,7 +272,7 @@ func (c *PageAddress) Next(dom *DOM.DOM) {
 		return
 	}
 
-	c.UpdateList(dom, pos+ADDRESS_PER_PAGE, pos+(ADDRESS_PER_PAGE*2))
+	c.UpdateList(dom, pos+AddressesPerPage, pos+(AddressesPerPage*2))
 }
 
 func (c *PageAddress) Previous(dom *DOM.DOM) {
@@ -281,7 +281,7 @@ func (c *PageAddress) Previous(dom *DOM.DOM) {
 		return
 	}
 
-	c.UpdateList(dom, pos-ADDRESS_PER_PAGE, pos)
+	c.UpdateList(dom, pos-AddressesPerPage, pos)
 }
 
 func (c *PageAddress) OnView(w *DOM.Window, dom *DOM.DOM) {

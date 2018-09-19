@@ -158,6 +158,10 @@ func GetSubType(tx, txPrevious Transaction) BlockType {
 		return Change
 	}
 
+	if txPrevious.GetBalance() == nil {
+		return NotABlock
+	}
+
 	if tx.GetBalance().Compare(txPrevious.GetBalance()) == 1 {
 		return Receive
 	} else {
@@ -168,14 +172,21 @@ func GetSubType(tx, txPrevious Transaction) BlockType {
 }
 
 func GetAmount(tx, txPrevious Transaction) *Numbers.RawAmount {
+	if tx.GetBalance() == nil {
+		return Numbers.NewMin()
+	}
+
 	switch GetSubType(tx, txPrevious) {
 	case Open:
 		return tx.GetBalance()
 	case Change:
 		return Numbers.NewMin()
 	case Send:
-		return tx.GetBalance().Subtract(txPrevious.GetBalance()).Abs()
+		fallthrough
 	case Receive:
+		if txPrevious.GetBalance() == nil {
+			return Numbers.NewMin()
+		}
 		return tx.GetBalance().Subtract(txPrevious.GetBalance()).Abs()
 	}
 
