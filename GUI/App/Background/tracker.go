@@ -76,10 +76,11 @@ func StartAddress(w *DOM.Window) error {
 
 	}
 
+	go realtimeUpdate(w)
+
 	Storage.TransactionStorage.Add(txs...)
 	DOM.UpdateAmount(w)
 
-	go realtimeUpdate(w)
 	go pending(w)
 
 	return nil
@@ -112,7 +113,7 @@ func realtimeUpdate(w *DOM.Window) {
 func acceptPending(w *DOM.Window, tx Block.Transaction) {
 	hash := tx.Hash()
 
-	if waitVotesConfirmation(tx, 6 * time.Minute) {
+	if waitVotesConfirmation(tx, 6*time.Minute) {
 		amount, err := Node.GetAmount(Connection, tx)
 		if err != nil {
 			return
