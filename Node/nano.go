@@ -249,6 +249,10 @@ func (srv *Server) listenUDP() {
 					}
 				} else {
 					switch h.MessageType {
+					case Packets.Publish:
+						srv.PublishHandler(srv, dest, h, b)
+					case Packets.ConfirmACK:
+						srv.ConfirmACKHandler(srv, dest, h, b)
 					case Packets.NodeHandshake:
 						srv.HandshakeHandler(srv, dest, h, b)
 					}

@@ -128,8 +128,7 @@ func waitVotesConfirmation(tx Block.Transaction, duration time.Duration) bool {
 	start := time.Now()
 	hash := tx.Hash()
 
-	ticker := time.NewTicker(1 * time.Second)
-	for range ticker.C {
+	for range time.Tick(2 * time.Second) {
 		if Storage.TransactionStorage.IsConfirmed(&hash, &Storage.Configuration.Account.Quorum) {
 			return true
 		}
@@ -141,6 +140,5 @@ func waitVotesConfirmation(tx Block.Transaction, duration time.Duration) bool {
 		}
 	}
 
-	ticker.Stop()
 	return false
 }
