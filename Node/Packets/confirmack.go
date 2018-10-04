@@ -10,8 +10,6 @@ import (
 	"encoding/binary"
 )
 
-//@TODO Support votes by blocks
-
 type ConfirmACKPackage struct {
 	PublicKey Wallet.PublicKey
 	Signature Wallet.Signature

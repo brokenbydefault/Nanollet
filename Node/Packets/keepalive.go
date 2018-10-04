@@ -68,7 +68,7 @@ func (p *KeepAlivePackage) Decode(_ *Header, src []byte) (err error) {
 		be := bi + PeerSize
 		dataPeer := src[bi:be]
 
-		p.List = append(p.List, Peer.NewPeer(dataPeer[:net.IPv6len], int(src[16])|int(src[17])<<8))
+		p.List = append(p.List, Peer.NewPeer(dataPeer[:net.IPv6len], int(dataPeer[16])|int(dataPeer[17])<<8))
 
 		bi = be
 	}

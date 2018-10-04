@@ -40,11 +40,11 @@ func TestKeepAlivePackage_Decode(t *testing.T) {
 	expected := []*Peer.Peer{
 		Peer.NewPeer(net.ParseIP("87.65.160.15"), 54000),
 		Peer.NewPeer(net.ParseIP("185.45.113.124"), 54000),
-		Peer.NewPeer(net.ParseIP("178.128.149.150"), 54000),
+		Peer.NewPeer(net.ParseIP("178.128.149.150"), 1024),
 		Peer.NewPeer(net.ParseIP("80.25.160.217"), 54000),
 		Peer.NewPeer(net.ParseIP("90.229.199.116"), 54000),
 		Peer.NewPeer(net.ParseIP("81.169.243.90"), 54000),
-		Peer.NewPeer(net.ParseIP("77.20.254.59"), 54000),
+		Peer.NewPeer(net.ParseIP("77.20.254.59"), 24946),
 		Peer.NewPeer(net.ParseIP("13.59.162.102"), 54000),
 	}
 
