@@ -22,7 +22,7 @@ func init() {
 
 func Start() {
 
-	w, err := window.New(sciter.SW_MAIN|sciter.SW_RESIZEABLE|sciter.SW_TITLEBAR|sciter.SW_CONTROLS, sciter.NewRect(200, 200, 900, 600))
+	w, err := window.New(sciter.SW_MAIN|sciter.SW_RESIZEABLE|sciter.SW_TITLEBAR|sciter.SW_CONTROLS|sciter.SW_GLASSY|sciter.SW_OWNS_VM, sciter.NewRect(200, 200, 900, 600))
 	if err != nil {
 		panic(err)
 	}
