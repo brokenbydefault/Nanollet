@@ -8,7 +8,7 @@ import (
 	"image/color"
 )
 
-const ADDRESS_PREFIX = "nano"
+const ADDRESS_PREFIX = "xrb"
 
 var ALLOWED_PREFIX = [...]string{"xrb", "nano"}
 
