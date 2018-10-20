@@ -4,7 +4,15 @@ import (
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"encoding"
+	"github.com/brokenbydefault/Nanollet/Util"
 )
+
+var (
+	GenesisAccount = Wallet.Address("xrb_3t6k35gi95xu6tergt6p69ck76ogmitsa8mnijtpxm9fkcm736xtoncuohr3").MustGetPublicKey()
+	BurnAccount = Wallet.Address("xrb_1111111111111111111111111111111111111111111111111111hifc8npp").MustGetPublicKey()
+	Epoch = [32]byte{0x65,0x70,0x6f,0x63,0x68,0x20,0x76,0x31,0x20,0x62,0x6c,0x6f,0x63,0x6b,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0}
+)
+
 
 type Transaction interface {
 	Encode() (data []byte)

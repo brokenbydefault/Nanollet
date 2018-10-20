@@ -136,8 +136,7 @@ func GetHistory(c Node, pk *Wallet.PublicKey, start *Block.BlockHash) (txs []Blo
 		for _, tx := range p.Transactions {
 			hash, sig := tx.Hash(), tx.GetSignature()
 
-			// @TODO (inkeliz) Support Epoch-Block
-			if !pk.IsValidSignature(hash[:], &sig) || hash != lastPreviousHash {
+			if (!pk.IsValidSignature(hash[:], &sig) && !Block.IsEpoch(tx)) || hash != lastPreviousHash {
 				continue
 			}
 
