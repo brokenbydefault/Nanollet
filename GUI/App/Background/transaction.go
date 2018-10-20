@@ -119,6 +119,7 @@ func processBlock(tx Block.Transaction, blockType Block.BlockType, amm *Numbers.
 	}
 
 	Storage.AccountStorage.Balance = tx.GetBalance()
+	Storage.AccountStorage.Representative = tx.SwitchToUniversalBlock(nil, nil).Representative
 	Storage.AccountStorage.Frontier = tx.Hash()
 
 	return nil
