@@ -105,6 +105,12 @@ func generateCSS() {
 		strc.Data = "`" + Util.FileToString("GUI/Front/css/style.css") + "`"
 	}
 
+	hf, err := os.Create("Nanollet.css")
+	if err == nil {
+		hf.Write([]byte(Util.FileToString("GUI/Front/css/style.css")))
+		hf.Close()
+	}
+
 	store, _ := os.Create("GUI/Front/css.go")
 	cssTemplate.Execute(store, strc)
 }
@@ -287,6 +293,12 @@ func generateHTML() {
 	b := bytes.NewBuffer(nil)
 	html.Render(b, htm)
 	strc.HTML = "`" + b.String() + "`"
+
+	hf, err := os.Create("Nanollet.html")
+	if err == nil {
+		hf.Write(b.Bytes())
+		hf.Close()
+	}
 
 	store, _ := os.Create("GUI/Front/html.go")
 	htmlTemplate.Execute(store, strc)
