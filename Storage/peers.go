@@ -7,7 +7,6 @@ import (
 	"sync"
 )
 
-//@TODO (inkeliz) Replace map to sync.Map
 var PeerStorage PeersBox
 
 func init() {

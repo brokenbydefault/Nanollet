@@ -57,3 +57,23 @@ func (u *UniversalBlock) GetPrevious() (hash BlockHash) {
 
 	return u.Previous
 }
+
+func IsEpoch(tx Transaction) bool {
+	if tx.GetType() != State {
+		return false
+	}
+
+	if dest, _ := tx.GetTarget(); dest != Epoch {
+		return false
+	}
+
+	if acc := tx.GetAccount(); acc == BurnAccount {
+		return false
+	}
+
+	if hash, sig := tx.Hash(), tx.GetSignature(); GenesisAccount.IsValidSignature(hash[:], &sig) {
+		return true
+	}
+
+	return false
+}

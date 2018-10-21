@@ -110,8 +110,7 @@ func (u *UniversalBlock) Decode(data []byte) (err error) {
 	}
 
 	hash := u.Hash()
-	// @TODO (inkeliz) Support Epoch-Block
-	if !u.Account.IsValidSignature(hash[:], &u.Signature) {
+	if !u.Account.IsValidSignature(hash[:], &u.Signature) && !IsEpoch(u) {
 		return ErrInvalidSignature
 	}
 
