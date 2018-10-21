@@ -13,6 +13,7 @@ func (w *Window) InitApplication(app Application) {
 		if err == nil {
 			DestroyHTML(button.el)
 		}
+
 		return
 	}
 

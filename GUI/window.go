@@ -32,7 +32,7 @@ func Start() {
 		w.SetOption(sciter.SCITER_SET_DEBUG_MODE, 1)
 	}
 
-	w.LoadHtml(string(Front.HTML), "/")
+	w.LoadHtml(Front.HTML, "/")
 	w.SetCSS(Front.CSSStyle, "style.css", "text/css")
 
 	win := DOM.NewWindow(w)
