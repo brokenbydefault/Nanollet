@@ -52,7 +52,7 @@ func (h *TransactionBox) Count() (len int) {
 }
 
 func (h *TransactionBox) IsConfirmed(hash *Block.BlockHash, quorum *Peer.Quorum) (valid bool) {
-	if h == nil || h.list == nil {
+	if h == nil || h.list == nil || quorum == nil {
 		return false
 	}
 
@@ -99,6 +99,32 @@ func (h *TransactionBox) IsConfirmed(hash *Block.BlockHash, quorum *Peer.Quorum)
 	}
 
 	return false
+}
+
+func (h *TransactionBox) WaitConfirmation(quorum *Peer.Quorum, timeout time.Duration, hashes ...*Block.BlockHash) (winner *Block.BlockHash, ok bool) {
+	if len(hashes) == 0 || quorum == nil {
+		return nil, false
+	}
+
+	c := make(chan *Block.BlockHash, len(hashes))
+	for _, hash := range hashes {
+		if hash == nil {
+			continue
+		}
+
+		go func(t *TransactionBox, h *Block.BlockHash, ch chan *Block.BlockHash) {
+			if t.IsConfirmed(h, quorum) {
+				c <- hash
+			}
+		}(h, hash, c)
+	}
+
+	select {
+	case hash := <-c:
+		return hash, true
+	case <-time.After(timeout):
+		return nil, false
+	}
 }
 
 func (h *TransactionBox) AddVotes(hash *Block.BlockHash, pk *Wallet.PublicKey, seq uint64) {

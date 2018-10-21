@@ -108,7 +108,7 @@ func GetAmount(c Node, tx Block.Transaction) (*Numbers.RawAmount, error) {
 	}
 
 	txPrev, err := GetBlock(c, &hashPrev)
-	if err != nil {
+	if txPrev ==nil || err != nil {
 		return nil, err
 	}
 
@@ -249,11 +249,10 @@ func GetBlock(c Node, hash *Block.BlockHash) (tx Block.Transaction, err error) {
 			cancel()
 		}
 
-		tx = p.Transactions[0]
-		return
+		return p.Transactions[0], nil
 	}
 
-	return tx, err
+	return tx, ErrTCPNotAvailable
 }
 
 // PostBlock sends a `publish` for the given tx, publishing the block to
