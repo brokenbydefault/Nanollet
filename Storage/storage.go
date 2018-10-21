@@ -1,3 +1,5 @@
+// +build !js
+
 package Storage
 
 import (
@@ -6,83 +8,69 @@ import (
 	"encoding/gob"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"bytes"
+	"path/filepath"
 )
 
-var ArbitraryStorage = configdir.New("BrokenByDefault", Configuration.Storage.Folder).QueryFolders(configdir.Global)[0]
-
-var PermanentStorage Persistent
-
-type Persistent struct {
-	SeedFY      Wallet.SeedFY
-	AllowedKeys []Wallet.PublicKey
-}
-
 func init() {
-	PermanentStorage.Load()
+	Engine = &DesktopStorage{
+		dir: configdir.New("BrokenByDefault", Configuration.Storage.Folder).QueryFolders(configdir.Global)[0],
+	}
+
+	Engine.Load(&PersistentStorage)
 }
 
-func (p *Persistent) Load() {
-	if ArbitraryStorage.Exists("storage.nanollet") {
-		r, err := ArbitraryStorage.ReadFile("storage.nanollet")
+type DesktopStorage struct {
+	dir *configdir.Config
+}
+
+func (s *DesktopStorage) Save(from *Persistent) {
+	b := new(bytes.Buffer)
+	if err := gob.NewEncoder(b).Encode(from); err != nil {
+		panic(err)
+	}
+
+	s.dir.WriteFile("storage.nanollet", b.Bytes())
+}
+
+func (s *DesktopStorage) Load(to *Persistent) {
+	if s.dir.Exists("storage.nanollet") {
+		r, err := s.dir.ReadFile("storage.nanollet")
 		if err != nil {
 			return
 		}
 
-		if err := gob.NewDecoder(bytes.NewReader(r)).Decode(p); err != nil {
+		if err := gob.NewDecoder(bytes.NewReader(r)).Decode(to); err != nil {
 			panic(err)
 		}
-	} else if ArbitraryStorage.Exists("mfa.dat") || ArbitraryStorage.Exists("wallet.dat") {
-		p.loadLegacy(ArbitraryStorage)
-		p.Save()
+	} else if s.dir.Exists("mfa.dat") || s.dir.Exists("wallet.dat") {
+		s.loadLegacy(to)
+		s.Save(to)
 	}
 }
 
-func (p *Persistent) Save() {
+func (s *DesktopStorage) Write(name string, data []byte) (path string, err error) {
+	return filepath.Join(s.dir.Path, name), s.dir.WriteFile(name, data)
+}
 
-	b := new(bytes.Buffer)
-	if err := gob.NewEncoder(b).Encode(p); err != nil {
-		panic(err)
-	}
-
-	ArbitraryStorage.WriteFile("storage.nanollet", b.Bytes())
+func (s *DesktopStorage) Read(name string) ([]byte, error) {
+	return s.dir.ReadFile(name)
 }
 
 // Backward compatibility for Nanollet 1.0 and Nanollet 2.0
-func (p *Persistent) loadLegacy(files *configdir.Config) {
-	if files.Exists("mfa.dat") {
-		if file, err := files.ReadFile("mfa.dat"); err == nil {
+func (s *DesktopStorage) loadLegacy(to *Persistent) {
+	if s.dir.Exists("mfa.dat") {
+		if file, err := s.dir.ReadFile("mfa.dat"); err == nil {
 			if b, ok := Util.SecureHexDecode(string(file)); ok && len(b) == 32 {
-				p.AddAllowedKey(Wallet.NewPublicKey(b))
+				to.AddAllowedKey(Wallet.NewPublicKey(b))
 			}
 		}
 	}
 
-	if files.Exists("wallet.dat") {
-		if data, err := files.ReadFile("wallet.dat"); err == nil {
+	if s.dir.Exists("wallet.dat") {
+		if data, err := s.dir.ReadFile("wallet.dat"); err == nil {
 			if seedfy, err := Wallet.ReadSeedFY(string(data)); err == nil {
-				p.SeedFY = seedfy
+				to.SeedFY = seedfy
 			}
 		}
 	}
-}
-
-func (p *Persistent) AddSeedFY(seedfy Wallet.SeedFY) {
-	p.SeedFY = seedfy
-	p.Save()
-}
-
-func (p *Persistent) AddAllowedKey(newKey Wallet.PublicKey) {
-	for _, key := range p.AllowedKeys {
-		if key == newKey {
-			return
-		}
-	}
-
-	if p.AllowedKeys == nil {
-		p.AllowedKeys = []Wallet.PublicKey{newKey}
-	} else {
-		p.AllowedKeys = append(p.AllowedKeys, newKey)
-	}
-
-	p.Save()
 }

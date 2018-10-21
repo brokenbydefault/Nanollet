@@ -1,5 +1,3 @@
-// +build !js
-
 package App
 
 import (
@@ -99,7 +97,7 @@ func (c *PageGenerate) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 		panic(err)
 	}
 
-	Storage.PermanentStorage.AddSeedFY(sf)
+	Storage.PersistentStorage.AddSeedFY(sf)
 
 	w.ViewPage(new(PagePassword))
 }
@@ -131,7 +129,7 @@ func (c *PageImport) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 		return
 	}
 
-	Storage.PermanentStorage.AddSeedFY(sf)
+	Storage.PersistentStorage.AddSeedFY(sf)
 
 	w.ViewPage(new(PagePassword))
 	dom.ApplyFor(".seed", DOM.ClearValue)
@@ -154,7 +152,7 @@ func (c *PagePassword) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 		return
 	}
 
-	seedfy := Storage.PermanentStorage.SeedFY
+	seedfy := Storage.PersistentStorage.SeedFY
 
 	need2FA, err := dom.GetStringValueOf(".ask2fa")
 	if err == nil && need2FA != "" {
@@ -177,7 +175,10 @@ func (c *PageMFA) Name() string {
 
 func (c *PageMFA) OnView(w *DOM.Window, dom *DOM.DOM) {
 	sk := Ephemeral.NewEphemeral()
-	requester, response := TwoFactor.NewRequesterServer(&sk, Storage.PermanentStorage.AllowedKeys)
+	requester, response, err := TwoFactor.NewRequesterServer(&sk, Storage.PersistentStorage.AllowedKeys)
+	if err != nil {
+		panic(err)
+	}
 
 	qr, err := requester.QRCode(300, color.RGBA{220, 220, 223, 1})
 	if err != nil {
@@ -191,7 +192,7 @@ func (c *PageMFA) OnView(w *DOM.Window, dom *DOM.DOM) {
 	go func() {
 		for resp := range response {
 			//@TODO Notify the user to allow or not the key
-			Storage.PermanentStorage.AddAllowedKey(resp.Capsule.Device)
+			Storage.PersistentStorage.AddAllowedKey(resp.Capsule.Device)
 			Storage.AccessStorage.Token = resp.Capsule.Token
 
 			c.OnContinue(w, dom, "")
@@ -207,7 +208,7 @@ func (c *PageMFA) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 		return
 	}
 
-	seedfy := Storage.PermanentStorage.SeedFY
+	seedfy := Storage.PersistentStorage.SeedFY
 
 	Storage.AccessStorage.Seed = seedfy.RecoverSeed(Storage.AccessStorage.Password, Storage.AccessStorage.Token[:])
 	copy(Storage.AccessStorage.Token[:], make([]byte, len(Storage.AccessStorage.Token)))

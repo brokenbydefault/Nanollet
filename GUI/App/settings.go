@@ -34,7 +34,7 @@ func (c *PageSeed) OnView(w *DOM.Window, dom *DOM.DOM) {
 		return
 	}
 
-	seedbox.SetValue(Storage.PermanentStorage.SeedFY.String())
+	seedbox.SetValue(Storage.PersistentStorage.SeedFY.String())
 }
 
 func (c *PageSeed) OnContinue(w *DOM.Window, dom *DOM.DOM, action string) {

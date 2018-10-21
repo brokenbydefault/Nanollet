@@ -8,18 +8,18 @@ import (
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/sciter-sdk/go-sciter"
 	"github.com/sciter-sdk/go-sciter/window"
-	"path/filepath"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 )
 
 func init() {
-	if err := Storage.ArbitraryStorage.WriteFile("sciter.link", Front.Sciter); err != nil {
+	path, err := Storage.Engine.Write("sciter.link", Front.Sciter)
+	if err != nil {
 		panic(err)
 	}
 
-	sciter.SetDLL(filepath.Join(Storage.ArbitraryStorage.Path, "sciter.link"))
+	sciter.SetDLL(path)
 }
 
 func Start() {
@@ -35,7 +35,7 @@ func Start() {
 	}
 
 	w.LoadHtml(Front.HTML, "/")
-	w.SetCSS(Front.CSSStyle, "style.css", "text/css")
+	w.SetCSS(Front.CSSStyle, "Nanollet.css", "text/css")
 
 	win := DOM.NewWindow(w)
 	win.InitApplication(new(App.NanolletApp))
@@ -44,7 +44,7 @@ func Start() {
 	win.InitApplication(new(App.SettingsApp))
 	win.ViewApplication(new(App.AccountApp))
 
-	if Storage.PermanentStorage.SeedFY != *new(Wallet.SeedFY) {
+	if Storage.PersistentStorage.SeedFY != *new(Wallet.SeedFY) {
 		win.ViewPage(new(App.PagePassword))
 	}
 

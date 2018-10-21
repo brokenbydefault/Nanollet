@@ -13,5 +13,8 @@
 /GUI/Front/.idea
 /GUI/Front/*.go
 *.css
+*.js
+*.html
 
 test/
+*.map
