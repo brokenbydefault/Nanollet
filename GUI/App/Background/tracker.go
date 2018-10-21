@@ -69,6 +69,7 @@ func StartAddress(w *DOM.Window) error {
 			for _, tx := range txs {
 				if typ := tx.GetType(); typ == Block.Change || typ == Block.Open {
 					Storage.AccountStorage.Representative = tx.SwitchToUniversalBlock(nil, nil).Representative
+					break
 				}
 			}
 			Storage.AccountStorage.Balance = balance
@@ -87,8 +88,8 @@ func StartAddress(w *DOM.Window) error {
 }
 
 func realtimeUpdate(w *DOM.Window) {
-	for tx := range Storage.TransactionStorage.Listen() {
-		tx := tx
+	for t := range Storage.TransactionStorage.Listen() {
+		tx := t
 
 		if dest, _ := tx.GetTarget(); dest != Storage.AccountStorage.PublicKey {
 			continue
@@ -98,6 +99,7 @@ func realtimeUpdate(w *DOM.Window) {
 		if tx, ok := Storage.TransactionStorage.GetByLinkHash(&hash); ok {
 			hash, sig := tx.Hash(), tx.GetSignature()
 			if Storage.AccountStorage.PublicKey.IsValidSignature(hash[:], &sig) {
+				// Ignore if it's already received.
 				continue
 			}
 		}
