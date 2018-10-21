@@ -22,7 +22,7 @@ func init() {
 
 func Start() {
 
-	w, err := window.New(sciter.SW_MAIN|sciter.SW_RESIZEABLE|sciter.SW_OWNS_VM|sciter.SW_GLASSY, sciter.NewRect(200, 200, 900, 600))
+	w, err := window.New(sciter.SW_MAIN|sciter.SW_RESIZEABLE|sciter.SW_TITLEBAR|sciter.SW_CONTROLS|sciter.SW_GLASSY|sciter.SW_OWNS_VM, sciter.NewRect(200, 200, 900, 600))
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +32,7 @@ func Start() {
 		w.SetOption(sciter.SCITER_SET_DEBUG_MODE, 1)
 	}
 
-	w.LoadHtml(string(Front.HTML), "/")
+	w.LoadHtml(Front.HTML, "/")
 	w.SetCSS(Front.CSSStyle, "style.css", "text/css")
 
 	win := DOM.NewWindow(w)

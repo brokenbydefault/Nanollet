@@ -2,40 +2,41 @@ package DOM
 
 import (
 	"strings"
+	"fmt"
 )
 
 func (w *Window) InitApplication(app Application) {
 	w.StartApplication(app)
 
 	if !app.HaveSidebar() {
+		button, err := w.root.SelectFirstElement(`.control button[id="`+ app.Name() +`"]`)
+		if err == nil {
+			DestroyHTML(button.el)
+		}
+
 		return
 	}
 
-	controlBar, _ := w.root.SelectFirstElement(".control")
-	moduleButton := controlBar.CreateElement("button", "")
+	button, err := w.root.SelectFirstElement(`.control button[id="`+ app.Name() +`"]`)
+	if err != nil {
+		panic(fmt.Sprintf("element %s was not found", `.control button[id="`+ app.Name() +`"]`))
+	}
 
-	moduleButton.CreateElementWithAttr("span", strings.Title(app.Name()), Attrs{"class": "title"})
-	moduleButton.CreateElementWithAttr("span", "", Attrs{"class": "pointer"})
-
-	moduleButton.On(Click, func(class string) {
+	button.On(Click, func(class string) {
 		w.root.ApplyForAll(".control button", DisableElement)
 		defer w.root.ApplyForAll(".control button", EnableElement)
 		w.ViewApplication(app)
 	})
 
-	aside := controlBar.CreateElementWithAttr("aside", "", Attrs{"class": "application", "id": app.Name()})
-
 	for _, p := range app.Pages() {
 		page := p
 
-		controlButton := aside.CreateElementWithAttr("button", "", Attrs{"class": strings.Title(page.Name())})
-		block := controlButton.CreateElementWithAttr("span", "", Attrs{"class": "block"})
+		pagebutton, err := w.root.SelectFirstElement(".control aside button."+strings.Title(page.Name()))
+		if err != nil {
+			panic(fmt.Sprintf("element %s was not found", `".control aside button.`+strings.Title(page.Name())))
+		}
 
-		block.CreateElementWithAttr("icon", "", Attrs{"class": "icon-" + page.Name()})
-		block.CreateElementWithAttr("span", strings.Title(page.Name()), Attrs{"class": "title"})
-		block.CreateElementWithAttr("span", "", Attrs{"class": "pointer"})
-
-		controlButton.On(Click, func(class string) {
+		pagebutton.On(Click, func(class string) {
 			w.root.ApplyForAll(".control button", DisableElement)
 			defer w.root.ApplyForAll(".control button", EnableElement)
 			w.ViewPage(page)

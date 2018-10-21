@@ -9,6 +9,7 @@ package main
 import (
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/kib357/less-go"
+	"golang.org/x/net/html"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -129,34 +130,208 @@ func generateHTML() {
 	strc := htmlStruct{}
 	strc.IsDebug = Storage.Configuration.DebugStatus
 
-	base, err := ioutil.ReadFile("GUI/Front/html/base.html")
+	base, err := os.Open("GUI/Front/html/0_base.html")
 	if err != nil {
 		panic(err)
 	}
 
-	baseSplit := bytes.Split(base, []byte("<section class=\"dynamic\">"))
-	if len(baseSplit) != 2 {
-		panic("invalid base.html")
+	defer base.Close()
+
+	htm, err := html.Parse(base)
+	if err != nil {
+		panic(err)
 	}
 
-	baseSplit[0] = append(baseSplit[0], []byte("<section class=\"dynamic\">")...)
+	section, ok := getElement(htm, "", []html.Attribute{{
+		Key: "class",
+		Val: "dynamic",
+	}})
+	if !ok {
+		panic("not found")
+	}
+
+	controlBar, ok := getElement(htm, "", []html.Attribute{{
+		Key: "class",
+		Val: "control",
+	}})
+	if !ok {
+		panic("not found")
+	}
 
 	pages, _ := filepath.Glob("GUI/Front/html/*")
 	for _, path := range pages {
-		if strings.Replace(filepath.Base(path), ".html", "", 1) == "base" {
+		if strings.Replace(filepath.Base(path), ".html", "", 1) == "0_base" {
 			continue
 		}
 
-		file, err := ioutil.ReadFile(path)
+		file, err := os.Open(path)
 		if err != nil {
 			panic(err)
 		}
 
-		baseSplit[0] = append(baseSplit[0], file...)
+		apphtml, err := html.Parse(file)
+		if err != nil {
+			panic(err)
+		}
+
+		app, ok := getElement(apphtml, "", []html.Attribute{
+			{Key: "application"},
+		})
+
+		addChild(section[0], app[0])
+
+		// Ignore if the app is not intended to be in the sidebar
+		if len(app[0].Attr) > 1 && app[0].Attr[1].Key == "no-sidebar" {
+			continue
+		}
+
+		// Sidebar button of the APP (e.g "Nanollet", "Nanofy")
+		addChild(controlBar[0], &html.Node{
+			FirstChild: &html.Node{
+				FirstChild: &html.Node{
+					Type: html.TextNode,
+					Data: strings.Title(app[0].Attr[0].Val),
+				},
+				Type: html.ElementNode,
+				Data: "span",
+				Attr: []html.Attribute{{
+					Key: "class",
+					Val: "title",
+				}},
+				NextSibling: &html.Node{
+					Type: html.ElementNode,
+					Data: "span",
+					Attr: []html.Attribute{{
+						Key: "class",
+						Val: "pointer",
+					}},
+				},
+			},
+			Type: html.ElementNode,
+			Data: "button",
+			Attr: []html.Attribute{{
+				Key: "id",
+				Val: app[0].Attr[0].Val,
+			}},
+		})
+
+		// Sidebar button for each page of the APP (e.g "Send", "Receive")
+		subMenu := &html.Node{
+			Type: html.ElementNode,
+			Data: "aside",
+			Attr: []html.Attribute{{
+				Key: "class",
+				Val: "application",
+			}, {
+				Key: "id",
+				Val: app[0].Attr[0].Val,
+			}},
+		}
+
+		s, ok := getElement(app[0], "section", nil)
+		if !ok {
+			panic("section not found")
+		}
+		for _, v := range s {
+			addChild(subMenu, &html.Node{
+				Type: html.ElementNode,
+				Data: "button",
+				Attr: []html.Attribute{{
+					Key: "class",
+					Val: strings.Title(v.Attr[0].Val),
+				}},
+				FirstChild: &html.Node{
+					Type: html.ElementNode,
+					Data: "span",
+					Attr: []html.Attribute{{
+						Key: "class",
+						Val: "block",
+					}},
+					FirstChild: &html.Node{
+						Type: html.ElementNode,
+						Data: "icon",
+						Attr: []html.Attribute{{
+							Key: "class",
+							Val: "icon-" + v.Attr[0].Val,
+						}},
+						NextSibling: &html.Node{
+							FirstChild: &html.Node{
+								Type: html.TextNode,
+								Data: strings.Title(v.Attr[0].Val),
+							},
+							Type: html.ElementNode,
+							Data: "span",
+							Attr: []html.Attribute{{
+								Key: "class",
+								Val: "title",
+							}},
+							NextSibling: &html.Node{
+								Type: html.ElementNode,
+								Data: "span",
+								Attr: []html.Attribute{{
+									Key: "class",
+									Val: "pointer",
+								}},
+							},
+						},
+					},
+				},
+			})
+		}
+
+		addChild(controlBar[0], subMenu)
+
+		file.Close()
 	}
 
-	strc.HTML = "`" + string(append(baseSplit[0], baseSplit[1]...)) + "`"
+	b := bytes.NewBuffer(nil)
+	html.Render(b, htm)
+	strc.HTML = "`" + b.String() + "`"
 
 	store, _ := os.Create("GUI/Front/html.go")
 	htmlTemplate.Execute(store, strc)
+}
+
+func getElement(node *html.Node, name string, attr []html.Attribute) (resp []*html.Node, ok bool) {
+	if node.Data == name || name == "" {
+		matches := 0
+
+		if attr != nil {
+			for _, v := range node.Attr {
+				for _, ex := range attr {
+					if v.Key == ex.Key && (v.Val == ex.Val || ex.Val == "") {
+						matches += 1
+					}
+				}
+			}
+		}
+
+		if matches == len(attr) {
+			resp, ok = append(resp, node), true
+		}
+	}
+
+	for c := node.FirstChild; c != nil; c = c.NextSibling {
+		if r, find := getElement(c, name, attr); find {
+			resp, ok = append(resp, r...), true
+		}
+	}
+
+	return
+}
+
+func addChild(node *html.Node, add *html.Node) {
+	if node.FirstChild == nil {
+		node.FirstChild = add
+		return
+	}
+
+	c := node.FirstChild
+	for {
+		if c.NextSibling == nil {
+			c.NextSibling = add
+			return
+		}
+		c = c.NextSibling
+	}
 }
