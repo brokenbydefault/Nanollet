@@ -158,7 +158,7 @@ func GetHistory(c Node, pk *Wallet.PublicKey, start *Block.BlockHash) (txs []Blo
 		for _, tx := range p.Transactions {
 			hash, sig := tx.Hash(), tx.GetSignature()
 
-			if (!pk.IsValidSignature(hash[:], &sig) && !Block.IsEpoch(tx)) || hash != lastPreviousHash {
+			if  hash != lastPreviousHash || (!pk.IsValidSignature(hash[:], &sig) && !Block.IsEpoch(tx)) {
 				continue
 			}
 
@@ -168,6 +168,63 @@ func GetHistory(c Node, pk *Wallet.PublicKey, start *Block.BlockHash) (txs []Blo
 		if len(p.Transactions) >= len(txs) {
 			txs, err = p.Transactions, nil
 		}
+	}
+
+	return txs, err
+}
+
+// GetMultiplesHistory retrieves all blocks for given pk. It will all chains received from
+// network, instead of the largest (GetHistory).
+//
+// This function don't request for vote, you need to request votes to verify if the block is valid on the network.
+// For usual cases the `GetHistory` should be used.
+func GetMultiplesHistory(c Node, pk *Wallet.PublicKey, start *Block.BlockHash) (txs map[Block.BlockHash][]Block.Transaction, err error) {
+	if start == nil {
+		h := Block.NewBlockHash(nil)
+		start = &h
+	}
+
+	req := Packets.NewBulkPullPackageRequest(*pk, *start)
+
+	packets, _ := c.SendTCP(req, Packets.BulkPull)
+	for packet := range packets {
+		p, ok := packet.(*Packets.BulkPullPackageResponse)
+		if !ok {
+			continue
+		}
+
+		l := len(p.Transactions)
+		if l <= 0 {
+			continue
+		}
+
+		// If already have this chain
+		if _, ok := txs[p.Transactions[0].Hash()]; ok  {
+			continue
+		}
+
+		// If the last block is not open
+		if hashPrev := p.Transactions[l-1].GetPrevious(); !Util.IsEmpty(hashPrev[:]) {
+			continue
+		}
+
+		pktx := p.Transactions[l-1].GetAccount()
+		if pktx != *pk {
+			continue
+		}
+
+		lastPreviousHash := p.Transactions[0].Hash()
+		for _, tx := range p.Transactions {
+			hash, sig := tx.Hash(), tx.GetSignature()
+
+			if hash != lastPreviousHash || (!pk.IsValidSignature(hash[:], &sig) && !Block.IsEpoch(tx)) {
+				continue
+			}
+
+			lastPreviousHash = tx.GetPrevious()
+		}
+
+		txs[p.Transactions[0].Hash()] = p.Transactions
 	}
 
 	return txs, err
