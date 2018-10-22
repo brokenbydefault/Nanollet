@@ -17,6 +17,7 @@ type Config struct {
 		Quorum         Peer.Quorum
 		//DefaultPrefixes       []string
 		MinimumAmount *Numbers.RawAmount
+		UnitAmount     Numbers.UnitBase
 	}
 
 	Node struct {
@@ -38,6 +39,7 @@ var Live = Config{
 		Representative Wallet.PublicKey
 		Quorum         Peer.Quorum
 		MinimumAmount  *Numbers.RawAmount
+		UnitAmount     Numbers.UnitBase
 	}{
 		Representative: Wallet.Address("xrb_1ywcdyz7djjdaqbextj4wh1db3wykze5ueh9wnmbgrcykg3t5k1se7zyjf95").MustGetPublicKey(),
 		Quorum: Peer.Quorum{
@@ -63,10 +65,11 @@ var Live = Config{
 				Wallet.Address("xrb_1x7biz69cem95oo7gxkrw6kzhfywq4x5dupw4z1bdzkb74dk9kpxwzjbdhhs").MustGetPublicKey(),
 				Wallet.Address("xrb_1ninja7rh37ehfp9utkor5ixmxyg8kme8fnzc4zty145ibch8kf5jwpnzr3r").MustGetPublicKey(),
 			},
-			Common: 30,
-			Fork:   50,
+			Common: 50,
+			Fork:   60,
 		},
 		MinimumAmount: Numbers.NewRawFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD3, 0xC2, 0x1B, 0xCE, 0xCC, 0xED, 0xA1, 0x00, 0x00, 0x00}),
+		UnitAmount:    Numbers.MegaXRB,
 	},
 
 	Node: struct {
@@ -102,6 +105,7 @@ var Beta = Config{
 		Representative Wallet.PublicKey
 		Quorum         Peer.Quorum
 		MinimumAmount  *Numbers.RawAmount
+		UnitAmount     Numbers.UnitBase
 	}{
 		Representative: Wallet.Address("xrb_1ywcdyz7djjdaqbextj4wh1db3wykze5ueh9wnmbgrcykg3t5k1se7zyjf95").MustGetPublicKey(),
 		Quorum: Peer.Quorum{
@@ -119,6 +123,7 @@ var Beta = Config{
 			Fork:   60,
 		},
 		MinimumAmount: Numbers.NewRawFromBytes([]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xD3, 0xC2, 0x1B, 0xCE, 0xCC, 0xED, 0xA1, 0x00, 0x00, 0x00}),
+		UnitAmount:    Numbers.MegaXRB,
 	},
 
 	Node: struct {
