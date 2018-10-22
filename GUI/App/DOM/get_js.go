@@ -28,11 +28,20 @@ func (el *Element) GetText() (result string, err error) {
 }
 
 func (el *Element) GetStringValue() (result string, err error) {
-	if strings.ToUpper(el.el.TagName()) == "TEXTAREA" {
-		return el.el.(*dom.HTMLTextAreaElement).Value, nil
+	if e, ok := el.el.(*dom.HTMLTextAreaElement); ok {
+		return e.Value, nil
 	}
 
-	return el.el.(*dom.HTMLInputElement).Value, nil
+	e, ok := el.el.(*dom.HTMLInputElement)
+	if !ok {
+		return "", nil
+	}
+
+	if t := strings.ToUpper(e.Type); (t == "CHECKBOX" || t == "OPTION") && !e.Checked {
+		return "", nil
+	}
+
+	return e.Value, nil
 }
 
 func (dom *DOM) GetStringValueOf(css string) (result string, err error) {
@@ -82,6 +91,3 @@ func (dom *DOM) GetFileOf(css string) (io.Reader, error) {
 
 	return input.GetFile()
 }
-
-
-
