@@ -32,7 +32,7 @@
     <button id="{{.Title | ToTitle}}"><span class="title">{{.Title | ToTitle}}</span><span class="pointer"></span></button>
     <aside class="application" id="{{.Title | ToTitle}}">
         {{range .Pages}}
-        <button class="{{. | ToTitle }}"><span class="block"><icon class="{{. | ToLower }}"></icon><span class="title">{{. | ToTitle}}</span><span
+        <button class="{{. | ToTitle }}"><span class="block"><icon class="icon-{{. | ToLower }}"></icon><span class="title">{{. | ToTitle}}</span><span
                 class="pointer"></span></span></button>
         {{end}}
     </aside>
