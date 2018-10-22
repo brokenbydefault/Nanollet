@@ -9,7 +9,7 @@ func (w *Window) InitApplication(app Application) {
 	w.StartApplication(app)
 
 	if !app.HaveSidebar() {
-		button, err := w.root.SelectFirstElement(`.control button[id="`+ app.Name() +`"]`)
+		button, err := w.root.SelectFirstElement(`.control button[id="`+ strings.Title(app.Name()) +`"]`)
 		if err == nil {
 			DestroyHTML(button.el)
 		}
@@ -17,9 +17,9 @@ func (w *Window) InitApplication(app Application) {
 		return
 	}
 
-	button, err := w.root.SelectFirstElement(`.control button[id="`+ app.Name() +`"]`)
+	button, err := w.root.SelectFirstElement(`.control button[id="`+ strings.Title(app.Name()) +`"]`)
 	if err != nil {
-		panic(fmt.Sprintf("element %s was not found", `.control button[id="`+ app.Name() +`"]`))
+		panic(fmt.Sprintf("element %s was not found", `.control button[id="`+ strings.Title(app.Name()) +`"]`))
 	}
 
 	button.On(Click, func(class string) {
@@ -52,7 +52,7 @@ func (w *Window) ViewApplication(app Application) error {
 		el.SetAttr("class", "")
 	}
 
-	w.root.ApplyForAll(".application#"+app.Name()+" button", ShowElement)
+	w.root.ApplyForAll(".application#"+strings.Title(app.Name())+" button", ShowElement)
 
 	return w.ViewPage(app.Pages()[0])
 }
