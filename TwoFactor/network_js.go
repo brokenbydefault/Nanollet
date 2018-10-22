@@ -8,11 +8,13 @@ import (
 	"encoding/binary"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/jaracil/goco/chrome/tcpsockets"
+	"errors"
 )
 
-//func NewRequesterServer(sk *Ephemeral.SecretKey, allowedDevices []Wallet.PublicKey) (Request, <-chan Envelope) {
-// no-op
-//}
+func NewRequesterServer(sk *Ephemeral.SecretKey, allowedDevices []Wallet.PublicKey) (req Request, ch <-chan Envelope, err error) {
+	// NO-OP
+	return req, nil, errors.New("not supported")
+}
 
 func ReplyRequest(device *Wallet.SecretKey, token Token, request Request) error {
 	sk := Ephemeral.NewEphemeral()
