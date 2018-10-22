@@ -1,3 +1,5 @@
+// +build !js
+
 package Util
 
 import "io/ioutil"

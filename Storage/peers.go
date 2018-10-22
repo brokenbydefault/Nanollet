@@ -138,7 +138,7 @@ func (h *PeersBox) Add(peers ...*Peer.Peer) (n int) {
 
 	for _, peer := range peers {
 		if h.Count() < 1024 {
-			if _, old := h.list.LoadOrStore(string(peer.UDP.IP), peer); !old {
+			if _, old := h.list.LoadOrStore(string(peer.IP), peer); !old {
 				n++
 			}
 		}
@@ -157,6 +157,6 @@ func (h *PeersBox) Remove(peers ...*Peer.Peer) {
 			break
 		}
 
-		h.list.Delete(string(peer.UDP.IP))
+		h.list.Delete(string(peer.IP))
 	}
 }

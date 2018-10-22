@@ -1,5 +1,3 @@
-// +build !js
-
 package App
 
 import (
@@ -70,17 +68,16 @@ func (c *PageWallet) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 	var dest Wallet.PublicKey
 	switch {
 	case Wallet.Address(addrOrAlias).IsValid():
-		if dest, err = Wallet.Address(addrOrAlias).GetPublicKey(); err != nil {
-			DOM.UpdateNotification(w, "The address is wrong")
-			return
-		}
+		dest, err = Wallet.Address(addrOrAlias).GetPublicKey()
 	case OpenCAP.Address(addrOrAlias).IsValid():
-		if dest, err = OpenCAP.Address(addrOrAlias).GetPublicKey(); err != nil {
-			DOM.UpdateNotification(w, "The address was not found")
-			return
-		}
+		dest, err = OpenCAP.Address(addrOrAlias).GetPublicKey()
 	default:
 		DOM.UpdateNotification(w, "The address invalid or it's not supported")
+		return
+	}
+
+	if err != nil {
+		DOM.UpdateNotification(w, "The address is wrong or was not found")
 		return
 	}
 
@@ -176,6 +173,11 @@ func (c *PageRepresentative) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 	representative, err := address.GetPublicKey()
 	if err != nil || !address.IsValid() {
 		DOM.UpdateNotification(w, "The given address is invalid")
+		return
+	}
+
+	if Util.IsEmpty(Storage.AccountStorage.Frontier[:]) {
+		Storage.AccountStorage.Representative = representative
 		return
 	}
 

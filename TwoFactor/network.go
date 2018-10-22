@@ -9,10 +9,10 @@ import (
 	"github.com/brokenbydefault/Nanollet/TwoFactor/Ephemeral"
 )
 
-func NewRequesterServer(sk *Ephemeral.SecretKey, allowedDevices []Wallet.PublicKey) (Request, <-chan *Envelope) {
+func NewRequesterServer(sk *Ephemeral.SecretKey, allowedDevices []Wallet.PublicKey) (req Request, ch <-chan *Envelope, err error) {
 	tcp, err := net.ListenTCP("tcp", &net.TCPAddr{IP: getIP()})
 	if err != nil {
-		panic(err)
+		return req, nil, err
 	}
 
 	c := make(chan *Envelope, 1)
@@ -20,7 +20,7 @@ func NewRequesterServer(sk *Ephemeral.SecretKey, allowedDevices []Wallet.PublicK
 
 	addr := tcp.Addr().(*net.TCPAddr)
 
-	return NewRequester(sk.PublicKey(), addr.IP, addr.Port), c
+	return NewRequester(sk.PublicKey(), addr.IP, addr.Port), c, nil
 }
 
 func ReplyRequest(device *Wallet.SecretKey, token Token, request Request) error {

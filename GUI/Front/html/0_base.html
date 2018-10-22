@@ -3,7 +3,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Nanollet</title>
 
-    <link rel="stylesheet" type="text/css" href="../css/style.css">
+    <link rel="stylesheet" type="text/css" href="Nanollet.css">
 </head>
 <body class="notconnected">
 
@@ -15,11 +15,11 @@
     <section class="account">
         <div class="box">
             <icon class="icon-coins"></icon>
-            <div class="ammount"> </div>
+            <div class="ammount"></div>
         </div>
         <div class="box">
             <icon class="icon-nodes"></icon>
-            <div class="nodes"> </div>
+            <div class="nodes"></div>
         </div>
         <button role="window-close">
             <icon id="end" class="icon-exit"></icon>
@@ -28,13 +28,24 @@
 </header>
 
 <section class="control">
+{{range .Menu}}
+    <button id="{{.Title | ToTitle}}"><span class="title">{{.Title | ToTitle}}</span><span class="pointer"></span></button>
+    <aside class="application" id="{{.Title | ToTitle}}">
+        {{range .Pages}}
+        <button class="{{. | ToTitle }}"><span class="block"><icon class="icon-{{. | ToLower }}"></icon><span class="title">{{. | ToTitle}}</span><span
+                class="pointer"></span></span></button>
+        {{end}}
+    </aside>
+{{end}}
 </section>
 
 <section class="dynamic">
+{{range .App}}
+    {{.}}
+{{end}}
 </section>
 
 <section class="notification">
-    <!--<button class="notification"></button>-->
 </section>
 <!--
     Custom Input - DropZone:
@@ -63,6 +74,8 @@
         }
       }
     }
+
 </script>
+<script src="Nanollet.js" type="application/javascript"></script>
 </body>
 </html>

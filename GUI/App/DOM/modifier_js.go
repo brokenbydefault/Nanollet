@@ -19,6 +19,9 @@ func (el *Element) SetText(text string) error {
 }
 
 func (el *Element) SetValue(value string) error {
+	if _, ok := el.el.(*dom.HTMLTextAreaElement); ok {
+		el.SetText(value)
+	}
 	el.el.SetNodeValue(value)
 	return nil
 }
