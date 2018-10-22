@@ -14,16 +14,21 @@ import (
 var Connection Node.Node
 
 func init() {
-	Connection = &Node.Server{
-		Peers:          &Storage.PeerStorage,
-		Transactions:   &Storage.TransactionStorage,
-		Header:         Storage.Configuration.Node.Header,
-		PublishHandler: PublishHandler,
+	Connection = Node.NewServer(
+		Storage.Configuration.Node.Header,
+		&Storage.PeerStorage,
+		&Storage.TransactionStorage,
+	)
+
+	Handler := Node.NewHandler(Connection)
+	Handler.PublishHandler = PublishHandler
+
+	if err := Handler.Start(); err != nil {
+		panic(err)
 	}
-	go Connection.Start()
 }
 
-func PublishHandler(srv *Node.Server, _ *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
+func PublishHandler(node Node.Node, _ *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
 	packet := new(Packets.PushPackage)
 
 	if err := packet.Decode(rHeader, msg); err != nil {
@@ -40,7 +45,7 @@ func PublishHandler(srv *Node.Server, _ *net.UDPAddr, rHeader *Packets.Header, m
 		return
 	}
 
-	srv.Transactions.Add(packet.Transaction)
+	node.Transactions().Add(packet.Transaction)
 }
 
 func StartAddress(w *DOM.Window) error {
