@@ -6,7 +6,6 @@ import (
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"os"
 	"github.com/brokenbydefault/Nanollet/Node"
 	"github.com/brokenbydefault/Nanollet/Block"
 )
@@ -39,19 +38,8 @@ func (c *PageSign) OnView(w *DOM.Window, dom *DOM.DOM) {
 }
 
 func (c *PageSign) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
-	filePath, err := dom.GetStringValueOf(".filepath")
-	if filePath == "" || err != nil {
-		return
-	}
-
-	file, err := os.Open(filePath[7:])
+	file, err := dom.GetFileOf(".filepath")
 	if err != nil {
-		DOM.UpdateNotification(w, "There was a problem opening the file")
-		return
-	}
-
-	stats, err := file.Stat()
-	if err != nil || stats.IsDir() {
 		DOM.UpdateNotification(w, "There was a problem opening the file")
 		return
 	}
@@ -100,10 +88,8 @@ func (c *PageVerify) OnView(w *DOM.Window, dom *DOM.DOM) {
 }
 
 func (c *PageVerify) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
-
 	addr, _ := dom.GetStringValueOf(".address")
-	filePath, err := dom.GetStringValueOf(".filepath")
-	if addr == "" || filePath == "" || err != nil {
+	if addr == "" {
 		return
 	}
 
@@ -113,15 +99,9 @@ func (c *PageVerify) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 		return
 	}
 
-	file, err := os.Open(filePath[7:])
+	file, err := dom.GetFileOf(".filepath")
 	if err != nil {
 		DOM.UpdateNotification(w, "There was a problem opening the file")
-		return
-	}
-
-	stats, err := file.Stat()
-	if err != nil || stats.IsDir() {
-		DOM.UpdateNotification(w, "Only files can be signed")
 		return
 	}
 

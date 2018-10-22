@@ -5,6 +5,9 @@ package DOM
 import (
 	"honnef.co/go/js/dom"
 	"strings"
+	"io"
+	"bytes"
+	"github.com/gopherjs/gopherjs/js"
 )
 
 func (el *Element) GetAttr(name string) (result string, err error) {
@@ -54,3 +57,31 @@ func (dom *DOM) GetBytesValueOf(css string) (result []byte, err error) {
 
 	return input.GetBytesValue()
 }
+
+func (el *Element) GetFile() (io.Reader, error) {
+	input, ok := el.el.(*dom.HTMLInputElement)
+	if !ok {
+		return nil, ErrInvalidElement
+	}
+
+	var b = make(chan io.Reader)
+	fileReader := js.Global.Get("FileReader").New()
+	fileReader.Set("onload", func() {
+		b <- bytes.NewReader(js.Global.Get("Uint8Array").New(fileReader.Get("result")).Interface().([]byte))
+	})
+	fileReader.Call("readAsArrayBuffer", input.Files()[0].Object)
+
+	return <-b, nil
+}
+
+func (dom *DOM) GetFileOf(css string) (io.Reader, error) {
+	input, err := dom.SelectFirstElement(css)
+	if err != nil {
+		return nil, err
+	}
+
+	return input.GetFile()
+}
+
+
+
