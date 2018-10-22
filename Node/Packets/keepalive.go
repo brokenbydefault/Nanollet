@@ -1,7 +1,6 @@
 package Packets
 
 import (
-	"net"
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
 )
 
@@ -38,8 +37,8 @@ func (p *KeepAlivePackage) Encode(dst []byte) (n int, err error) {
 
 	bi := 0
 	for _, peer := range p.List[:max] {
-		bi += copy(dst[bi:], peer.UDP.IP)
-		bi += copy(dst[bi:], []byte{byte(peer.UDP.Port), byte(peer.UDP.Port << 8)})
+		bi += copy(dst[bi:], peer.IP)
+		bi += copy(dst[bi:], []byte{byte(peer.Port), byte(peer.Port << 8)})
 	}
 
 	return KeepAlivePackageSize, nil
@@ -68,7 +67,7 @@ func (p *KeepAlivePackage) Decode(_ *Header, src []byte) (err error) {
 		be := bi + PeerSize
 		dataPeer := src[bi:be]
 
-		p.List = append(p.List, Peer.NewPeer(dataPeer[:net.IPv6len], int(dataPeer[16])|int(dataPeer[17])<<8))
+		p.List = append(p.List, Peer.NewPeer(dataPeer[:16], int(dataPeer[16])|int(dataPeer[17])<<8))
 
 		bi = be
 	}

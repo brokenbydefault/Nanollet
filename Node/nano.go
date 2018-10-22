@@ -1,3 +1,5 @@
+// +build !js
+
 package Node
 
 import (
@@ -32,15 +34,15 @@ func NewServer(Header Packets.Header, Peer *Storage.PeersBox, Tx *Storage.Transa
 	}
 }
 
-func (srv Server) Peers() *Storage.PeersBox {
+func (srv *Server) Peers() *Storage.PeersBox {
 	return srv.Peer
 }
 
-func (srv Server) Transactions() *Storage.TransactionBox {
+func (srv *Server) Transactions() *Storage.TransactionBox {
 	return srv.Transaction
 }
 
-func (srv Server) ListenTCP() (ch <-chan RawTCP, err error) {
+func (srv *Server) ListenTCP() (ch <-chan RawTCP, err error) {
 	// no-op
 	return nil, nil
 }
@@ -62,7 +64,7 @@ func (srv *Server) ListenUDP() (ch <-chan RawUDP, err error) {
 
 			c <- RawUDP{
 				Raw:    b[:end],
-				Source: dest,
+				Source: Peer.NewPeer(dest.IP, dest.Port),
 			}
 		}
 	}()
@@ -72,11 +74,16 @@ func (srv *Server) ListenUDP() (ch <-chan RawUDP, err error) {
 
 // SendUDPTo sends a package to specific peer, this peer must accept UDP.
 func (srv *Server) SendUDPTo(packet Packets.PacketUDP, dest *Peer.Peer) (err error) {
+	if dest == nil {
+		return
+	}
+
 	if srv.udp == nil {
 		srv.initUDP()
 	}
 
-	if _, err := srv.udp.WriteTo(Packets.EncodePacketUDP(srv.Header, packet), dest.UDP); err != nil {
+
+	if _, err := srv.udp.WriteTo(Packets.EncodePacketUDP(srv.Header, packet), &net.UDPAddr{IP: dest.IP, Port: dest.Port}); err != nil {
 		return err
 	}
 
@@ -95,13 +102,13 @@ func (srv *Server) SendUDP(packet Packets.PacketUDP) (err error) {
 
 // SendTCPTo sends a package to specific peer, this peer must accept TCP.
 func (srv *Server) SendTCPTo(request Packets.PacketTCP, responseType Packets.MessageType, dest *Peer.Peer) (packet Packets.PacketTCP, err error) {
-	if dest == nil || dest.UDP == nil {
+	if dest == nil {
 		return packet, ErrTCPNotAvailable
 	}
 
 	packet = Packets.DecodeResponsePacketTCP(responseType)
 
-	tcp, err := net.DialTCP("tcp", nil, &net.TCPAddr{IP: dest.UDP.IP, Port: dest.UDP.Port})
+	tcp, err := net.DialTCP("tcp", nil, &net.TCPAddr{IP: dest.IP, Port: dest.Port})
 	if err != nil {
 		return packet, err
 	}
@@ -156,7 +163,8 @@ func (srv *Server) sendTCPToContext(ctx context.Context, request Packets.PacketT
 
 	packet = Packets.DecodeResponsePacketTCP(responseType)
 
-	tcp, err := dialer.DialContext(ctx, "tcp", dest.String())
+	addr := &net.TCPAddr{IP: dest.IP, Port: dest.Port}
+	tcp, err := dialer.DialContext(ctx, "tcp", addr.String())
 	if err != nil {
 		return packet, err
 	}

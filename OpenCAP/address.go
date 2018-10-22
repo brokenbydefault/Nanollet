@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"encoding/json"
 	"errors"
-	"net"
 	"time"
 	"github.com/brokenbydefault/Nanollet/Util"
 )
@@ -108,7 +107,7 @@ func (addr Address) LookupHost() string {
 		return ""
 	}
 
-	_, srvAddrs, err := net.LookupSRV("opencap", "tcp", host)
+	_, srvAddrs, err := Util.LookupSRV("opencap", "tcp", host)
 	if err != nil || len(srvAddrs) < 1 {
 		return ""
 	}

@@ -1,7 +1,6 @@
 package Node
 
 import (
-	"net"
 	"time"
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
@@ -12,12 +11,12 @@ import (
 
 type RawUDP struct {
 	Raw    []byte
-	Source *net.UDPAddr
+	Source *Peer.Peer
 }
 
 type RawTCP struct {
 	Raw    []byte
-	Source *net.TCPAddr
+	Source *Peer.Peer
 }
 
 type Node interface {
@@ -34,7 +33,7 @@ type Node interface {
 	Transactions() *Storage.TransactionBox
 }
 
-type HandlerFunc func(Node Node, dest *net.UDPAddr, rHeader *Packets.Header, msg []byte)
+type HandlerFunc func(Node Node, dest *Peer.Peer, rHeader *Packets.Header, msg []byte)
 type SenderFunc func(Node Node)
 
 type HandlerGroup struct {
@@ -113,29 +112,29 @@ func (hg *HandlerGroup) readUDP(raw RawUDP) {
 	if peer, ok := hg.Node.Peers().Get(raw.Source.IP); ok && peer.IsKnow() && peer.IsActive() {
 		switch header.MessageType {
 		case Packets.KeepAlive:
-			hg.KeepAliveHandler(hg.Node, raw.Source, header,raw.Raw)
+			hg.KeepAliveHandler(hg.Node, raw.Source, header, raw.Raw)
 		case Packets.Publish:
-			hg.PublishHandler(hg.Node, raw.Source, header,raw.Raw)
+			hg.PublishHandler(hg.Node, raw.Source, header, raw.Raw)
 		case Packets.ConfirmReq:
-			hg.ConfirmReqHandler(hg.Node, raw.Source, header,raw.Raw)
+			hg.ConfirmReqHandler(hg.Node, raw.Source, header, raw.Raw)
 		case Packets.ConfirmACK:
-			hg.ConfirmACKHandler(hg.Node, raw.Source, header,raw.Raw)
+			hg.ConfirmACKHandler(hg.Node, raw.Source, header, raw.Raw)
 		case Packets.NodeHandshake:
-			hg.HandshakeHandler(hg.Node, raw.Source, header,raw.Raw)
+			hg.HandshakeHandler(hg.Node, raw.Source, header, raw.Raw)
 		}
 	} else {
 		switch header.MessageType {
 		case Packets.Publish:
-			hg.PublishHandler(hg.Node, raw.Source, header,raw.Raw)
+			hg.PublishHandler(hg.Node, raw.Source, header, raw.Raw)
 		case Packets.ConfirmACK:
-			hg.ConfirmACKHandler(hg.Node, raw.Source, header,raw.Raw)
+			hg.ConfirmACKHandler(hg.Node, raw.Source, header, raw.Raw)
 		case Packets.NodeHandshake:
-			hg.HandshakeHandler(hg.Node, raw.Source, header,raw.Raw)
+			hg.HandshakeHandler(hg.Node, raw.Source, header, raw.Raw)
 		}
 	}
 }
 
-func defaultKeepAliveHandler(node Node, dest *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
+func defaultKeepAliveHandler(node Node, dest *Peer.Peer, rHeader *Packets.Header, msg []byte) {
 	packet := new(Packets.KeepAlivePackage)
 
 	if err := packet.Decode(rHeader, msg); err != nil {
@@ -155,7 +154,7 @@ func defaultKeepAliveHandler(node Node, dest *net.UDPAddr, rHeader *Packets.Head
 
 }
 
-func defaultHandshakeHandler(node Node, dest *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
+func defaultHandshakeHandler(node Node, dest *Peer.Peer, rHeader *Packets.Header, msg []byte) {
 	packet := new(Packets.HandshakePackage)
 
 	if err := packet.Decode(rHeader, msg); err != nil {
@@ -185,7 +184,7 @@ func defaultHandshakeHandler(node Node, dest *net.UDPAddr, rHeader *Packets.Head
 	}
 }
 
-func defaultPublishHandler(node Node, _ *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
+func defaultPublishHandler(node Node, _ *Peer.Peer, rHeader *Packets.Header, msg []byte) {
 	packet := new(Packets.PushPackage)
 
 	if err := packet.Decode(rHeader, msg); err != nil {
@@ -199,7 +198,7 @@ func defaultPublishHandler(node Node, _ *net.UDPAddr, rHeader *Packets.Header, m
 	node.Transactions().Add(packet.Transaction)
 }
 
-func defaultConfirmACKHandler(node Node, _ *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
+func defaultConfirmACKHandler(node Node, _ *Peer.Peer, rHeader *Packets.Header, msg []byte) {
 	packet := new(Packets.ConfirmACKPackage)
 
 	if err := packet.Decode(rHeader, msg); err != nil {
@@ -211,7 +210,7 @@ func defaultConfirmACKHandler(node Node, _ *net.UDPAddr, rHeader *Packets.Header
 	}
 }
 
-func defaultConfirmReqHandler(_ Node, _ *net.UDPAddr, _ *Packets.Header, _ []byte) {
+func defaultConfirmReqHandler(_ Node, _ *Peer.Peer, _ *Packets.Header, _ []byte) {
 	//@TODO create support to Confirm_Req
 	//NO-OP
 }

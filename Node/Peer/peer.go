@@ -2,7 +2,6 @@ package Peer
 
 import (
 	"net"
-	"strings"
 	"errors"
 	"strconv"
 	"time"
@@ -27,8 +26,8 @@ var (
 )
 
 type Peer struct {
-	UDP *net.UDPAddr
-	TCP *net.TCPAddr
+	IP   []byte
+	Port int
 
 	LastSeen  time.Time
 	PublicKey Wallet.PublicKey
@@ -38,10 +37,8 @@ type Peer struct {
 
 func NewPeer(ip net.IP, port int) (peer *Peer) {
 	peer = &Peer{
-		UDP: &net.UDPAddr{
-			IP:   ip,
-			Port: port,
-		},
+		IP:       ip,
+		Port:     port,
 		LastSeen: time.Now(),
 	}
 
@@ -52,12 +49,21 @@ func NewPeer(ip net.IP, port int) (peer *Peer) {
 
 func NewPeersFromString(hosts ...string) (peers []*Peer) {
 	for _, host := range hosts {
-		if ip, port, err := parseIP(host); err == nil {
-			peers = append(peers, NewPeer(ip, port))
+
+		iph, porth, err := net.SplitHostPort(host)
+		if err != nil {
 			continue
 		}
 
-		if ips, port, err := parseHost(host); err == nil {
+		port, err := strconv.Atoi(porth)
+		if err != nil {
+			continue
+		}
+
+		if ip := net.ParseIP(iph); ip != nil {
+			peers = append(peers, NewPeer(ip, port))
+		} else {
+			ips, _ := Util.LookupIP(iph)
 			for _, ip := range ips {
 				peers = append(peers, NewPeer(ip, port))
 			}
@@ -89,63 +95,4 @@ func (p *Peer) IsKnow() bool {
 	}
 
 	return true
-}
-
-func (p *Peer) String() string {
-	if p.UDP != nil {
-		return p.UDP.String()
-	}
-
-	if p.TCP != nil {
-		return p.TCP.String()
-	}
-
-	return ""
-}
-
-func parseHost(s string) (ips []net.IP, port int, err error) {
-	split := strings.Split(s, ":")
-	if len(split) < 2 {
-		return ips, port, ErrIncompleteData
-	}
-
-	port, err = parsePort(split[1])
-	if err != nil {
-		return ips, port, err
-	}
-
-	ips, err = net.LookupIP(split[0])
-	if err != nil {
-		return ips, port, ErrInvalidIP
-	}
-
-	return ips, port, nil
-}
-
-func parseIP(s string) (ip net.IP, port int, err error) {
-	split := strings.Split(s, ":")
-	if len(split) < 2 {
-		return ip, port, ErrIncompleteData
-	}
-
-	port, err = parsePort(split[1])
-	if err != nil {
-		return ip, port, err
-	}
-
-	ip = net.ParseIP(split[0])
-	if ip == nil {
-		return ip, port, ErrInvalidIP
-	}
-
-	return ip, port, nil
-}
-
-func parsePort(s string) (port int, err error) {
-	port, err = strconv.Atoi(s)
-	if err != nil || port > 65535 {
-		return 0, ErrInvalidPort
-	}
-
-	return port, nil
 }

@@ -6,9 +6,9 @@ import (
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Numbers"
 	"github.com/brokenbydefault/Nanollet/Node"
-	"net"
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
 	"time"
+	"github.com/brokenbydefault/Nanollet/Node/Peer"
 )
 
 var Connection Node.Node
@@ -28,7 +28,7 @@ func init() {
 	}
 }
 
-func PublishHandler(node Node.Node, _ *net.UDPAddr, rHeader *Packets.Header, msg []byte) {
+func PublishHandler(node Node.Node, _ *Peer.Peer, rHeader *Packets.Header, msg []byte) {
 	packet := new(Packets.PushPackage)
 
 	if err := packet.Decode(rHeader, msg); err != nil {
