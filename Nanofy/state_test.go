@@ -8,12 +8,22 @@ import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Wallet"
 	"github.com/brokenbydefault/Nanollet/Storage"
+	"github.com/brokenbydefault/Nanollet/Node/Packets"
 )
 
 func TestVersion1_VerifyBlock(t *testing.T) {
 
-	con := Node.NewServer(Storage.Configuration.Node.Header)
-	con.Start()
+	con := Node.NewServer(Packets.Header{
+		MagicNumber:   82,
+		NetworkType:   Packets.Live,
+		VersionMax:    13,
+		VersionUsing:  13,
+		VersionMin:    13,
+		MessageType:   Packets.Invalid,
+		ExtensionType: 0,
+	}, &Storage.PeerStorage, &Storage.TransactionStorage)
+
+	Node.NewHandler(con).Start()
 	time.Sleep(1 * time.Second)
 
 	flaghash := Block.NewBlockHash(Util.SecureHexMustDecode("A7CEB0E504E31D74CD87DB0990B9C44D8211987C464BE758C6007C6DA2D188FB"))

@@ -5,6 +5,7 @@ import (
 	"net"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Node/Peer"
+	"bytes"
 )
 
 func BenchmarkKeepAlivePackage_Encode(b *testing.B) {
@@ -62,12 +63,12 @@ func TestKeepAlivePackage_Decode(t *testing.T) {
 	}
 
 	for i, peer := range pack.List {
-		if !expected[i].UDP.IP.Equal(peer.UDP.IP) {
-			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.UDP.IP, expected[i].UDP.IP)
+		if !bytes.Equal(expected[i].IP, peer.IP) {
+			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.IP, expected[i].IP)
 		}
 
-		if expected[i].UDP.Port != peer.UDP.Port {
-			t.Errorf("invalid decode, wrong port. Gets %d expecting %d", peer.UDP.Port, expected[i].UDP.Port)
+		if expected[i].Port != peer.Port {
+			t.Errorf("invalid decode, wrong port. Gets %d expecting %d", peer.Port, expected[i].Port)
 		}
 	}
 
@@ -98,12 +99,12 @@ func TestKeepAlivePackage_Encode(t *testing.T) {
 	}
 
 	for i, peer := range pack.List {
-		if !peers[i].UDP.IP.Equal(peer.UDP.IP) {
-			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.UDP.IP, peers[i].UDP.IP)
+		if !bytes.Equal(peers[i].IP, peer.IP) {
+			t.Errorf("invalid decode, wrong ip. Gets %s expecting %s", peer.IP, peers[i].IP)
 		}
 
-		if peers[i].UDP.Port != peer.UDP.Port {
-			t.Errorf("invalid decode, wrong port. Gets %d expecting %d", peer.UDP.Port, peers[i].UDP.Port)
+		if peers[i].Port != peer.Port {
+			t.Errorf("invalid decode, wrong port. Gets %d expecting %d", peer.Port, peers[i].Port)
 		}
 	}
 

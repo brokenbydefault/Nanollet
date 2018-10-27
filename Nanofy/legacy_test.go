@@ -8,13 +8,24 @@ import (
 	"github.com/brokenbydefault/Nanollet/Block"
 	"time"
 	"github.com/brokenbydefault/Nanollet/Storage"
+	"github.com/brokenbydefault/Nanollet/Node/Packets"
 )
 
 func TestVersion0_VerifyBlock(t *testing.T) {
 
-	con := Node.NewServer(Storage.Configuration.Node.Header)
-	con.Start()
-	time.Sleep(1 * time.Second)
+	con := Node.NewServer(Packets.Header{
+		MagicNumber:   82,
+		NetworkType:   Packets.Live,
+		VersionMax:    13,
+		VersionUsing:  13,
+		VersionMin:    13,
+		MessageType:   Packets.Invalid,
+		ExtensionType: 0,
+	}, &Storage.PeerStorage, &Storage.TransactionStorage)
+
+	Node.NewHandler(con).Start()
+
+	time.Sleep(2 * time.Second)
 
 	flaghash := Block.NewBlockHash(Util.SecureHexMustDecode("AE95D7936A23D0671DD4E7E0736612F5304A18AD80B2827B2D69A3482A38F1EA"))
 	flagblock, err := Node.GetBlock(con, &flaghash)
@@ -44,8 +55,17 @@ func TestVersion0_VerifyBlock(t *testing.T) {
 }
 
 func TestVersion0_VerifyBlock_Invalid(t *testing.T) {
-	con := Node.NewServer(Storage.Configuration.Node.Header)
-	con.Start()
+	con := Node.NewServer(Packets.Header{
+		MagicNumber:   82,
+		NetworkType:   Packets.Live,
+		VersionMax:    13,
+		VersionUsing:  13,
+		VersionMin:    13,
+		MessageType:   Packets.Invalid,
+		ExtensionType: 0,
+	}, &Storage.PeerStorage, &Storage.TransactionStorage)
+
+	Node.NewHandler(con).Start()
 	time.Sleep(1 * time.Second)
 
 	flaghash := Block.NewBlockHash(Util.SecureHexMustDecode("AE95D7936A23D0671DD4E7E0736612F5304A18AD80B2827B2D69A3482A38F1EA"))

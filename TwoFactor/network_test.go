@@ -17,7 +17,7 @@ func TestNewRequesterServer(t *testing.T) {
 	seedfy, _ := NewSeedFY()
 	token, _ := NewToken(seedfy.String(), []byte("123456"))
 
-	request, response := NewRequesterServer(&computer, []Wallet.PublicKey{smartphone.PublicKey()})
+	request, response, _ := NewRequesterServer(&computer, []Wallet.PublicKey{smartphone.PublicKey()})
 	go func() {
 		envelope := <-response
 		received = true

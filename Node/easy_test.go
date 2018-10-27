@@ -8,6 +8,7 @@ import (
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/Storage"
 )
 
 func TestGetBalance(t *testing.T) {
@@ -19,8 +20,11 @@ func TestGetBalance(t *testing.T) {
 		VersionMin:    13,
 		MessageType:   Packets.Invalid,
 		ExtensionType: 0,
-	})
-	c.Start()
+	}, &Storage.PeerStorage, &Storage.TransactionStorage)
+
+	NewHandler(c).Start()
+
+
 	time.Sleep(2 * time.Second)
 
 	pkx := Wallet.Address("xrb_1ipx847tk8o46pwxt5qjdbncjqcbwcc1rrmqnkztrfjy5k7z4imsrata9est").MustGetPublicKey()
@@ -46,8 +50,9 @@ func TestGetBlock(t *testing.T) {
 		VersionMin:    13,
 		MessageType:   Packets.Invalid,
 		ExtensionType: 0,
-	})
-	c.Start()
+	}, &Storage.PeerStorage, &Storage.TransactionStorage)
+
+	NewHandler(c).Start()
 	time.Sleep(1 * time.Second)
 
 	hash := Block.NewBlockHash(Util.SecureHexMustDecode("8FF14E8A184F43B63B048C5D20862B7A9D91DA1275BC2F77E8149633B157BCB8"))
@@ -72,8 +77,9 @@ func TestGetHistory(t *testing.T) {
 		VersionMin:    13,
 		MessageType:   Packets.Invalid,
 		ExtensionType: 0,
-	})
-	c.Start()
+	}, &Storage.PeerStorage, &Storage.TransactionStorage)
+
+	NewHandler(c).Start()
 	time.Sleep(1 * time.Second)
 
 	pk := Wallet.Address("xrb_3tz9pdfskx934ce36cf6h17uspp4hzsamr5hk7u1wd6em1gfsnb618hfsafc").MustGetPublicKey()
@@ -106,8 +112,9 @@ func TestGetPendings(t *testing.T) {
 		VersionMin:    13,
 		MessageType:   Packets.Invalid,
 		ExtensionType: 0,
-	})
-	c.Start()
+	}, &Storage.PeerStorage, &Storage.TransactionStorage)
+
+	NewHandler(c).Start()
 	time.Sleep(1 * time.Second)
 
 	pk := Wallet.Address("xrb_1nanofy8on8preceding8transaction11111111411111111111pqdyc8af").MustGetPublicKey()
