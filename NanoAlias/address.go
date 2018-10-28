@@ -43,10 +43,13 @@ func (addr Address) GetPublicKey() (pk Wallet.PublicKey, err error) {
 
 	opensHashes := make([]*Block.BlockHash, 0)
 	for _, txs := range chains {
-		hash := txs[len(txs)-1].Hash()
+		openblock := txs[len(txs)-1]
+		hash := openblock.Hash()
 
 		opensHashes = append(opensHashes, &hash)
-		Storage.TransactionStorage.Add(txs[len(txs)-1])
+
+		Node.RequestVotes(Background.Connection, openblock)
+		Storage.TransactionStorage.Add(openblock)
 	}
 
 	winner, ok := Storage.TransactionStorage.WaitConfirmation(&Storage.Configuration.Account.Quorum, 30*time.Second, opensHashes...)
