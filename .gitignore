@@ -18,7 +18,6 @@
 /GUI/Front/*.go
 *.css
 *.js
-*.html
 *.sig
 *.syso
 *.zip
@@ -26,6 +25,7 @@
 *.apk
 Nanollet
 Nanollet.exe
+Nanollet.html
 Nanollet.app/*
 test/
 *.map

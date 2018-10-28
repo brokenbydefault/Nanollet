@@ -41,6 +41,7 @@ func Start() {
 	win.InitApplication(new(App.NanolletApp))
 	win.InitApplication(new(App.NanofyApp))
 	win.InitApplication(new(App.AccountApp))
+	win.InitApplication(new(App.NanoAliasApp))
 	win.InitApplication(new(App.SettingsApp))
 	win.ViewApplication(new(App.AccountApp))
 
