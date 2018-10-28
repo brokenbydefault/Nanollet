@@ -2,10 +2,7 @@
 
 # Nanollet
 
-Nanollet is light is size, but rich in features. The wallet need less than 20MB of disk space and negligible bandwidth consumption.
-
-> Remember, the Nanollet is working in progress, if you had some problem report it directly in the issues.
-
+Nanollet is decentralized, easy to use and secure! The wallet need less than 20MB of disk space and don't need a centralized server.
 
 ----------
 
@@ -27,20 +24,16 @@ That allows you to sign one file, or arbitrary data, using Nano. This is so easy
 - **Nanollet 2FA**:
 You can only send one transaction with hold your mobile phone. If someone stole one of your keys they don’t have the ability to move your money. It’s not secure as the multi-sig, but better than a simply password.
 
+- **OpenCAP**
+You can send money using a OpenCAP alias, for instance send money using nanollet$ogdolo.com. You can create a alias using any provider (like [ogdolo.com](https://ogdolo.com)) and the Nanollet will discover the address and send the funds.
+
+- **NanoAlias**:
+You can create your own alias inside the wallet, stored on the blockchain and without any centralized server. With this alias is possible to receive money by using a simple @nanollet, rather than use xrb_3tz9pdfskx934ce36cf6h17uspp4hzsamr5hk7u1wd6em1gfsnb618hfsafc.
+
 #### Internal:
 
 - **SeedFY:** 
 That is the secure seed. The SeedFY can be consider as one part of your seed, that combines with your password to generate the seed. Because of that, holding only the SeedFY don’t guarantees immediately access to your funds.
-
-### Planned features:
-
-- “Alias”:
-The Nanode already allow you to set one alias, but we want to take different approach and even more decentralized and, of course, secure to anyone.
-
-- "Hardware Wallet":
-That is hard for, but challenges are good. Create one completely hardware wallet will be very nice to anyone.
-
-*Much more features should be added.*
 
 ---------
 
@@ -48,7 +41,7 @@ That is hard for, but challenges are good. Create one completely hardware wallet
 
 If you like the project you can help it gets better and better. We really need people to review the code, searching for flaws or security issues, also to improve the code in general.
 
-However, donations are accepted under **xrb_3tz9pdfskx934ce36cf6h17uspp4hzsamr5hk7u1wd6em1gfsnb618hfsafc**.
+However, donations are accepted under **xrb_3tz9pdfskx934ce36cf6h17uspp4hzsamr5hk7u1wd6em1gfsnb618hfsafc**, or **@nanollet** or **nanollet$ogdolo.com**. ;)
 
 
 
