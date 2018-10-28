@@ -1,9 +1,9 @@
 package DOM
 
 import (
-	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"fmt"
+	"github.com/brokenbydefault/Nanollet/Storage"
+	"strconv"
 )
 
 func UpdateAmount(w *Window) error {
@@ -40,7 +40,7 @@ func UpdateNodesCount(w *Window) error {
 
 		active, all := Storage.PeerStorage.CountActive()
 
-		if err = display.SetValue(fmt.Sprintf("%d (%d)", active, all)); err != nil {
+		if err = display.SetValue(strconv.Itoa(active) + " / " + strconv.Itoa(all)); err != nil {
 			return err
 		}
 	}

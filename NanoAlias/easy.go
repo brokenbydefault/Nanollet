@@ -1,7 +1,6 @@
 package NanoAlias
 
 import (
-	"fmt"
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/Node"
@@ -51,7 +50,6 @@ func Register(sk *Wallet.SecretKey, previous Block.Transaction, alias string) er
 
 		winner, ok := Storage.TransactionStorage.WaitConfirmation(&Storage.Configuration.Account.Quorum, 30 * time.Second, &hash)
 		if !ok || *winner != hash {
-			fmt.Print(ok, winner)
 			return ErrUnconfirmedRegister
 		}
 
