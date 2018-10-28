@@ -1,12 +1,12 @@
 package Node
 
 import (
-	"github.com/brokenbydefault/Nanollet/Wallet"
+	"errors"
+	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/Node/Packets"
 	"github.com/brokenbydefault/Nanollet/Numbers"
-	"github.com/brokenbydefault/Nanollet/Block"
-	"errors"
 	"github.com/brokenbydefault/Nanollet/Util"
+	"github.com/brokenbydefault/Nanollet/Wallet"
 )
 
 var (
@@ -108,7 +108,7 @@ func GetAmount(c Node, tx Block.Transaction) (*Numbers.RawAmount, error) {
 	}
 
 	txPrev, err := GetBlock(c, &hashPrev)
-	if txPrev ==nil || err != nil {
+	if txPrev == nil || err != nil {
 		return nil, err
 	}
 
@@ -158,7 +158,7 @@ func GetHistory(c Node, pk *Wallet.PublicKey, start *Block.BlockHash) (txs []Blo
 		for _, tx := range p.Transactions {
 			hash, sig := tx.Hash(), tx.GetSignature()
 
-			if  hash != lastPreviousHash || (!pk.IsValidSignature(hash[:], &sig) && !Block.IsEpoch(tx)) {
+			if hash != lastPreviousHash || (!pk.IsValidSignature(hash[:], &sig) && !Block.IsEpoch(tx)) {
 				continue
 			}
 
@@ -184,6 +184,7 @@ func GetMultiplesHistory(c Node, pk *Wallet.PublicKey, start *Block.BlockHash) (
 		start = &h
 	}
 
+	txs = make(map[Block.BlockHash][]Block.Transaction, 0)
 	req := Packets.NewBulkPullPackageRequest(*pk, *start)
 
 	packets, _ := c.SendTCP(req, Packets.BulkPull)
@@ -199,7 +200,7 @@ func GetMultiplesHistory(c Node, pk *Wallet.PublicKey, start *Block.BlockHash) (
 		}
 
 		// If already have this chain
-		if _, ok := txs[p.Transactions[0].Hash()]; ok  {
+		if _, ok := txs[p.Transactions[0].Hash()]; ok {
 			continue
 		}
 
@@ -278,4 +279,3 @@ func RequestVotes(c Node, tx Block.Transaction) (err error) {
 
 	return nil
 }
-
