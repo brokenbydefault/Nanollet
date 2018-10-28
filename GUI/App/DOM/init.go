@@ -2,7 +2,6 @@ package DOM
 
 import (
 	"strings"
-	"fmt"
 )
 
 func (w *Window) InitApplication(app Application) {
@@ -19,7 +18,7 @@ func (w *Window) InitApplication(app Application) {
 
 	button, err := w.root.SelectFirstElement(`.control button[id="`+ strings.Title(app.Name()) +`"]`)
 	if err != nil {
-		panic(fmt.Sprintf("element %s was not found", `.control button[id="`+ strings.Title(app.Name()) +`"]`))
+		panic("element .control button[id="+ strings.Title(app.Name()) +"] was not found")
 	}
 
 	button.On(Click, func(class string) {
@@ -33,7 +32,7 @@ func (w *Window) InitApplication(app Application) {
 
 		pagebutton, err := w.root.SelectFirstElement(".control aside button."+strings.Title(page.Name()))
 		if err != nil {
-			panic(fmt.Sprintf("element %s was not found", `".control aside button.`+strings.Title(page.Name())))
+			panic("element .control aside button."+strings.Title(page.Name())+" was not found")
 		}
 
 		pagebutton.On(Click, func(class string) {
