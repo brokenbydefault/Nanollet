@@ -152,7 +152,7 @@ func (addr Address) GetAliasSecretKey() (alias Wallet.SecretKey, ok bool) {
 		// "-" to "." (45 to 46)   - [44]                     = 1 to 2
 		v -= (((44 - v) >> 8) & ((v - 47) >> 8)) & 44
 		// "_" (95)                                           = 3
-		v -= (((94 - v) >> 8) & ((v - 66) >> 8)) & 92
+		v -= (((94 - v) >> 8) & ((v - 96) >> 8)) & 92
 		// "a" to "z" (97 to 122)                             = 4 to 29
 		v -= (((96 - v) >> 8) & ((v - 123) >> 8)) & 93
 
