@@ -1,16 +1,17 @@
 package App
 
 import (
+	"github.com/brokenbydefault/Nanollet/NanoAlias"
 	"strings"
 
 	"github.com/brokenbydefault/Nanollet/Block"
 	"github.com/brokenbydefault/Nanollet/GUI/App/Background"
 	"github.com/brokenbydefault/Nanollet/GUI/App/DOM"
 	"github.com/brokenbydefault/Nanollet/Numbers"
+	"github.com/brokenbydefault/Nanollet/OpenCAP"
 	"github.com/brokenbydefault/Nanollet/Storage"
 	"github.com/brokenbydefault/Nanollet/Util"
 	"github.com/brokenbydefault/Nanollet/Wallet"
-	"github.com/brokenbydefault/Nanollet/OpenCAP"
 	"image/color"
 )
 
@@ -71,6 +72,8 @@ func (c *PageWallet) OnContinue(w *DOM.Window, dom *DOM.DOM, _ string) {
 		dest, err = Wallet.Address(addrOrAlias).GetPublicKey()
 	case OpenCAP.Address(addrOrAlias).IsValid():
 		dest, err = OpenCAP.Address(addrOrAlias).GetPublicKey()
+	case NanoAlias.Address(addrOrAlias).IsValid():
+		dest, err = NanoAlias.Address(addrOrAlias).GetPublicKey()
 	default:
 		DOM.UpdateNotification(w, "The address invalid or it's not supported")
 		return
