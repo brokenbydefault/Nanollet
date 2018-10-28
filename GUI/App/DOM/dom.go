@@ -52,8 +52,6 @@ func NewDOMPage(page Page, dom *DOM) *DOM {
 		panic(err)
 	}
 
-	el.UID()
-
 	return &DOM{el: &Element{el}}
 }
 
