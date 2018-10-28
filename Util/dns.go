@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"strings"
 	"errors"
+	"time"
 )
 
 type rr int
@@ -75,7 +76,9 @@ func LookupSRV(service, proto, name string) (cname string, addrs []*net.SRV, err
 }
 
 func lookup(rr rr, host string) (*response, error) {
-	raw, err := http.Get("https://1.1.1.1/dns-query?" + url.Values{
+	client := &http.Client{Timeout: 3 * time.Second}
+
+	raw, err := client.Get("https://1.1.1.1/dns-query?" + url.Values{
 		"name": []string{host},
 		"type": []string{rr.String()},
 		"ct":   []string{"application/dns-json"},
