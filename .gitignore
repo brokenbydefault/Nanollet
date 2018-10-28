@@ -9,12 +9,23 @@
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+
+# IDE
 .idea
 /GUI/Front/.idea
+
+# Nanollet
 /GUI/Front/*.go
 *.css
 *.js
-*.html
-
+*.sig
+*.syso
+*.zip
+*.wasm
+*.apk
+Nanollet
+Nanollet.exe
+Nanollet.html
+Nanollet.app/*
 test/
 *.map

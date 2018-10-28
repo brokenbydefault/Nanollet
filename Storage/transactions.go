@@ -113,8 +113,10 @@ func (h *TransactionBox) WaitConfirmation(quorum *Peer.Quorum, timeout time.Dura
 		}
 
 		go func(t *TransactionBox, h *Block.BlockHash, ch chan *Block.BlockHash) {
-			if t.IsConfirmed(h, quorum) {
-				c <- hash
+			for range time.Tick(500 * time.Millisecond) {
+				if t.IsConfirmed(h, quorum) {
+					c <- hash
+				}
 			}
 		}(h, hash, c)
 	}
@@ -145,7 +147,7 @@ func (h *TransactionBox) AddVotes(hash *Block.BlockHash, pk *Wallet.PublicKey, s
 }
 
 func (h *TransactionBox) GetByHash(hash *Block.BlockHash) (item *Transaction, ok bool) {
-	if h == nil || Util.IsEmpty(hash[:]) {
+	if h == nil || hash == nil || Util.IsEmpty(hash[:]) {
 		return
 	}
 

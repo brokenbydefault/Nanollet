@@ -9,9 +9,9 @@ type Application interface {
 }
 
 type Page interface {
-	OnContinue(w *Window, dom *DOM, action string)
-	OnView(w *Window, dom *DOM)
 	Name() string
+	OnView(w *Window, dom *DOM)
+	OnContinue(w *Window, dom *DOM, action string)
 }
 
 type ActionMethod int
