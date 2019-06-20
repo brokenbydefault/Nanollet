@@ -1,6 +1,9 @@
 package Storage
 
-import "github.com/brokenbydefault/Nanollet/Wallet"
+import (
+	"github.com/brokenbydefault/Nanollet/Node/Peer"
+	"github.com/brokenbydefault/Nanollet/Wallet"
+)
 
 var Engine FileStorage
 var PersistentStorage Persistent
@@ -8,6 +11,7 @@ var PersistentStorage Persistent
 type Persistent struct {
 	SeedFY      Wallet.SeedFY
 	AllowedKeys []Wallet.PublicKey
+	Quorum      Peer.Quorum
 }
 
 func (p *Persistent) AddSeedFY(seedfy Wallet.SeedFY) {

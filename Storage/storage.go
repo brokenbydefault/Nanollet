@@ -17,6 +17,10 @@ func init() {
 	}
 
 	Engine.Load(&PersistentStorage)
+
+	if len(PersistentStorage.Quorum.PublicKeys) != 0 {
+		Configuration.Account.Quorum = PersistentStorage.Quorum
+	}
 }
 
 type DesktopStorage struct {
