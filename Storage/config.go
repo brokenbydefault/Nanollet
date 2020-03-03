@@ -80,9 +80,9 @@ var Live = Config{
 		Header: Packets.Header{
 			MagicNumber:  82,
 			NetworkType:  Packets.Live,
-			VersionMax:   14,
-			VersionUsing: 14,
-			VersionMin:   7,
+			VersionMax:   0,
+			VersionUsing: 255,
+			VersionMin:   255,
 		},
 	},
 
@@ -122,9 +122,9 @@ var Beta = Config{
 		Header: Packets.Header{
 			MagicNumber:  82,
 			NetworkType:  Packets.Beta,
-			VersionMax:   14,
-			VersionUsing: 14,
-			VersionMin:   7,
+			VersionMax:   0,
+			VersionUsing: 255,
+			VersionMin:   255,
 		},
 	},
 
